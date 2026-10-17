@@ -1,0 +1,12 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useTradeStore } from '../../stores'
+import OpenTradeCard from './OpenTradeCard.vue'
+import EmptyState from '../../components/EmptyState.vue'
+import AppCard from '../../components/AppCard.vue'
+import { usePredictionStore, useKronosStore } from '../../stores'
+import { date } from '../../format'
+const prediction=usePredictionStore();const kronos=useKronosStore()
+const trades=useTradeStore();const paper=computed(()=>trades.open.filter(t=>t.classification==='BROKER_PAPER_EXECUTION'));const shadow=computed(()=>trades.open.filter(t=>t.classification==='SIMULATED_SHADOW'));const unknown=computed(()=>trades.open.filter(t=>!['BROKER_PAPER_EXECUTION','SIMULATED_SHADOW'].includes(t.classification)))
+</script>
+<template><section class="inventory-workspace" aria-label="Inventario actual"><div class="section-heading"><h2>Operación abierta</h2><span class="pill">{{ trades.open.length }} registros del experimento</span></div><AppCard v-if="!trades.open.length" class="inventory-idle"><EmptyState title="Sin operación abierta" description="No hay posiciones registradas. NO_TRADE no cuenta como operación."><p class="small muted">Paper: sin posición registrada en este experimento; no sustituye la conciliación de cuenta. Shadow: inventario vacío.</p></EmptyState><dl class="idle-context"><div><dt>Última decisión</dt><dd>{{ prediction.current?.decision ?? 'DATA_UNAVAILABLE' }}</dd></div><div><dt>Última señal</dt><dd>{{ prediction.current?.at?date(prediction.current.at):'DATA_UNAVAILABLE' }}</dd></div><div><dt>Próxima evaluación</dt><dd>Cierre de vela · horario no expuesto</dd></div><div><dt>Último forecast</dt><dd>{{ date(kronos.view?.latest?.created_at) }}</dd></div></dl></AppCard><div v-else class="inventory-origins"><div><p class="origin-label paper-label">IBKR PAPER · {{ paper.length }}</p><OpenTradeCard v-for="t in paper" :key="t.id" :trade="t" @select="trades.selected=$event" /><p v-if="!paper.length" class="inventory-empty">Sin posición Paper registrada en este experimento. No sustituye la conciliación completa de cuenta.</p></div><div><p class="origin-label shadow-label">SIMULATED SHADOW · {{ shadow.length }}</p><OpenTradeCard v-for="t in shadow" :key="t.id" :trade="t" @select="trades.selected=$event" /><p v-if="!shadow.length" class="inventory-empty">Sin posición Shadow registrada.</p></div></div><OpenTradeCard v-for="t in unknown" :key="t.id" :trade="t" @select="trades.selected=$event" /></section></template>

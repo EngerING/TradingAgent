@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="495" height="495" preserveAspectRatio="xMinYMin meet" viewBox="0 0 495 495" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>...</title>
+	<desc>...</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="495" height="495"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-495)" style="clip-path: url(#clip)">
+		<g transform="">
+			<text x="147.92041015625" y="482" style="font-family: BodyBold; font-size: 10px;fill: rgb(7%,17%,23%); stroke:none;" transform="translate(0,964) scale(1,-1)">Cada transición conserva una autoridad distinta</text>
+			<path d="M 245,415 L 245,373 Z" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 0.8;"/>
+			<polygon points="245 373, 242 379, 248 379" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 1; fill: rgb(33%,41%,46%); fill-rule: evenodd;"/>
+			<text x="250.0" y="394.0" style="font-family: Body; font-size: 8px;fill: rgb(33%,41%,46%); stroke:none;" transform="translate(0,788) scale(1,-1)">configuración</text>
+			<path d="M 245,325 L 245,283 Z" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 0.8; stroke-dasharray: 4, 3;"/>
+			<polygon points="245 283, 242 289, 248 289" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 1; fill: rgb(33%,41%,46%); fill-rule: evenodd;"/>
+			<text x="250.0" y="304.0" style="font-family: Body; font-size: 8px;fill: rgb(33%,41%,46%); stroke:none;" transform="translate(0,608) scale(1,-1)">no se concede automáticamente</text>
+			<path d="M 245,235 L 245,193 Z" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 0.8;"/>
+			<polygon points="245 193, 242 199, 248 199" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 1; fill: rgb(33%,41%,46%); fill-rule: evenodd;"/>
+			<text x="250.0" y="214.0" style="font-family: Body; font-size: 8px;fill: rgb(33%,41%,46%); stroke:none;" transform="translate(0,428) scale(1,-1)">comprobación</text>
+			<path d="M 245,145 L 245,103 Z" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 0.8;"/>
+			<polygon points="245 103, 242 109, 248 109" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 1; fill: rgb(33%,41%,46%); fill-rule: evenodd;"/>
+			<text x="250.0" y="124.0" style="font-family: Body; font-size: 8px;fill: rgb(33%,41%,46%); stroke:none;" transform="translate(0,248) scale(1,-1)">admisión no es permiso IBKR</text>
+			<rect x="30" y="415" width="430" height="48" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="135.81513671875" y="436.0" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,872) scale(1,-1)">Usuario elige valores → preparación GUARDADO / VALIDO</text>
+			<rect x="30" y="325" width="430" height="48" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="158.2693359375" y="346.0" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,692) scale(1,-1)">Perfil vigente + políticas identificadas por hash</text>
+			<rect x="30" y="235" width="430" height="48" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="148.12373046875" y="256.0" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,512) scale(1,-1)">Permiso Shadow independiente y ligado al contexto</text>
+			<rect x="30" y="145" width="430" height="48" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="157.89423828125" y="166.0" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,332) scale(1,-1)">Datos / inventario / solver / reserva / Stop SQL</text>
+			<rect x="30" y="55" width="430" height="48" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="162.27412109375" y="76.0" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,152) scale(1,-1)">Ciclo virtual de laboratorio · brokerOrders=0</text>
+		</g>
+	</g>
+</svg>

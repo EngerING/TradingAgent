@@ -1,0 +1,17 @@
+{
+  "scope": "EURUSD_SHADOW_R1_R5_R10",
+  "initial_capital_per_portfolio": "100",
+  "exposure_ceiling_usd": "100",
+  "profiles": {
+    "EURUSD_R1": {"risk_fraction": "0.01", "trade_risk_cap_usd": "1", "daily_loss_budget_usd": "2"},
+    "EURUSD_R5": {"risk_fraction": "0.05", "trade_risk_cap_usd": "5", "daily_loss_budget_usd": "5"},
+    "EURUSD_R10": {"risk_fraction": "0.10", "trade_risk_cap_usd": "10", "daily_loss_budget_usd": "10"}
+  },
+  "strategy": "trend",
+  "probability": {"minimum_samples": 100, "minimum_days": 30, "minimum_folds": 3, "maximum_censor_fraction": "0.10"},
+  "poll_seconds": 30,
+  "openai": {"enabled": false, "model": "gpt-6.1-sol", "max_cost_usd": "0", "max_calls": 10, "max_output_tokens": 512, "max_prompt_bytes": 6000, "timeout_seconds": 20},
+  "broker_orders_enabled": false,
+  "live_enabled": false,
+  "automatic_strategy_changes": false
+}

@@ -1,0 +1,20 @@
+{
+  "profile": "EURUSD_PAPER_RESEARCH_100",
+  "environment": "INTERNAL_SIMULATION",
+  "instrument": "EUR/USD CASH IDEALPRO",
+  "purpose": "SPECULATIVE_RESEARCH_NOT_CURRENCY_CONVERSION",
+  "capital_usd": "100",
+  "risk_fraction": "0.01",
+  "maximum_trade_risk_usd": "1",
+  "daily_loss_budget_usd": "2",
+  "cumulative_loss_budget_usd": "20",
+  "exposure_multiple": "1",
+  "timezone": "America/Santo_Domingo",
+  "policy": "WIN_TO_CONTINUE / FIRST_LOSS_STOPS_DAY",
+  "baseline_strategy": "trend",
+  "minimum_net_reward_risk": "1",
+  "maximum_cost_target_fraction": "0.5",
+  "broker_orders_enabled": false,
+  "live_enabled": false,
+  "openai_calls_enabled": false
+}

@@ -1,0 +1,21 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+import { ShieldAlert, ArrowRight } from '@lucide/vue'
+import { useSystemStore, useExperimentStore } from '../stores'
+import StatusBadge from './StatusBadge.vue'
+import { ref } from 'vue'
+import { money,date } from '../format'
+const system=useSystemStore();const experiments=useExperimentStore()
+const blockers=computed(()=>[...new Set(experiments.experiments.flatMap(e=>e.paperBlockers ?? []))])
+const procedure=ref('')
+const commands=computed(()=>{
+ const cohort=system.rotation?.cohort ?? '<COHORT>'
+ const action=procedure.value==='ASSESS'?'Assess':procedure.value==='RECOVERY_INSPECT'?'RecoveryInspect':procedure.value==='AUTHORIZE'?'Authorize':procedure.value==='START'?'Run':procedure.value==='STOP'?'Stop':'Revoke'
+ return `.\\scripts\\eurusd-paper-exploratory.ps1 -Action ${action} -Cohort ${cohort}`+(action==='Authorize'?' -Profile <PERFIL_REVISADO> -EvidencePath <RECIBOS_REVISADOS> -Minutes 30':'')
+})
+</script>
+<template><section class="paper-readiness" aria-label="Paper Experimental" data-testid="paper-readiness"><div class="readiness-icon"><ShieldAlert :size="22" /></div><div class="readiness-content"><div class="flex items-center gap-2 flex-wrap"><h3>PAPER EXPERIMENT</h3><StatusBadge :value="system.rotation?.state ?? 'UNKNOWN'" /><StatusBadge :value="system.status?.paperAuto ?? 'UNKNOWN'" tone="warn" /></div><h4 v-if="system.rotation">Próximo perfil Paper: {{ system.rotation.nextProfile.slice(7) }}</h4><p v-else>Próximo perfil: UNKNOWN</p><template v-if="system.rotation?.protocolVersion===2"><p><b>{{ system.rotation.operationalState }}</b> · {{ system.rotation.purpose }}</p><p>Autorización: {{ system.rotation.authorizationStatus }} · Vence: {{ date(system.rotation.authorizationExpiresAt ?? null) }} · EmergencyStop: {{ system.status?.emergency }}</p><div class="paper-eligibility"><div v-for="(e,p) in system.rotation.eligibility" :key="p"><b>{{ p }}</b><span>{{ e?.status }}</span><small>{{ e?.reason ?? 'Ejecución pendiente de verificación' }}</small><small>{{ e?.quantity ?? 'UNKNOWN' }} EUR · riesgo {{ money(e?.risk) }}</small></div></div><p>{{ system.rotation.completedPaper }} cierres IBKR PAPER · {{ money(system.rotation.observedFees) }} comisiones observadas · {{ system.rotation.shadowTrades }} twins Shadow · {{ system.rotation.skipped }} saltos auditados</p><p>Último perfil ejecutado: {{ system.rotation.lastExecutedProfile ?? 'NONE' }} · máximo {{ system.rotation.maxOpenings }} apertura supervisada.</p><small>{{ system.rotation.selectionBias }}</small><div class="paper-actions"><button v-for="action in ['ASSESS','AUTHORIZE','START','STOP','REVOKE','RECOVERY_INSPECT']" :key="action" class="secondary-button" :disabled="action==='START'" @click="procedure=action">{{ action }}{{ action==='START'?' · BLOCKED':' · procedimiento' }}</button></div><div v-if="procedure" role="region" :aria-label="`Procedimiento ${procedure}`"><p>Comando local protegido; esta pantalla no ejecuta acciones. Requiere revisión humana. STOP conserva la gestión del inventario propio.</p><code>{{ commands }}</code><button class="text-button" @click="procedure=''">Cerrar procedimiento</button></div></template><p class="small muted">IBKR PAPER EXECUTION · rotación condicionada a autorización independiente. La UI no puede resolver los bloqueos.</p><details v-if="blockers.length || system.rotation?.globalStop"><summary>{{ blockers.length }} bloqueos registrados <span v-if="system.rotation?.globalStop">· {{ system.rotation.globalStop }}</span></summary><ul><li v-for="b in blockers" :key="b">{{ b }}</li></ul></details><p v-else class="small muted">Sin evidencia de habilitación; revisar protocolo externo.</p></div><RouterLink to="/configuracion" class="text-button readiness-link">Ver controles <ArrowRight :size="14" /></RouterLink></section></template>
+
+<style scoped>
+.paper-eligibility{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--space-3,12px);margin-block:12px}.paper-eligibility>div{display:flex;flex-direction:column;gap:6px;overflow-wrap:anywhere}.paper-actions{display:flex;flex-wrap:wrap;gap:8px;margin-block:12px}code{display:block;white-space:pre-wrap;overflow-wrap:anywhere} @media(max-width:600px){.paper-eligibility{grid-template-columns:1fr}}
+</style>

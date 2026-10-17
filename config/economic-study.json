@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "instrument": "EUR/USD",
+  "quantities": [1, 10, 50, 80, 100, 1000, 20000, 100000],
+  "assumedPrice": 1.10,
+  "stopDistance": 0.0010,
+  "targetDistance": 0.0015,
+  "publicFeeRate": 0.00002,
+  "publicMinimumFeeUsd": 2,
+  "manualOpeningUsd": 2,
+  "manualOpeningQuantity": 100,
+  "publicCommissionSource": "https://www.interactivebrokers.com/en/pricing/commissions-spot-currencies.php",
+  "limitations": "Offline sensitivity study. Price/stop/target are assumptions, not current quotes. Public Tier I fees are not account-verified. Favorable zero spread/slippage/gap and fully-funded margin are scenario assumptions. Small-lot permission, tradable minimum/step and account margin are unknown. Main instrument and active risk policy unchanged."
+}

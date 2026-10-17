@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="495" height="535" preserveAspectRatio="xMinYMin meet" viewBox="0 0 495 535" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>...</title>
+	<desc>...</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="495" height="535"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-535)" style="clip-path: url(#clip)">
+		<g transform="">
+			<text x="141.03564453125" y="522" style="font-family: BodyBold; font-size: 10px;fill: rgb(7%,17%,23%); stroke:none;" transform="translate(0,1044) scale(1,-1)">Línea sólida = FK SQL; discontinua = contrato lógico</text>
+			<path d="M 120,385 L 120,450 Z" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 0.8;"/>
+			<polygon points="120 450, 117 444, 123 444" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 1; fill: rgb(33%,41%,46%); fill-rule: evenodd;"/>
+			<text x="125.0" y="417.5" style="font-family: Body; font-size: 8px;fill: rgb(33%,41%,46%); stroke:none;" transform="translate(0,835) scale(1,-1)">N : 1</text>
+			<path d="M 120,255 L 120,330 Z" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 0.8; stroke-dasharray: 4, 3;"/>
+			<polygon points="120 330, 117 324, 123 324" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 1; fill: rgb(33%,41%,46%); fill-rule: evenodd;"/>
+			<text x="125.0" y="292.5" style="font-family: Body; font-size: 8px;fill: rgb(33%,41%,46%); stroke:none;" transform="translate(0,585) scale(1,-1)">verifica head</text>
+			<path d="M 375,450 L 375,385 Z" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 0.8; stroke-dasharray: 4, 3;"/>
+			<polygon points="375 385, 372 391, 378 391" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 1; fill: rgb(33%,41%,46%); fill-rule: evenodd;"/>
+			<text x="380.0" y="417.5" style="font-family: Body; font-size: 8px;fill: rgb(33%,41%,46%); stroke:none;" transform="translate(0,835) scale(1,-1)">preparación ligada</text>
+			<path d="M 375,330 L 375,255 Z" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 0.8; stroke-dasharray: 4, 3;"/>
+			<polygon points="375 255, 372 261, 378 261" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 1; fill: rgb(33%,41%,46%); fill-rule: evenodd;"/>
+			<text x="380.0" y="292.5" style="font-family: Body; font-size: 8px;fill: rgb(33%,41%,46%); stroke:none;" transform="translate(0,585) scale(1,-1)">admisión</text>
+			<path d="M 375,200 L 375,120 Z" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 0.8; stroke-dasharray: 4, 3;"/>
+			<polygon points="375 120, 372 126, 378 126" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 1; fill: rgb(33%,41%,46%); fill-rule: evenodd;"/>
+			<text x="380.0" y="160.0" style="font-family: Body; font-size: 8px;fill: rgb(33%,41%,46%); stroke:none;" transform="translate(0,320) scale(1,-1)">permiso</text>
+			<path d="M 120,120 L 120,200 Z" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 0.8; stroke-dasharray: 4, 3;"/>
+			<polygon points="120 200, 117 194, 123 194" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 1; fill: rgb(33%,41%,46%); fill-rule: evenodd;"/>
+			<text x="125.0" y="160.0" style="font-family: Body; font-size: 8px;fill: rgb(33%,41%,46%); stroke:none;" transform="translate(0,320) scale(1,-1)">guard de OPEN</text>
+			<rect x="10" y="450" width="220" height="55" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="82.36220703125" y="480.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,961) scale(1,-1)">r20_v2_test.profiles</text>
+			<text x="79.51640625" y="468.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,937) scale(1,-1)">PK scope_id + version</text>
+			<rect x="265" y="450" width="220" height="55" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="323.19384765625" y="480.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,961) scale(1,-1)">r20_v2_config.preparations</text>
+			<text x="339.22421875" y="468.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,937) scale(1,-1)">PK scope + revision</text>
+			<rect x="10" y="330" width="220" height="55" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="83.999609375" y="360.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,721) scale(1,-1)">r20_v2_test.events</text>
+			<text x="65.23798828125001" y="348.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,697) scale(1,-1)">FK scope_id + profile_version</text>
+			<rect x="265" y="330" width="220" height="55" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="334.75673828125" y="360.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,721) scale(1,-1)">r20_v2_config.events</text>
+			<text x="328.5552734375" y="348.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,697) scale(1,-1)">perfil validado / activado</text>
+			<rect x="10" y="200" width="220" height="55" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="76.6189453125" y="230.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,461) scale(1,-1)">r20_v2_shadow.events</text>
+			<text x="70.6443359375" y="218.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,437) scale(1,-1)">accountingRevision + hash</text>
+			<rect x="265" y="200" width="220" height="55" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="324.7953125" y="230.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,461) scale(1,-1)">r20_v2_admission.receipts</text>
+			<text x="326.88193359375" y="218.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,437) scale(1,-1)">UNIQUE scope + signal_id</text>
+			<rect x="10" y="65" width="220" height="55" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="75.6216796875" y="95.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,191) scale(1,-1)">r20_v2_runner.controls</text>
+			<text x="81.34248046875" y="83.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,167) scale(1,-1)">PREREGISTER / STOP</text>
+			<rect x="265" y="65" width="220" height="55" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="321.695703125" y="95.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,191) scale(1,-1)">r20_v2_shadow.permissions</text>
+			<text x="327.47041015625" y="83.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,167) scale(1,-1)">plan / contexto / ventana</text>
+		</g>
+	</g>
+</svg>

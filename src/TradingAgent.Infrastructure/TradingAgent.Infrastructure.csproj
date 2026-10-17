@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../TradingAgent.Core/TradingAgent.Core.csproj" />
+    <PackageReference Include="Npgsql" Version="9.0.3" />
+    <EmbeddedResource Include="Migrations/*.sql" />
+  </ItemGroup>
+</Project>

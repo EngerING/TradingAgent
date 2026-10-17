@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "environment": "PAPER_TRADING",
+  "symbol": "F",
+  "sessions": 20,
+  "capital_usd": 100,
+  "exposure": 1,
+  "poll_seconds": 60,
+  "calendar_refresh_seconds": 3600,
+  "capabilities_refresh_seconds": 86400,
+  "request_timeout_seconds": 20,
+  "client_id": 92,
+  "max_quote_age_seconds": 30,
+  "maximum_midpoint_jump_ratio": 0.1,
+  "minimum_live_coverage": 0.9,
+  "maximum_gap_seconds": 180,
+  "required_capabilities": ["stock_etf_permissions", "effective_fee_plan", "effective_per_order_fees", "SettledCash_USD", "effective_intraday_restrictions", "contract_specific_margin", "effective_minimum_quantity", "quantity_increment"],
+  "corporate_action_coverage": "UNKNOWN",
+  "max_future_research_cost_usd": "1.00"
+}

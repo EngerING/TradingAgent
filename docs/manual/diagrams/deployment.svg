@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="495" height="450" preserveAspectRatio="xMinYMin meet" viewBox="0 0 495 450" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>...</title>
+	<desc>...</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="495" height="450"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-450)" style="clip-path: url(#clip)">
+		<g transform="">
+			<text x="126.50927734375" y="437" style="font-family: BodyBold; font-size: 10px;fill: rgb(7%,17%,23%); stroke:none;" transform="translate(0,874) scale(1,-1)">Procesos posibles; diagrama no acredita que estén activos</text>
+			<path d="M 122.5,260 L 122.5,210 Z" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 0.8;"/>
+			<polygon points="122.5 210, 119.5 216, 125.5 216" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 1; fill: rgb(33%,41%,46%); fill-rule: evenodd;"/>
+			<text x="127.5" y="235.0" style="font-family: Body; font-size: 8px;fill: rgb(33%,41%,46%); stroke:none;" transform="translate(0,470) scale(1,-1)">proxy</text>
+			<path d="M 372.5,260 L 372.5,210 Z" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 0.8;"/>
+			<polygon points="372.5 210, 369.5 216, 375.5 216" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 1; fill: rgb(33%,41%,46%); fill-rule: evenodd;"/>
+			<text x="377.5" y="235.0" style="font-family: Body; font-size: 8px;fill: rgb(33%,41%,46%); stroke:none;" transform="translate(0,470) scale(1,-1)">API TCP</text>
+			<path d="M 122.5,155 L 122.5,100 Z" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 0.8;"/>
+			<polygon points="122.5 100, 119.5 106, 125.5 106" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 1; fill: rgb(33%,41%,46%); fill-rule: evenodd;"/>
+			<text x="127.5" y="127.5" style="font-family: Body; font-size: 8px;fill: rgb(33%,41%,46%); stroke:none;" transform="translate(0,255) scale(1,-1)">Npgsql</text>
+			<rect x="30" y="365" width="430" height="50" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="145.228515625" y="387.0" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,774) scale(1,-1)">Equipo local Windows · loopback · usuario autorizado</text>
+			<rect x="15" y="260" width="215" height="55" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="80.7001953125" y="290.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,581) scale(1,-1)">Vite :5173 (desarrollo)</text>
+			<text x="72.9287109375" y="278.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,557) scale(1,-1)">proxy /api y /hubs → 5080</text>
+			<rect x="265" y="260" width="215" height="55" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="352.455859375" y="290.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,581) scale(1,-1)">TWS :7497</text>
+			<text x="316.58125" y="278.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,557) scale(1,-1)">cuenta exacta / API de lectura</text>
+			<rect x="15" y="155" width="215" height="55" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="104.7693359375" y="185.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,371) scale(1,-1)">Api :5080</text>
+			<text x="71.3609375" y="173.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,347) scale(1,-1)">frontend/dist + JSON + Hub</text>
+			<rect x="265" y="155" width="215" height="55" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="325.1119140625" y="185.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,371) scale(1,-1)">Python PaperReadSource</text>
+			<text x="330.1162109375" y="173.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,347) scale(1,-1)">diagnóstico; sin fills V2</text>
+			<rect x="15" y="45" width="215" height="55" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="75.3005859375" y="75.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,151) scale(1,-1)">PostgreSQL Paper :55433</text>
+			<text x="70.87128906250001" y="63.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,127) scale(1,-1)">no migrar para documentar</text>
+			<rect x="265" y="45" width="215" height="55" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="332.2634765625" y="75.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,151) scale(1,-1)">Laboratorio separado</text>
+			<text x="316.554296875" y="63.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,127) scale(1,-1)">5182 + PostgreSQL test 55432</text>
+		</g>
+	</g>
+</svg>

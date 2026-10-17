@@ -1,0 +1,21 @@
+{
+  "model": "gpt-6.1-sol",
+  "max_provider_calls": 3,
+  "max_candidates": 3,
+  "max_backtests": 45,
+  "max_seconds": 300,
+  "provider_timeout_seconds": 30,
+  "simulation_timeout_seconds": 60,
+  "max_output_tokens": 2048,
+  "max_total_tokens": 120000,
+  "max_cost_usd": "1.00",
+  "max_prompt_bytes": 24000,
+  "max_consecutive_provider_failures": 2,
+  "pricing": {
+    "model": "gpt-6.1-sol",
+    "input_usd_per_million": "5.00",
+    "output_usd_per_million": "15.00",
+    "verified_on": "2026-10-06",
+    "source": "https://developers.openai.com/api/docs/pricing"
+  }
+}

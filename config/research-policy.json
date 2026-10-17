@@ -1,0 +1,23 @@
+{
+  "version": "research-capital-v3",
+  "ordinaryRisk": 0.0025,
+  "maximumRisk": 0.005,
+  "dailyLimit": 0.01,
+  "weeklyLimit": 0.02,
+  "drawdownLimit": 0.05,
+  "maxPositions": 1,
+  "preventiveDrawdown": 0.02,
+  "preventiveLossStreak": 3,
+  "reductionFactor": 0.5,
+  "maxLeverage": 1,
+  "minFreeMargin": 0,
+  "buffer": 0,
+  "maxDataAgeSeconds": 30,
+  "allocatedCapital": 100,
+  "cumulativeLossLimit": 20,
+  "reviewEquity": 95,
+  "reduceEquity": 90,
+  "restrictEquity": 85,
+  "reducedRiskFactor": 0.5,
+  "restrictedRiskFactor": 0.25
+}

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="495" height="410" preserveAspectRatio="xMinYMin meet" viewBox="0 0 495 410" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>...</title>
+	<desc>...</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="495" height="410"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-410)" style="clip-path: url(#clip)">
+		<g transform="">
+			<text x="144.3046875" y="397" style="font-family: BodyBold; font-size: 10px;fill: rgb(7%,17%,23%); stroke:none;" transform="translate(0,794) scale(1,-1)">Dos superficies de aplicación; autoridad separada</text>
+			<path d="M 122.5,330 L 122.5,285 Z" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 0.8;"/>
+			<polygon points="122.5 285, 119.5 291, 125.5 291" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 1; fill: rgb(33%,41%,46%); fill-rule: evenodd;"/>
+			<text x="127.5" y="307.5" style="font-family: Body; font-size: 8px;fill: rgb(33%,41%,46%); stroke:none;" transform="translate(0,615) scale(1,-1)">HTTP / eventos</text>
+			<path d="M 372.5,330 L 372.5,285 Z" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 0.8;"/>
+			<polygon points="372.5 285, 369.5 291, 375.5 291" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 1; fill: rgb(33%,41%,46%); fill-rule: evenodd;"/>
+			<text x="377.5" y="307.5" style="font-family: Body; font-size: 8px;fill: rgb(33%,41%,46%); stroke:none;" transform="translate(0,615) scale(1,-1)">HTTP / refresco</text>
+			<path d="M 122.5,230 L 122.5,185 Z" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 0.8;"/>
+			<polygon points="122.5 185, 119.5 191, 125.5 191" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 1; fill: rgb(33%,41%,46%); fill-rule: evenodd;"/>
+			<text x="127.5" y="207.5" style="font-family: Body; font-size: 8px;fill: rgb(33%,41%,46%); stroke:none;" transform="translate(0,415) scale(1,-1)">DI / JSON</text>
+			<path d="M 372.5,230 L 372.5,185 Z" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 0.8;"/>
+			<polygon points="372.5 185, 369.5 191, 375.5 191" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 1; fill: rgb(33%,41%,46%); fill-rule: evenodd;"/>
+			<text x="377.5" y="207.5" style="font-family: Body; font-size: 8px;fill: rgb(33%,41%,46%); stroke:none;" transform="translate(0,415) scale(1,-1)">stdin / stdout</text>
+			<path d="M 122.5,130 L 122.5,85 Z" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 0.8;"/>
+			<polygon points="122.5 85, 119.5 91, 125.5 91" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 1; fill: rgb(33%,41%,46%); fill-rule: evenodd;"/>
+			<text x="127.5" y="107.5" style="font-family: Body; font-size: 8px;fill: rgb(33%,41%,46%); stroke:none;" transform="translate(0,215) scale(1,-1)">SQL</text>
+			<path d="M 372.5,130 L 372.5,85 Z" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 0.8;"/>
+			<polygon points="372.5 85, 369.5 91, 375.5 91" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 1; fill: rgb(33%,41%,46%); fill-rule: evenodd;"/>
+			<text x="377.5" y="107.5" style="font-family: Body; font-size: 8px;fill: rgb(33%,41%,46%); stroke:none;" transform="translate(0,215) scale(1,-1)">psql con guard</text>
+			<rect x="15" y="330" width="215" height="55" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="84.936328125" y="360.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,721) scale(1,-1)">Navegador principal</text>
+			<text x="86.48388671875" y="348.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,697) scale(1,-1)">Vue / Pinia / router</text>
+			<rect x="265" y="330" width="215" height="55" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="337.9640625" y="360.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,721) scale(1,-1)">Navegador R20 V2</text>
+			<text x="330.81025390625" y="348.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,697) scale(1,-1)">preparation + monitor</text>
+			<rect x="15" y="230" width="215" height="55" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="78.431640625" y="260.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,521) scale(1,-1)">TradingAgent.Api :5080</text>
+			<text x="82.78232421875" y="248.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,497) scale(1,-1)">HTTP / SignalR / Core</text>
+			<rect x="265" y="230" width="215" height="55" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="328.76630859375" y="260.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,521) scale(1,-1)">ConfigurationLab :5182</text>
+			<text x="323.4767578125" y="248.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,497) scale(1,-1)">HTTP autenticado / bridge</text>
+			<rect x="15" y="130" width="215" height="55" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="79.87812500000001" y="160.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,321) scale(1,-1)">Infrastructure / Npgsql</text>
+			<text x="57.549707031249994" y="148.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,297) scale(1,-1)">Python: proyección e investigación</text>
+			<rect x="265" y="130" width="215" height="55" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="345.05947265625" y="160.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,321) scale(1,-1)">Python R20 V2</text>
+			<text x="326.52919921875" y="148.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,297) scale(1,-1)">economía + SQL + replay</text>
+			<rect x="15" y="30" width="215" height="55" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="87.22958984375" y="60.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,121) scale(1,-1)">PostgreSQL :55433</text>
+			<text x="79.57265625" y="48.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,97) scale(1,-1)">journals históricos / V1</text>
+			<rect x="265" y="30" width="215" height="55" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="329.0201171875" y="60.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,121) scale(1,-1)">PostgreSQL test :55432</text>
+			<text x="337.5912109375" y="48.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,97) scale(1,-1)">ledger V2 sintético</text>
+		</g>
+	</g>
+</svg>

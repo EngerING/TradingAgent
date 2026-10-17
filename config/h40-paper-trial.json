@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "profile": "PAPER_EXPERIMENTAL_H40_SUPERVISED_V1",
+  "environment": "PAPER_TRADING",
+  "capital_usd": 100,
+  "maximum_notional_usd": 100,
+  "maximum_forecast_loss_usd": 10,
+  "original_h40_risk_percent": 2,
+  "maximum_quantity": 1,
+  "maximum_opening_attempts": 1,
+  "authorization_minutes": 30,
+  "protection_ack_seconds": 5,
+  "poll_seconds": 1,
+  "cost_model": "FIXED_FEE_STRESS",
+  "partial_and_late_cost_allowance_usd": 1,
+  "exit_semantics": "ORIGINAL_H40_STOP_TARGET_HOLD40_OR_EXPLICIT_OWNED_RECOVERY",
+  "daily_policy": "WIN_TO_CONTINUE / FIRST_LOSS_STOPS_DAY",
+  "day_timezone": "America/Santo_Domingo",
+  "supervised": true,
+  "live_enabled": false
+}

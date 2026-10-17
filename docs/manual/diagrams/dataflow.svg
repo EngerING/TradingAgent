@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="495" height="510" preserveAspectRatio="xMinYMin meet" viewBox="0 0 495 510" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>...</title>
+	<desc>...</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="495" height="510"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-510)" style="clip-path: url(#clip)">
+		<g transform="">
+			<text x="132.8349609375" y="497" style="font-family: BodyBold; font-size: 10px;fill: rgb(7%,17%,23%); stroke:none;" transform="translate(0,994) scale(1,-1)">La lectura auténtica no está conectada al ciclo sintético</text>
+			<path d="M 245,435 L 245,398 Z" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 0.8;"/>
+			<polygon points="245 398, 242 404, 248 404" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 1; fill: rgb(33%,41%,46%); fill-rule: evenodd;"/>
+			<text x="250.0" y="416.5" style="font-family: Body; font-size: 8px;fill: rgb(33%,41%,46%); stroke:none;" transform="translate(0,833) scale(1,-1)">lectura</text>
+			<path d="M 245,350 L 245,313 Z" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 0.8;"/>
+			<polygon points="245 313, 242 319, 248 319" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 1; fill: rgb(33%,41%,46%); fill-rule: evenodd;"/>
+			<text x="250.0" y="331.5" style="font-family: Body; font-size: 8px;fill: rgb(33%,41%,46%); stroke:none;" transform="translate(0,663) scale(1,-1)">evidencia</text>
+			<path d="M 245,150 L 245,105 Z" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 0.8;"/>
+			<polygon points="245 105, 242 111, 248 111" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 1; fill: rgb(33%,41%,46%); fill-rule: evenodd;"/>
+			<text x="250.0" y="127.5" style="font-family: Body; font-size: 8px;fill: rgb(33%,41%,46%); stroke:none;" transform="translate(0,255) scale(1,-1)">ciclo de laboratorio</text>
+			<rect x="30" y="435" width="430" height="48" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="136.61923828125" y="456.0" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,912) scale(1,-1)">IBKR → identidad exacta → contrato / calendario / quotes</text>
+			<rect x="30" y="350" width="430" height="48" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="136.7607421875" y="371.0" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,742) scale(1,-1)">assess_market → barras nativas completas / señal técnica</text>
+			<rect x="30" y="265" width="430" height="48" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="138.29482421875002" y="286.0" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,572) scale(1,-1)">Diagnóstico auténtico: entryEligible=false; corte histórico</text>
+			<rect x="30" y="150" width="430" height="60" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="164.69990234375" y="183.0" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,366) scale(1,-1)">Replay explícito + perfil + permiso sintético</text>
+			<text x="149.43095703125" y="171.0" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,342) scale(1,-1)">AdmissionCoordinator → solver → reserva atómica</text>
+			<rect x="30" y="50" width="430" height="55" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="147.16240234375" y="80.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,161) scale(1,-1)">ShadowCycle → ledger/ciclo → monitor autenticado</text>
+			<text x="191.79228515625" y="68.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,137) scale(1,-1)">Sólo SYNTHETIC_TEST_ONLY</text>
+		</g>
+	</g>
+</svg>

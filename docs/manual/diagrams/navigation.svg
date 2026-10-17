@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="495" height="370" preserveAspectRatio="xMinYMin meet" viewBox="0 0 495 370" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>...</title>
+	<desc>...</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="495" height="370"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-370)" style="clip-path: url(#clip)">
+		<g transform="">
+			<text x="148.07666015625" y="357" style="font-family: BodyBold; font-size: 10px;fill: rgb(7%,17%,23%); stroke:none;" transform="translate(0,714) scale(1,-1)">Rutas Vue principales y host R20 independiente</text>
+			<path d="M 245,290 L 122.5,245 Z" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 0.8;"/>
+			<polygon points="122.5 245, 119.5 251, 125.5 251" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 1; fill: rgb(33%,41%,46%); fill-rule: evenodd;"/>
+			<text x="188.75" y="267.5" style="font-family: Body; font-size: 8px;fill: rgb(33%,41%,46%); stroke:none;" transform="translate(0,535) scale(1,-1)">páginas</text>
+			<path d="M 245,290 L 375,245 Z" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 0.8;"/>
+			<polygon points="375 245, 372 251, 378 251" style="stroke: rgb(33%,41%,46%); stroke-linecap: butt; stroke-width: 1; fill: rgb(33%,41%,46%); fill-rule: evenodd;"/>
+			<text x="315.0" y="267.5" style="font-family: Body; font-size: 8px;fill: rgb(33%,41%,46%); stroke:none;" transform="translate(0,535) scale(1,-1)">páginas</text>
+			<rect x="25" y="290" width="440" height="50" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="165.07724609375" y="312.0" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,624) scale(1,-1)">index.html → main.ts → App.vue → router</text>
+			<rect x="10" y="180" width="225" height="65" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="74.415625" y="221.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,443) scale(1,-1)">/ · /trading · /operaciones</text>
+			<text x="73.35546875" y="209.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,419) scale(1,-1)">/mercado · /experimentos</text>
+			<text x="86.427734375" y="197.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,395) scale(1,-1)">/aggressive-growth</text>
+			<rect x="265" y="180" width="220" height="65" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="325.79033203125" y="221.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,443) scale(1,-1)">/sol · /research · /reportes</text>
+			<text x="347.74365234375" y="209.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,419) scale(1,-1)">/configuracion</text>
+			<text x="339.700390625" y="197.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,395) scale(1,-1)">/r20/configuracion</text>
+			<rect x="25" y="45" width="440" height="65" rx="5" ry="5" style="stroke: rgb(3%,49%,51%); stroke-linecap: butt; stroke-width: 0.7; fill: rgb(92%,96%,96%); fill-rule: evenodd;"/>
+			<text x="151.8544921875" y="86.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,173) scale(1,-1)">Entrada lab: r20-config.html → r20-config-main.ts</text>
+			<text x="157.680859375" y="74.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,149) scale(1,-1)">R20ConfigurationLab → R20ConfigurationPage</text>
+			<text x="150.71572265625002" y="62.5" style="font-family: Body; font-size: 9.2px;fill: rgb(14%,21%,26%); stroke:none;" transform="translate(0,125) scale(1,-1)">API V2 disponible en :5182; no registrada en :5080</text>
+		</g>
+	</g>
+</svg>

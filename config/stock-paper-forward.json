@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "environment": "PAPER_TRADING",
+  "strategy_version": "2459b8fbe73d4dec3bff7a1baaf3e382b9473fa5908d25e6d6b58ffd151072d8",
+  "candidate_artifact": "artifacts/research/ai-strategy-research/candidates/6093d4afc8961b5278cecea356a2b31c705fe6e51cf1ca343a01d030984c48b8.json",
+  "symbol": "F",
+  "capital_usd": 100,
+  "maximum_exposure": 1,
+  "loss_allowance_usd": 20,
+  "research_risk_percent": [3, 5, 10, 15],
+  "client_id": 93,
+  "request_timeout_seconds": 20,
+  "poll_seconds": 10,
+  "entry_window_seconds": 60,
+  "maximum_quote_age_seconds": 15,
+  "authorization_hours": 8,
+  "effective_capabilities": "UNKNOWN",
+  "effective_protection": "UNKNOWN"
+}

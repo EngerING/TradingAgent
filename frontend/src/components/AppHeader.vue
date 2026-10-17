@@ -1,0 +1,10 @@
+<script setup lang="ts">
+import { Menu, LogOut, Sparkles, Sun, Moon } from '@lucide/vue'
+import { useSystemStore, useMarketStore, useInterfaceStore } from '../stores'
+import { useInstrument } from '../composables/useInstrument'
+import { date } from '../format'
+import StatusBadge from './StatusBadge.vue'
+import NotificationCenter from './NotificationCenter.vue'
+const system = useSystemStore(); const market = useMarketStore(); const ui=useInterfaceStore();const {symbol}=useInstrument();defineProps<{ menuOpen?: boolean }>(); defineEmits<{ menu: []; logout: []; sol: [] }>()
+</script>
+<template><header class="app-header"><div class="flex items-center gap-3"><button class="icon-button menu-toggle" @click="$emit('menu')" aria-label="Abrir menú" aria-controls="workspace-sidebar" :aria-expanded="menuOpen"><Menu :size="22" /></button><span class="header-path"><b>TradingAgent</b><span class="header-instrument"><span>/</span>{{ symbol }}</span></span></div><div class="header-actions"><StatusBadge value="PAPER" tone="neutral" /><StatusBadge value="LIVE BLOQUEADO" tone="danger" /><button class="sol-launcher" aria-label="Abrir copiloto Sol" @click="$emit('sol')"><Sparkles :size="17" /><span>Sol</span></button><button class="icon-button theme-toggle" :aria-label="ui.theme==='dark'?'Activar modo claro':'Activar modo oscuro'" @click="ui.setTheme(ui.theme==='dark'?'light':'dark')"><Sun v-if="ui.theme==='dark'" :size="18"/><Moon v-else :size="18"/></button><NotificationCenter /><button class="icon-button" aria-label="Cerrar sesión" @click="$emit('logout')"><LogOut :size="18" /></button></div><div class="system-strip"><span :class="['connection-dot', { online: system.connection === 'CONNECTED' }]" aria-hidden="true"></span><span>UI {{ system.connection }}</span><span>IBKR: {{ system.status?.ibkr ?? 'DATA_UNAVAILABLE' }}</span><span>PostgreSQL: {{ system.status?.postgres ?? 'UNKNOWN' }}</span><span>Datos: {{ system.connection === 'CONNECTED' ? market.quote?.quality ?? 'MISSING' : 'STALE / SIN CONEXIÓN' }}</span><span class="last-update">{{ date(system.status?.sourceUpdate) }}</span></div></header></template>

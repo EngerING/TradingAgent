@@ -1,0 +1,91 @@
+{
+  "at_utc": "2026-10-15T02:40:20.485636+00:00",
+  "scope": "Documentation artifacts only; not an operational release or permission",
+  "files": [
+    {
+      "path": "docs/manual/audit_sources.py",
+      "bytes": 3257,
+      "sha256": "9027b3b4d461c0031f863a0545dc9ad39261f4215e609f63e10eb00f91d3b683"
+    },
+    {
+      "path": "docs/manual/build_manual.py",
+      "bytes": 27041,
+      "sha256": "58243fe5925c347125ff2e99be64d735634b719a2667577fcb7f5f9a4ee9ff21"
+    },
+    {
+      "path": "docs/manual/diagrams/authority.svg",
+      "bytes": 4703,
+      "sha256": "611252504f3517460c813529ccb10334f995af4e8fafc6966ddbcfb6adfe11b6"
+    },
+    {
+      "path": "docs/manual/diagrams/components.svg",
+      "bytes": 8089,
+      "sha256": "fdd1310db0413fe2af8e0884803bd821722613c8c1b4d5bf008884fb9ddfd271"
+    },
+    {
+      "path": "docs/manual/diagrams/dataflow.svg",
+      "bytes": 4654,
+      "sha256": "17a34bb06649b4f312b7ef75406a76c6f2a20bfa9c81712205c8f3fcb67ff95a"
+    },
+    {
+      "path": "docs/manual/diagrams/deployment.svg",
+      "bytes": 5988,
+      "sha256": "1269234b9201a69e7c351680fd6c2fd44eb990d20974a932ad45e1533661de54"
+    },
+    {
+      "path": "docs/manual/diagrams/erd.svg",
+      "bytes": 8175,
+      "sha256": "2ca90678e01c812a23d4e1d8591214d9437faad6948d98f4683c4e9a21aeafbd"
+    },
+    {
+      "path": "docs/manual/diagrams/navigation.svg",
+      "bytes": 4468,
+      "sha256": "ffe3e2e9b163834a586323cbd40556ccc2b3a0c0484177afbae9d1797ac087ef"
+    },
+    {
+      "path": "docs/manual/diagrams/paper-flow.svg",
+      "bytes": 5628,
+      "sha256": "ea0ee14b8de0f6f35bb5692413c5cfd32335a5364fd90297701c5aa26a6c7f87"
+    },
+    {
+      "path": "docs/manual/diagrams/shadow-sequence.svg",
+      "bytes": 7593,
+      "sha256": "fe59669c8949333aa241581deaf6ea94162f82e2ebc58753fae1fec304151808"
+    },
+    {
+      "path": "docs/manual/diagrams/specs.json",
+      "bytes": 10327,
+      "sha256": "d571ab4d2235198b914bbfdf5c1b7d6c215a26088e3a2cace42796ea8284665a"
+    },
+    {
+      "path": "docs/manual/integrity-final.json",
+      "bytes": 518670,
+      "sha256": "2171bcd52ab323f2a583b4c4c99a2d8eefe95d16cf5df306a57af5d2c9788262"
+    },
+    {
+      "path": "docs/manual/pdf-validation.json",
+      "bytes": 3775,
+      "sha256": "d110d40b9cc70893c2c9c755a41ab5b40527eb952c392ac59c82ee5b946c9c4b"
+    },
+    {
+      "path": "docs/manual/source-audit.json",
+      "bytes": 518645,
+      "sha256": "03c059703973cc215e397569b49932c639e554a5d2e054386ee0794150ca3f92"
+    },
+    {
+      "path": "docs/manual/TradingAgent_Manual_Tecnico_Integral.md",
+      "bytes": 131491,
+      "sha256": "ecff26e915cab6ef69759a9ba9e82b6f3cb427d4f08ef3168c5ebe87a00e96a8"
+    },
+    {
+      "path": "docs/manual/TradingAgent_Manual_Tecnico_Integral.pdf",
+      "bytes": 297745,
+      "sha256": "1f31321892f532b3d5de1bc3d574bd5f66c3af38ae634d7173b6b173c49b3944"
+    },
+    {
+      "path": "docs/manual/validate_manual.py",
+      "bytes": 3621,
+      "sha256": "7709e66053dd3d6bc7e68436a4629087f35c8ac0914b3ad260cf2e4ce1b8adbc"
+    }
+  ]
+}

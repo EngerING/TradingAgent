@@ -1,0 +1,81 @@
+import {test,expect,request as requests} from '@playwright/test'
+import type {Page} from '@playwright/test'
+import {writeFile} from 'node:fs/promises'
+import {resolve} from 'node:path'
+const out=resolve(process.env.R20_UI_ARTIFACTS!)
+const headers={Origin:'http://127.0.0.1:5182','X-R20-Configuration':'1'}
+const values={logical_capital_usd:'100',allocation_usd:'20',requested_allocation_leverage:'20',risk_per_trade_pct:'1',daily_loss_limit_pct:'5',max_open_positions:'1',environment:'SHADOW'}
+async function client(admin=false){const c=await requests.newContext({baseURL:'http://127.0.0.1:5182',extraHTTPHeaders:headers});expect((await c.post('/api/r20-v2/session',{data:{credential:process.env[admin?'R20_LAB_ADMIN_TOKEN':'R20_LAB_READER_TOKEN']}})).status()).toBe(200);return c}
+async function login(page:Page,admin=true){await page.goto('/');await page.getByLabel('Credencial de pruebas').fill(process.env[admin?'R20_LAB_ADMIN_TOKEN':'R20_LAB_READER_TOKEN']!);await page.getByRole('button',{name:'Entrar',exact:true}).click();await expect(page.getByRole('heading',{name:'Preparación económica',exact:true})).toBeVisible()}
+test.describe.serial('Phase 2 isolated preparation',()=>{
+ test('HTTP auth, strict values, CAS, idempotency, immutable versions and blocked actions',async({request})=>{
+  expect((await request.get('/api/r20-v2/preparation')).status()).toBe(401)
+  const reader=await client(),admin=await client(true)
+  const get=async()=> (await admin.get('/api/r20-v2/preparation')).json()
+  const before=await get()
+  expect((await reader.post('/api/r20-v2/preparation/save',{data:{}})).status()).toBe(403)
+  expect((await admin.post('/api/r20-v2/preparation/save',{headers:{Origin:'https://example.invalid'},data:{}})).status()).toBe(403)
+  for(const action of ['start','stop','switch','activate'])expect((await admin.post('/api/r20-v2/preparation/'+action,{data:{}})).status()).toBe(409)
+  for(const [key,value] of [['risk_per_trade_pct',''],['max_open_positions','1.5'],['environment','LIVE']]){
+   expect((await admin.post('/api/r20-v2/preparation/save',{data:{revision:before.revision,requestId:crypto.randomUUID(),values:{...values,[key!]:value}}})).status()).toBe(422)
+  }
+  expect((await get()).revision).toBe(before.revision)
+  const body={revision:before.revision,requestId:crypto.randomUUID(),values}
+  const saved=await admin.post('/api/r20-v2/preparation/save',{data:body});expect(saved.status()).toBe(200)
+  expect(await (await admin.post('/api/r20-v2/preparation/save',{data:body})).json()).toEqual(await saved.json())
+  expect((await admin.post('/api/r20-v2/preparation/save',{data:{...body,values:{...values,allocation_usd:'30'}}})).status()).toBe(409)
+  const state=await get()
+  const race=await Promise.all([1,2].map(()=>admin.post('/api/r20-v2/preparation/save',{data:{revision:state.revision,requestId:crypto.randomUUID(),values}})))
+  expect(race.map(r=>r.status()).sort()).toEqual([200,409])
+  const after=await get();expect(after.activeProfile).toBeNull();expect(after.executionEnabled).toBe(false)
+  expect(after.controls.effectiveEnvironment).toBeNull()
+  await writeFile(resolve(out,'http-evidence.json'),JSON.stringify({before,after},null,2))
+  await reader.dispose();await admin.dispose()
+ })
+ test('desktop saves and validates six fields without activation; unknowns stay null',async({page})=>{
+  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await login(page)
+  await expect(page.locator('input[name]')).toHaveCount(6)
+  for(const key of ['risk_per_trade_pct','daily_loss_limit_pct','max_open_positions'])await expect(page.locator(`[name="${key}"]`)).toHaveValue('')
+  await expect(page.getByTestId('target')).toHaveText('400 USD');await expect(page.getByTestId('target-leverage')).toHaveText('4 ×')
+  await expect(page.getByRole('button',{name:'Guardar configuración',exact:true})).toBeDisabled()
+  for(const [k,v] of Object.entries(values))if(k!=='environment')await page.locator(`[name="${k}"]`).fill(v)
+  await page.getByRole('button',{name:'Previsualizar y comprobar'}).click()
+  await expect(page.getByRole('button',{name:'Guardar configuración',exact:true})).toBeEnabled()
+  await page.getByRole('button',{name:'Guardar configuración',exact:true}).click()
+  await expect(page.getByRole('button',{name:'Validar versión guardada'})).toBeEnabled()
+  await page.getByRole('button',{name:'Validar versión guardada'}).click()
+  await expect(page.getByText('LISTO PARA REVISIÓN · NO ACTIVADO',{exact:true})).toBeVisible()
+  await expect(page.getByText('SLIPPAGE_UNKNOWN',{exact:true})).toBeVisible()
+  for(const label of ['Iniciar','Detener','Cambiar entorno'])await expect(page.getByRole('button',{name:label,exact:true})).toBeDisabled()
+  await page.getByLabel('Entorno solicitado').selectOption('IBKR_PAPER')
+  await expect(page.getByText(/Paper bloqueado: adaptador/)).toBeVisible()
+  await page.getByRole('button',{name:'Previsualizar y comprobar'}).click()
+  await page.getByLabel('Capital asignado por operación',{exact:true}).fill('10')
+  await expect(page.getByTestId('target')).toHaveText('UNKNOWN')
+  await page.getByRole('button',{name:'Previsualizar y comprobar'}).click();await expect(page.getByTestId('target')).toHaveText('200 USD')
+  await page.getByRole('button',{name:'Recuperar última versión'}).click();await page.getByRole('button',{name:'Previsualizar y comprobar'}).click()
+  await expect(page.getByTestId('target')).toHaveText('400 USD')
+  await expect(page.getByRole('button',{name:'Previsualizar y comprobar'})).toBeEnabled()
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);expect(errors).toEqual([])
+  await page.screenshot({path:resolve(out,'desktop-1600.png'),fullPage:true})
+  await page.screenshot({path:resolve(out,'desktop-viewport.png')})
+  await page.reload();await login(page);await page.getByRole('button',{name:'Recuperar última versión'}).click()
+  await expect(page.locator('[name="allocation_usd"]')).toHaveValue('20')
+  await expect(page.getByText('LISTO PARA REVISIÓN · NO ACTIVADO',{exact:true})).toBeVisible()
+ })
+ test('mobile reader, keyboard, history and disconnection',async({page})=>{
+  await page.setViewportSize({width:390,height:844});await login(page,false)
+  await expect(page.getByRole('button',{name:'Guardar configuración',exact:true})).toBeDisabled()
+  await expect(page.getByLabel('Entorno solicitado')).toBeDisabled()
+  await page.getByRole('button',{name:'Recuperar última versión'}).click();await page.getByRole('button',{name:'Previsualizar y comprobar'}).click()
+  await expect(page.getByTestId('target')).toHaveText('400 USD')
+  await page.getByRole('button',{name:'Actualizar estado',exact:true}).focus();await page.keyboard.press('Tab')
+  expect(await page.evaluate(()=>document.activeElement?.tagName)).toBe('BUTTON')
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true)
+  await page.screenshot({path:resolve(out,'mobile-390.png'),fullPage:true})
+  await page.screenshot({path:resolve(out,'mobile-viewport.png')})
+  await page.route('**/api/r20-v2/preparation',r=>r.abort());await page.getByRole('button',{name:'Actualizar estado',exact:true}).click()
+  await expect(page.getByRole('alert')).toContainText('STALE');await expect(page.locator('.history li').first()).toBeVisible()
+  await page.screenshot({path:resolve(out,'mobile-stale.png'),fullPage:true})
+ })
+})

@@ -1,0 +1,17 @@
+**/bin/
+**/obj/
+**/__pycache__/
+.local/
+.venv/
+.env
+.env.*
+!.env.example
+TestResults/
+artifacts/
+*.user
+frontend/node_modules/
+frontend/dist/
+frontend/playwright-report/
+frontend/test-results/
+/tmp/
+/graphify-out/

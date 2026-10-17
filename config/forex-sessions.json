@@ -1,0 +1,13 @@
+{
+  "version": "ibkr-idealpro-regular-v1",
+  "timezone": "America/New_York",
+  "opens": "17:15",
+  "closes": "17:00",
+  "opening_weekdays": [6, 0, 1, 2, 3],
+  "coverage_start": "2026-09-27",
+  "coverage_end": "2026-10-10",
+  "overrides": {},
+  "status": "PROVISIONAL_REGULAR_TEMPLATE",
+  "grid_timezone": "UTC",
+  "source": "IBKR contract 12087792 trading_hours captured 2026-10-04; regular template applied to the preceding week; historical holiday exceptions not verified"
+}

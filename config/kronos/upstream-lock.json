@@ -1,0 +1,29 @@
+{
+  "commit": "67b630e67f6a18c9e9be918d9b4337c960db1e9a",
+  "source": "https://github.com/shiyu-coder/Kronos",
+  "license": "MIT",
+  "files": {
+    "model/__init__.py": "f8f856ca3fedadcaac97e196be23d1aeda1c3c9ffe8903d66d43ea3bcac6240c",
+    "model/kronos.py": "638a56e035856c600c9848b368be087cb706a61603a0790124968c95b8c69f3a",
+    "model/module.py": "a07edbadc0e96804c8158c021bbc6063bb7cc43b34d7fc470d5c8ff2005a409f",
+    "LICENSE": "16fa0cc8736754b878132ef3181d7ff4d1ae28d20d7758f9b3c0f5c8e1056d69"
+  },
+  "weights": {
+    "Kronos-base": {
+      "revision": "2b554741eca47781b64468546e77fef3e85130e6",
+      "files": {
+        "config.json": "77ebc3038b647709b92be002f801d72e1a385f4c8c2c5aa1cc6cf21fcfe44eb2",
+        "model.safetensors": "abff193acab6db1a0368e9773e75799d11403b6d054ee6d5f0a11aeabc5f4b83",
+        "README.md": "73fccc29fd1cda62e7e2b0467c0d2b6f5b551b46a4f4cac0c7bca51c0a0b4697"
+      }
+    },
+    "Kronos-Tokenizer-base": {
+      "revision": "0e0117387f39004a9016484a186a908917e22426",
+      "files": {
+        "config.json": "2366e7ccfec76cbc19cf3c4c1b9c5d901be336ca1e83f2d2292c9bff381b77a2",
+        "model.safetensors": "59d85f6af76a2c3b8240ea06cb21db4213b4eeca053f246b23e29cf832fc6bee",
+        "README.md": "24d59758e911d355a79608b6686610a14f649270d6d852f3d86b2a1e8232ce89"
+      }
+    }
+  }
+}

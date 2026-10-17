@@ -1,0 +1,38 @@
+{
+  "name": "tradingagent-dashboard",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 5173 --strictPort",
+    "test": "vitest run",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@lucide/vue": "^1.52.0",
+    "@microsoft/signalr": "^9.0.6",
+    "echarts": "^6.1.0",
+    "pinia": "^3.0.4",
+    "vue": "^3.5.43",
+    "vue-router": "^4.6.4",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^22.19.0",
+    "@vitejs/plugin-vue": "^6.0.2",
+    "@vue/test-utils": "2.4.6",
+    "jsdom": "^26.1.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.7",
+    "vitest": "4.1.11",
+    "vue-tsc": "^3.1.8"
+  }
+}

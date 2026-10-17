@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["hypothesis", "explanation", "strategyHash", "proposedRisk", "evidenceIds"],
+  "properties": {
+    "hypothesis": {"type": "string"},
+    "explanation": {"type": "string"},
+    "strategyHash": {"type": "string"},
+    "proposedRisk": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.005},
+    "evidenceIds": {"type": "array", "items": {"type": "string"}}
+  }
+}
