@@ -122,6 +122,17 @@ class EconomicsTests(unittest.TestCase):
         self.assertTrue(changed['admitted'])
         self.assertNotEqual(original['input_sha256'], changed['input_sha256'])
 
+    def test_per_unit_commissions_override_minimum_and_budget_boundary_is_inclusive(self):
+        c = context()
+        c['costs'].update(opening_per_eur_usd='0.015', closing_per_eur_usd='0.015')
+        result = assess(c, plan(), now=AT)
+        self.assertEqual(Decimal('0.75'), Decimal(result['metrics']['opening_commission_usd']))
+        self.assertEqual(Decimal('1.62'), Decimal(result['metrics']['round_trip_cost_usd']))
+        c['remaining_risk_usd'] = result['metrics']['stop_loss_with_costs_usd']
+        self.assertTrue(assess(c, plan(), now=AT)['admitted'])
+        c['remaining_risk_usd'] = str(Decimal(c['remaining_risk_usd']) - Decimal('0.0001'))
+        self.assertIn('RISK_BUDGET_EXCEEDED', assess(c, plan(), now=AT)['reasons'])
+
 
 if __name__ == '__main__':
     unittest.main()

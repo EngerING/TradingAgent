@@ -2,6 +2,7 @@
 from contextlib import contextmanager
 import json
 from pathlib import Path
+import re
 import sqlite3
 
 from ..ai_strategy_researcher.strategy_bundle_v2 import validate_bundle
@@ -9,9 +10,22 @@ from .economics import assess, canonical, digest, identifier, instant, require
 
 FOLDER = 'artifacts/research/forex-economic-phase1'
 REJECTIONS = frozenset(('PREFLIGHT_BLOCKED', 'POSTFLIGHT_BLOCKED',
-                        'PROPOSAL_INVALID', 'SIMULATED_PROVIDER_FAILED'))
+                        'PROPOSAL_INVALID', 'SIMULATED_PROVIDER_FAILED', 'SOURCE_CHANGED'))
 AUTHORITY = dict(execution_authority=False, paper_execution_eligible=False,
                  live_enabled=False, trading_decision='NO_TRADE')
+
+
+def validated_bundle(bundle, inputs):
+    bundle = validate_bundle(bundle)
+    # Rejected replies are never persisted, including plausible credential echoes.
+    candidate = bundle['candidate']
+    texts = [candidate['strategy_id'], candidate['hypothesis'],
+             candidate['entry_spec']['description'], candidate['exit_spec']['description']]
+    require(not any(re.search(r'Bearer\s+\S+|\bsk-[A-Za-z0-9_-]{8,}', text, re.IGNORECASE)
+                    for text in texts), 'SENSITIVE_OUTPUT_REJECTED')
+    require(candidate['direction'] == inputs['plan']['direction']
+            and candidate['risk_profile'] == inputs['risk_profile'], 'DESIGN_BINDING_MISMATCH')
+    return bundle
 
 
 class Journal:
@@ -106,6 +120,7 @@ class Journal:
                 require(prior[0]['input_sha256'] == input_hash, 'IDEMPOTENCY_CONFLICT')
                 require(prior[-1]['phase'] == 'FINISHED', 'REQUEST_PENDING_REVIEW')
                 return prior[-1]['value']
+            require(sum(row['phase'] == 'RESERVED' for row in rows) < 5000, 'JOURNAL_REQUEST_LIMIT')
             # Reserve only hashes: invalid input or raw model output is never archived.
             self._append(request_id, 'RESERVED', input_hash,
                          dict(provider='SIMULATED_NO_MODEL', api_cost_usd='0'), rows)
@@ -121,11 +136,12 @@ class Journal:
         if bundle is not None:
             # A caller cannot bypass the gate by calling this persistence boundary directly.
             require(assessment is not None and assessment['admitted'], 'ECONOMIC_GATE_REQUIRED')
-            bundle = validate_bundle(bundle)
-            require(bundle['candidate']['direction'] == inputs['plan']['direction']
-                    and bundle['candidate']['risk_profile'] == inputs['risk_profile'], 'DESIGN_BINDING_MISMATCH')
+            require(type(inputs.get('source_manifest')) is dict and inputs['source_manifest'],
+                    'SOURCE_MANIFEST_REQUIRED')
+            bundle = validated_bundle(bundle, inputs)
             candidate = dict(schema='FOREX_ECONOMIC_CANDIDATE_V1', bundle=bundle,
                              economic_context=inputs['context'], economic_plan=inputs['plan'],
+                             source_manifest=inputs['source_manifest'],
                              assessment=assessment, assessed_at_utc=instant(now).isoformat(),
                              scope='ECONOMIC_SCENARIO_ONLY',
                              exit_model='UNIMPLEMENTED_RESEARCH_BRACKET_SCENARIO',

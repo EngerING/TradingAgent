@@ -51,6 +51,39 @@ consumir Sol en una integracion futura; no se importa transporte, claves ni
 configuracion real de proveedores. Tokens y costo API reales son cero.
 No existe excepcion `TECHNICAL_VALIDATION` en este filtro.
 
+## Entrada por biblioteca, sin activacion automatica
+
+No se registra un endpoint, launcher ni servicio al iniciar el proyecto.
+El llamador proporciona el corte y el escenario completos, y una respuesta
+simulada con las claves `candidate` y `rules` del contrato Forex V2 existente:
+
+```python
+from trading_agent.forex_research.runner import SimulatedDesigner, run
+
+result = run(
+    repository_root,
+    request_id="offline-experiment-001",
+    context=economic_snapshot,
+    plan=economic_scenario,
+    risk_profile="MODERATE",
+    designer=SimulatedDesigner(proposal_json),
+)
+```
+
+Las estructuras completas y exclusivamente sinteticas estan en
+`python/tests/test_forex_research_economics.py` (`context`, `plan`) y
+`python/tests/test_forex_research_runner.py` (`proposal`). Los instantes de esos
+fixtures son fijos para pruebas; no reemplazan una cotizacion vigente.
+La categoria de riesgo no selecciona un porcentaje: el limite monetario
+restante viene siempre del contexto del llamador.
+
+Cada aceptacion incluye hashes de fuentes nuevas y de los contratos reutilizados.
+Cambiar fuentes/contexto bajo el mismo request_id produce conflicto; una reserva
+inconclusa exige revision, sin reintento automatico ni limpieza de su historia.
+Los rechazos solo archivan codigos/metricas y hashes, nunca la respuesta cruda.
+El ledger admite 5000 solicitudes y 10000 eventos; agotarlo bloquea nuevas
+solicitudes conservando espacio para completar las reservadas.
+
 ## Criterios y comprobacion
 
 Unittest: costos/limites desconocidos, beneficio agotado por comisiones, LONG y
