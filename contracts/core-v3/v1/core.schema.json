@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:trading-agent:core-v3:v1",
+  "title": "Core V3.1 research metadata and historical imports",
+  "description": "Structural wire schema. Python additionally validates decimal precision, unit/currency links, time ordering and historical integrity. Environment is metadata, never authorization.",
+  "$ref": "#/$defs/instrument",
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$"},
+    "currency": {"type": "string", "pattern": "^[A-Z]{3}$"},
+    "unit": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,15}$"},
+    "hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "decimal": {"type": "string", "pattern": "^-?(0|[1-9][0-9]{0,17})(\\.[0-9]{1,12})?$"},
+    "positiveDecimal": {"allOf": [{"$ref": "#/$defs/decimal"}, {"not": {"pattern": "^-|^0(\\.0+)?$"}}]},
+    "instant": {"type": "string", "format": "date-time", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,6})?(Z|[+-][0-9]{2}:[0-9]{2})$"},
+    "money": {
+      "type": "object", "additionalProperties": false,
+      "required": ["amount", "currency"],
+      "properties": {"amount": {"$ref": "#/$defs/decimal"}, "currency": {"$ref": "#/$defs/currency"}}
+    },
+    "quantity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["amount", "unit"],
+      "properties": {"amount": {"$ref": "#/$defs/positiveDecimal"}, "unit": {"$ref": "#/$defs/unit"}}
+    },
+    "price": {
+      "type": "object", "additionalProperties": false,
+      "required": ["amount", "currency", "per_unit"],
+      "properties": {
+        "amount": {"$ref": "#/$defs/positiveDecimal"},
+        "currency": {"$ref": "#/$defs/currency"},
+        "per_unit": {"$ref": "#/$defs/unit"}
+      }
+    },
+    "evidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["evidence_id", "source_kind", "environment", "content_sha256", "observed_at", "valid_until"],
+      "properties": {
+        "evidence_id": {"$ref": "#/$defs/id"},
+        "source_kind": {"enum": ["SYNTHETIC", "CALLER_UNVERIFIED", "AUTHENTIC_CAPTURE", "HISTORICAL_VERIFIED", "DERIVED"]},
+        "environment": {"enum": ["RESEARCH", "SIMULATION", "PAPER", "LIVE"]},
+        "content_sha256": {"anyOf": [{"$ref": "#/$defs/hash"}, {"type": "null"}]},
+        "observed_at": {"anyOf": [{"$ref": "#/$defs/instant"}, {"type": "null"}]},
+        "valid_until": {"anyOf": [{"$ref": "#/$defs/instant"}, {"type": "null"}]}
+      }
+    },
+    "instrument": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema", "schema_version", "instrument_id", "specification_version", "asset_class", "symbol", "base_currency", "quote_currency", "quantity_unit", "multiplier", "tick", "minimum_quantity", "quantity_step", "calendar_id"],
+      "properties": {
+        "schema": {"const": "trading.core_v3.instrument"},
+        "schema_version": {"type": "integer", "const": 1},
+        "instrument_id": {"$ref": "#/$defs/id"},
+        "specification_version": {"type": "integer", "minimum": 1, "maximum": 2147483647},
+        "asset_class": {"enum": ["FOREX", "EQUITY"]},
+        "symbol": {"type": "string", "pattern": "^[A-Z0-9][A-Z0-9./_-]{0,31}$"},
+        "base_currency": {"anyOf": [{"$ref": "#/$defs/currency"}, {"type": "null"}]},
+        "quote_currency": {"$ref": "#/$defs/currency"},
+        "quantity_unit": {"$ref": "#/$defs/unit"},
+        "multiplier": {"$ref": "#/$defs/positiveDecimal"},
+        "tick": {"$ref": "#/$defs/price"},
+        "minimum_quantity": {"$ref": "#/$defs/quantity"},
+        "quantity_step": {"$ref": "#/$defs/quantity"},
+        "calendar_id": {"$ref": "#/$defs/id"}
+      },
+      "allOf": [
+        {"if": {"properties": {"asset_class": {"const": "FOREX"}}}, "then": {"properties": {"base_currency": {"$ref": "#/$defs/currency"}}}, "else": {"properties": {"base_currency": {"type": "null"}}}}
+      ]
+    }
+  }
+}
