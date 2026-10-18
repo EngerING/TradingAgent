@@ -241,7 +241,8 @@ class IsolationTests(unittest.TestCase):
     def test_core_modules_have_no_operational_dependencies_or_import_side_effects(self):
         root = Path(__file__).resolve().parents[2] / 'python/trading_agent/core_v3'
         allowed = {'dataclasses', 'datetime', 'decimal', 'enum', 'hashlib', 'json', 'math', 're',
-                   'contracts', 'ai_strategy_researcher.strategy_bundle_v2', 'forex_research.economics'}
+                   'contracts', 'ai_strategy_researcher.strategy_bundle_v2', 'forex_research.economics',
+                   'types', 'typing', 'economic_contracts', 'economic_scenarios', 'economic_calculation'}
         for path in root.glob('*.py'):
             tree = ast.parse(path.read_text(encoding='utf-8'))
             for node in ast.walk(tree):
