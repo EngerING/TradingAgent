@@ -152,3 +152,14 @@ class ResearchJournalTests(unittest.TestCase):
                     journal.db.execute("CREATE TRIGGER immutable_events_update BEFORE UPDATE ON events BEGIN SELECT RAISE(ABORT,'IMMUTABLE'); END")
                     with self.assertRaisesRegex(ContractError, 'JOURNAL_INTEGRITY'):
                         journal.history()
+
+    def test_busy_database_fails_with_bounded_locking_and_preserves_the_ledger(self):
+        with tempfile.TemporaryDirectory() as root, ResearchJournal(root, budget()) as journal:
+            journal.db.execute('BEGIN IMMEDIATE')
+            try:
+                with self.assertRaisesRegex(ContractError, 'RESEARCH_PERSISTENCE_FAILED'):
+                    ResearchJournal(root, budget())
+            finally:
+                journal.db.execute('ROLLBACK')
+            self.assertEqual(1, len(journal.history()))
+            self.assertEqual(0, journal.budget_status().reserved_requests)

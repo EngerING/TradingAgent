@@ -6,14 +6,16 @@ import unittest
 from test_core_v3_economic_contracts import AT, fixture
 from trading_agent.core_v3.contracts import ContractError, Money
 from trading_agent.core_v3.research_contracts import (
-    BudgetPolicy, ResearchAllowance, ResearchInputs, ResearchRequest, InstrumentIdentity,
+    BudgetPolicy, BudgetStatus, ResearchAllowance, ResearchCharge, ResearchInputs, ResearchRequest, InstrumentIdentity,
 )
 
 
-def request(*, name='request-1', stock=False, direction=None):
+def request(*, name='request-1', stock=False, direction=None, account_currency=None):
     options = {'stock': stock}
     if direction is not None:
         options['direction'] = direction
+    if account_currency is not None:
+        options['account_currency'] = account_currency
     context, policy = fixture(**options)
     return ResearchRequest(name, 'key-' + name, InstrumentIdentity.of(context.market.instrument),
         ResearchInputs(context, policy), ResearchAllowance(100, 100, Money(Decimal('.01'), 'USD')))
@@ -67,3 +69,13 @@ class ResearchContractTests(unittest.TestCase):
         changed['scenario']['quantity']['amount'] = '27'
         self.assertIsNone(receipt(canonical_bytes(changed).decode(), design).proposal)
         self.assertIsNone(receipt('{bad', design).proposal)
+
+    def test_budget_wire_cannot_claim_inconsistent_remaining_resources(self):
+        zero = Money(Decimal('0'), 'USD')
+        status = BudgetStatus(budget(), 0, 0, 2, 0, 0, 400, zero, zero, Money(Decimal('.02'), 'USD'))
+        for changes in ({'remaining_requests': 3}, {'remaining_tokens': 399},
+                        {'remaining_cost': Money(Decimal('.01'), 'USD')}):
+            with self.subTest(changes=changes), self.assertRaises(ContractError):
+                replace(status, **changes)
+        with self.assertRaises(ContractError):
+            ResearchCharge(0, 0, 1, zero)

@@ -11,13 +11,14 @@ from .economic_contracts import EconomicResult, EconomicStatus
 from .economics import postflight, preflight
 from .research_contracts import (
     BudgetPolicy, BudgetStatus, DesignReceipt, DesignRequest, InstrumentIdentity, ResearchCharge,
-    ResearchInputs, ResearchRequest, ResearchResult, ResearchState, TERMINAL,
+    ResearchInputs, ResearchReferences, ResearchRequest, ResearchResult, ResearchState, TERMINAL,
 )
 from .research_designer import proposal_for, receipt
 
 
 MAX_REQUESTS, MAX_EVENTS = 256, 2049
 ZERO_HASH = '0' * 64
+GENESIS_AT = '1970-01-01T00:00:00.000000+00:00'
 S = ResearchState
 ALLOWED = {
     S.RECEIVED: frozenset((S.VALIDATION_REJECTED, S.ECONOMIC_BLOCKED, S.BUDGET_BLOCKED, S.BUDGET_RESERVED, S.INTERRUPTED)),
@@ -68,7 +69,7 @@ class ResearchJournal:
                     for action in ('UPDATE', 'DELETE'):
                         self.db.execute(f"CREATE TRIGGER immutable_events_{action.lower()} BEFORE {action} ON events BEGIN SELECT RAISE(ABORT,'IMMUTABLE_EVENTS'); END")
                     self.db.execute('INSERT INTO head VALUES(1,0,?)', (ZERO_HASH,))
-                    self._append('', 'INITIALIZED', '2026-01-01T00:00:00+00:00', policy.to_dict())
+                    self._append('', 'INITIALIZED', GENESIS_AT, policy.to_dict())
                 require(tables == set() or tables == {'events', 'head'}, 'FOREIGN_JOURNAL_FORBIDDEN')
                 self._load()
         except BaseException:
@@ -136,9 +137,16 @@ class ResearchJournal:
         state = view.state if state is None else state
         release = state in (S.INTERRUPTED, S.FAILED) and view.state is S.BUDGET_RESERVED
         digest = content_hash(view.request)
-        return ResearchResult(view.request.request_id, digest, 'op-' + digest, view.request.instrument,
+        budget_hash = content_hash(self.policy)
+        operation_hash = content_hash(dict(engine='CORE_V3_3_V1', request=digest, budget=budget_hash))
+        before = view.preflight if before is None else before
+        proposal = view.receipt.proposal if view.receipt is not None else None
+        refs = ResearchReferences(content_hash(view.request.inputs.context), content_hash(view.request.inputs.policy),
+            content_hash(before) if before is not None else None, content_hash(proposal) if proposal is not None else None,
+            content_hash(after) if after is not None else None)
+        return ResearchResult(view.request.request_id, digest, budget_hash, 'op-' + operation_hash, view.request.instrument, refs,
             state, reason, view.at if at is None else at, self._charge(view, release=release),
-            view.preflight if before is None else before, view.receipt, after)
+            before, view.receipt, after)
 
     def _terminal(self, view, state, now, views, reason=None):
         req, before, after = view.request, view.preflight, None
@@ -228,7 +236,8 @@ class ResearchJournal:
                         and row['event_sha256'] == self._event_hash(sequence, row['request_id'], row['state'],
                             row['at'], row['payload'], previous), 'JOURNAL_INTEGRITY')
                 if sequence == 1:
-                    require(row['request_id'] == '' and row['state'] == 'INITIALIZED', 'JOURNAL_INTEGRITY')
+                    require(row['request_id'] == '' and row['state'] == 'INITIALIZED'
+                            and row['at'] == GENESIS_AT, 'JOURNAL_INTEGRITY')
                     require(BudgetPolicy.from_dict(payload) == self.policy, 'BUDGET_POLICY_CONFLICT')
                 else:
                     self._apply(views, row, payload)

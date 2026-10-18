@@ -1,7 +1,7 @@
 """Immutable V3.3 research contracts. Research resources are never trading capital."""
 from dataclasses import dataclass, fields
 from datetime import datetime
-from decimal import Decimal
+from decimal import Context, Decimal, localcontext
 from enum import Enum
 import re
 from types import UnionType
@@ -190,6 +190,8 @@ class ResearchCharge(EconomicRecord):
                 and self.reserved_requests + self.consumed_requests <= 1
                 and 0 <= self.reserved_tokens <= 2000000, 'RESEARCH_CHARGE_INVALID')
         _funds(self.reserved_cost)
+        require(self.reserved_requests == 1 or (self.reserved_tokens == 0 and self.reserved_cost.amount == 0),
+                'RESEARCH_CHARGE_INVALID')
 
 
 @dataclass(frozen=True, slots=True)
@@ -213,6 +215,28 @@ class BudgetStatus(EconomicRecord):
             require(value >= 0, 'RESEARCH_BUDGET_INVALID')
         for value in (self.reserved_cost, self.consumed_cost, self.remaining_cost):
             _funds(value)
+        with localcontext(Context(prec=160)):
+            require(self.reserved_requests + self.consumed_requests + self.remaining_requests == self.policy.max_requests
+                    and self.reserved_tokens + self.consumed_tokens + self.remaining_tokens == self.policy.max_tokens
+                    and self.reserved_cost.amount + self.consumed_cost.amount + self.remaining_cost.amount
+                        == self.policy.max_cost.amount, 'RESEARCH_BALANCE_INCONSISTENT')
+
+
+@dataclass(frozen=True, slots=True)
+class ResearchReferences(EconomicRecord):
+    SCHEMA = 'trading.core_v3.research.references'
+    context_sha256: str
+    policy_sha256: str
+    preflight_sha256: str | None
+    proposal_sha256: str | None
+    postflight_sha256: str | None
+
+    def __post_init__(self):
+        _types(self)
+        for value in (self.context_sha256, self.policy_sha256, self.preflight_sha256,
+                      self.proposal_sha256, self.postflight_sha256):
+            if value is not None:
+                _hash(value)
 
 
 @dataclass(frozen=True, slots=True)
@@ -220,8 +244,10 @@ class ResearchResult(EconomicRecord):
     SCHEMA = 'trading.core_v3.research.result'
     request_id: str
     request_sha256: str
+    budget_policy_sha256: str
     operation_id: str
     instrument: InstrumentIdentity
+    references: ResearchReferences
     state: ResearchState
     reason: str
     at: datetime
@@ -240,14 +266,30 @@ class ResearchResult(EconomicRecord):
         _types(self)
         identifier(self.request_id)
         _hash(self.request_sha256)
-        require(self.operation_id == 'op-' + self.request_sha256, 'OPERATION_ID_INVALID')
+        _hash(self.budget_policy_sha256)
+        operation_hash = content_hash(dict(engine='CORE_V3_3_V1', request=self.request_sha256,
+                                          budget=self.budget_policy_sha256))
+        require(self.operation_id == 'op-' + operation_hash, 'OPERATION_ID_INVALID')
         require(re.fullmatch('[A-Z][A-Z0-9_]{0,79}', self.reason) is not None, 'REASON_INVALID')
         object.__setattr__(self, 'at', utc(self.at))
+        proposal = self.receipt.proposal if self.receipt is not None else None
+        for value, digest in ((self.preflight, self.references.preflight_sha256),
+                              (proposal, self.references.proposal_sha256),
+                              (self.postflight, self.references.postflight_sha256)):
+            require(digest == (content_hash(value) if value is not None else None), 'RESEARCH_REFERENCE_MISMATCH')
+        if self.preflight is not None:
+            require(self.preflight.context_sha256 == self.references.context_sha256
+                    and self.preflight.policy_sha256 == self.references.policy_sha256, 'RESEARCH_REFERENCE_MISMATCH')
         require(self.scope == 'SIMULATED_RESEARCH_ONLY' and self.trading_decision == 'NO_TRADE'
                 and all(v is False for v in (self.execution_authority, self.paper_execution_eligible,
                                             self.live_enabled, self.statistically_validated)),
                 'RESEARCH_AUTHORITY_FORBIDDEN')
         if self.state is ResearchState.CANDIDATE_RECORDED:
-            require(self.receipt is not None and self.receipt.proposal is not None
-                    and self.postflight is not None and self.postflight.witness is not None,
+            require(self.preflight is not None and self.preflight.stage == 'PREFLIGHT'
+                    and self.receipt is not None and self.receipt.proposal is not None
+                    and self.postflight is not None and self.postflight.stage == 'POSTFLIGHT'
+                    and self.postflight.witness is not None
+                    and self.preflight.witness == self.receipt.proposal.scenario == self.postflight.witness
+                    and self.receipt.proposal.request_sha256 == self.request_sha256
+                    and self.receipt.proposal.instrument_sha256 == self.instrument.content_sha256,
                     'POSTFLIGHT_REQUIRED')
