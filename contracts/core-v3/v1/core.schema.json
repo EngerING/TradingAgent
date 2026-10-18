@@ -3,8 +3,9 @@
   "$id": "urn:trading-agent:core-v3:v1",
   "title": "Core V3.1 research metadata and historical imports",
   "description": "Structural wire schema. Python additionally validates decimal precision, unit/currency links, time ordering and historical integrity. Environment is metadata, never authorization.",
-  "$ref": "#/$defs/instrument",
+  "oneOf": [{"$ref": "#/$defs/instrument"}, {"$ref": "#/$defs/importedStrategy"}, {"$ref": "#/$defs/importedAssessment"}],
   "$defs": {
+    "sourceJson": {"type": "string", "maxLength": 32768},
     "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$"},
     "currency": {"type": "string", "pattern": "^[A-Z]{3}$"},
     "unit": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,15}$"},
@@ -41,6 +42,73 @@
         "content_sha256": {"anyOf": [{"$ref": "#/$defs/hash"}, {"type": "null"}]},
         "observed_at": {"anyOf": [{"$ref": "#/$defs/instant"}, {"type": "null"}]},
         "valid_until": {"anyOf": [{"$ref": "#/$defs/instant"}, {"type": "null"}]}
+      }
+    },
+    "importedStrategy": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema", "schema_version", "instrument", "original_schema", "original_json", "original_sha256", "original_hashes", "strategy_id", "strategy_version", "direction", "timeframe_minutes", "risk_profile", "research_capital", "provenance", "statistically_validated", "backtested", "environment", "scope", "economically_approved", "execution_authority", "paper_execution_eligible", "live_enabled", "trading_decision"],
+      "properties": {
+        "schema": {"const": "trading.core_v3.imported_strategy"},
+        "schema_version": {"type": "integer", "const": 1},
+        "instrument": {"$ref": "#/$defs/instrument"},
+        "original_schema": {"const": "FOREX_STRATEGY_BUNDLE_V2"},
+        "original_json": {"$ref": "#/$defs/sourceJson"},
+        "original_sha256": {"$ref": "#/$defs/hash"},
+        "original_hashes": {
+          "type": "object", "additionalProperties": false,
+          "required": ["candidate_sha256", "rules_sha256", "bundle_sha256"],
+          "properties": {"candidate_sha256": {"$ref": "#/$defs/hash"}, "rules_sha256": {"$ref": "#/$defs/hash"}, "bundle_sha256": {"$ref": "#/$defs/hash"}}
+        },
+        "strategy_id": {"type": "string", "pattern": "^[a-z][a-z0-9_-]{2,63}$"},
+        "strategy_version": {"type": "integer", "minimum": 1},
+        "direction": {"enum": ["LONG", "SHORT"]},
+        "timeframe_minutes": {"enum": [15, 60, 240]},
+        "risk_profile": {"enum": ["CONSERVATIVE", "MODERATE", "AGGRESSIVE"]},
+        "research_capital": {"$ref": "#/$defs/money"},
+        "provenance": {"$ref": "#/$defs/evidence"},
+        "statistically_validated": {"type": "null"},
+        "backtested": {"const": false},
+        "environment": {"const": "RESEARCH"},
+        "scope": {"const": "HISTORICAL_RESEARCH_ONLY"},
+        "economically_approved": {"const": false},
+        "execution_authority": {"const": false},
+        "paper_execution_eligible": {"const": false},
+        "live_enabled": {"const": false},
+        "trading_decision": {"const": "NO_TRADE"}
+      }
+    },
+    "importedAssessment": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema", "schema_version", "instrument", "original_schema", "original_json", "context_json", "plan_json", "assessed_at", "original_sha256", "context_sha256", "plan_sha256", "original_hashes", "provenance", "source_admitted", "source_scope", "statistically_validated", "broker_executability_verified", "environment", "scope", "economically_approved", "execution_authority", "paper_execution_eligible", "live_enabled", "trading_decision"],
+      "properties": {
+        "schema": {"const": "trading.core_v3.imported_economic_assessment"},
+        "schema_version": {"type": "integer", "const": 1},
+        "instrument": {"$ref": "#/$defs/instrument"},
+        "original_schema": {"const": "FOREX_ECONOMIC_ASSESSMENT_V1"},
+        "original_json": {"$ref": "#/$defs/sourceJson"},
+        "context_json": {"$ref": "#/$defs/sourceJson"},
+        "plan_json": {"$ref": "#/$defs/sourceJson"},
+        "assessed_at": {"$ref": "#/$defs/instant"},
+        "original_sha256": {"$ref": "#/$defs/hash"},
+        "context_sha256": {"$ref": "#/$defs/hash"},
+        "plan_sha256": {"$ref": "#/$defs/hash"},
+        "original_hashes": {
+          "type": "object", "additionalProperties": false,
+          "required": ["input_sha256"],
+          "properties": {"input_sha256": {"anyOf": [{"$ref": "#/$defs/hash"}, {"type": "null"}]}}
+        },
+        "provenance": {"$ref": "#/$defs/evidence"},
+        "source_admitted": {"type": "boolean"},
+        "source_scope": {"const": "ECONOMIC_SCENARIO_ONLY"},
+        "statistically_validated": {"const": false},
+        "broker_executability_verified": {"const": false},
+        "environment": {"const": "RESEARCH"},
+        "scope": {"const": "HISTORICAL_RESEARCH_ONLY"},
+        "economically_approved": {"const": false},
+        "execution_authority": {"const": false},
+        "paper_execution_eligible": {"const": false},
+        "live_enabled": {"const": false},
+        "trading_decision": {"const": "NO_TRADE"}
       }
     },
     "instrument": {

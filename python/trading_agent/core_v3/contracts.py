@@ -68,7 +68,10 @@ def parse_decimal(value):
 def utc(value):
     require(type(value) is datetime and value.tzinfo is not None and value.utcoffset() is not None,
             'AWARE_TIMESTAMP_REQUIRED')
-    return value.astimezone(timezone.utc)
+    try:
+        return value.astimezone(timezone.utc)
+    except (ValueError, OverflowError):
+        raise ContractError('TIMESTAMP_INVALID') from None
 
 
 def instant(value):

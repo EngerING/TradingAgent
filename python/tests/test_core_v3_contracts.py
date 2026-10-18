@@ -100,6 +100,19 @@ class CommonTypeTests(unittest.TestCase):
         with self.assertRaises(ContractError):
             replace(ref, valid_until=AT)
 
+    def test_time_canonicalization_and_unrepresentable_utc_are_controlled(self):
+        ref = EvidenceRef('fixture', SourceKind.SYNTHETIC, Environment.RESEARCH,
+                          None, AT, AT + timedelta(seconds=30))
+        data = ref.to_dict()
+        data['observed_at'] = '2026-10-18T08:00:00-04:00'
+        self.assertEqual(ref, EvidenceRef.from_dict(data))
+        data['observed_at'] = '0001-01-01T00:00:00+23:00'
+        with self.assertRaises(ContractError):
+            EvidenceRef.from_dict(data)
+        boundary = datetime.min.replace(tzinfo=timezone(timedelta(hours=23)))
+        with self.assertRaises(ContractError):
+            ref.require_current(boundary)
+
 
 class InstrumentTests(unittest.TestCase):
     def test_forex_and_non_usd_synthetic_equity_roundtrip(self):

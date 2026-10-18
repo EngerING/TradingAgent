@@ -65,3 +65,125 @@ importadores. Ejecutar pruebas V3.1 y regresiones offline, incluidas las 28 Fore
 Revisar límites, esquemas y dependencia transitiva; comprobar que las fuentes
 históricas no cambiaron. Pruebas sin red, procesos ni acceso a `.local` real.
 No iniciar V3.2; queda pendiente de auditoría independiente y aprobación.
+
+## Contratos entregados y uso
+
+El esquema tiene tres raíces: `trading.core_v3.instrument`,
+`trading.core_v3.imported_strategy` y
+`trading.core_v3.imported_economic_assessment`, todas con `schema_version=1`.
+Los tipos comunes implementados son `Money`, `Quantity`, `Price`, `EvidenceRef`
+y los enums `AssetClass`, `SourceKind`, `Environment`. Instancias y componentes
+anidados son dataclasses frozen con slots; los diccionarios devueltos son copias.
+
+```python
+from trading_agent.core_v3.contracts import Instrument
+from trading_agent.core_v3.legacy_import import import_forex_bundle, import_forex_assessment
+
+instrument = Instrument.from_json(instrument_metadata_json)
+strategy_record = import_forex_bundle(original_bundle_json, instrument=instrument)
+assessment_record = import_forex_assessment(
+    original_assessment_json,
+    context_json=original_context_json,
+    plan_json=original_plan_json,
+    assessed_at=original_assessment_datetime,  # datetime con zona; no el reloj actual
+    instrument=instrument,
+)
+serialized = strategy_record.to_json()
+# La procedencia histórica conserva su vigencia. Esto solo comprueba el tiempo:
+assessment_record.provenance.require_current(explicit_current_datetime)
+```
+
+El importador recibe texto/bytes UTF-8 en memoria y no abre archivos. Las fuentes
+se limitan a 32768 bytes cada una; un documento V3 a 131072 bytes y profundidad
+32. Los originales conservan espacios, orden de claves, BOM UTF-8 si existe y saltos de línea;
+`original_sha256` corresponde a sus bytes UTF-8 exactos. Los hashes declarados
+V2/input V1 se guardan por separado, sin reemplazarlos por el hash nuevo.
+Los blobs fuente se conservan como texto, no como reglas V3 ya compiladas.
+
+`source_admitted` reproduce exclusivamente la decisión del evaluador histórico;
+el sobre siempre declara `HISTORICAL_RESEARCH_ONLY`, `economically_approved=false`
+y autoridades falsas. No hay vinculación automática entre el registro de
+estrategia y el de assessment. Cadenas de datos no confiables siguen siendo
+datos: no se evalúan como código ni se envían a un modelo.
+
+## Canonicalización y validación
+
+- Dinero: `Decimal` finito, hasta 18 dígitos enteros, 12 posiciones decimales y
+  28 dígitos significativos. No se redondea para aceptar un valor. Se eliminan
+  ceros decimales finales y el cero negativo se representa como `"0"`, sin usar
+  `Decimal.normalize()` dependiente de la precisión ambiental.
+- El wire financiero exige cadenas decimales sin exponente; no convierte floats,
+  booleanos o valores ausentes. Las constantes numéricas de reglas V2 permanecen
+  dentro del JSON original bajo su contrato histórico.
+- Canonicalización de contratos validados: claves ordenadas, sin espacios,
+  `ensure_ascii=True`, UTF-8 y SHA-256; arrays mantienen orden. No se normaliza
+  Unicode: se conserva su secuencia de puntos de código y se escapa en JSON.
+  No se aceptan surrogates aislados. Fechas normalizadas a UTC con seis posiciones
+  de microsegundos y sufijo Z. Un hash no autentica una fuente ni concede permisos.
+- La suma de Money y la comprobación de grillas usan un contexto Decimal local
+  de precisión 60; la validación final mantiene los límites del contrato. No hay
+  conversión de monedas ni cálculo de riesgo, margen o rentabilidad V3.
+  La grilla de cantidad es `mínimo + n * paso`; los precios se alinean a múltiplos
+  del tick. Son convenciones explícitas del contrato, no restricciones IBKR verificadas.
+- `core.schema.json` describe la estructura del wire con referencias locales.
+  Las invariantes entre campos, el límite de precisión y la consistencia de los
+  originales exigen usar los validadores Python: validar solo el JSON Schema no
+  basta. Las pruebas verifican referencias y paridad de campos del esquema; no se
+  añadió un motor JSON Schema externo ni una dependencia de runtime nueva.
+- Las fechas históricas pueden conservarse vencidas. `require_current` rechaza
+  tiempo desconocido, futuro o vencido, pero comprueba únicamente vigencia temporal;
+  no afirma autenticidad del productor ni disponibilidad actual de mercado.
+
+No existe consumidor .NET en este incremento. Hay vectores dorados reproducibles
+de bytes/hashes en las pruebas Python; los vectores compartidos y DTOs .NET se
+posponen hasta tener ese consumidor.
+
+## Evidencia de verificación
+
+Graphify se consultó sobre el grafo existente de 424 nodos/1039 aristas. Se usó
+el vocabulario `strategy research risk account`; la salida encontró 181 nodos,
+limitada a 1400 tokens. Se contrastó con los validadores puros actuales de bundles
+V2 y economía V1 antes de reutilizarlos. No se reconstruyó el grafo ni se dedujo
+autoridad operativa de sus relaciones.
+
+Verificación final del incremento:
+
+| Grupo | Resultado |
+|---|---|
+| Contratos/serialización V3.1 | 17 pruebas pasadas |
+| Importación/esquemas/aislamiento V3.1 | 19 pruebas pasadas |
+| Forex fase 1 | 28 pruebas pasadas |
+| Contratos AI históricos | 16 pruebas pasadas |
+| Total | **80 pruebas pasadas** |
+
+Se instalaron audit hooks en el proceso de verificación que deniegan red,
+subprocesos y apertura/listado de la `.local` real del proyecto. Los importadores
+también se probaron con apertura de archivos prohibida durante sus llamadas.
+Las bases SQLite de regresión se crean en directorios temporales nuevos;
+se usó permiso fuera del sandbox por sus restricciones conocidas en Windows.
+No hubo conexiones a servicios, lectura de secretos ni operaciones de broker.
+
+Se comprobó que una inversión temporal de la condición de autoridad hace fallar
+la prueba de importación válida; la condición se restauró antes de la ejecución
+final. Esto verifica sensibilidad de esa prueba, no un puntaje de mutation testing
+de toda la suite. No se ejecutaron pruebas .NET ni servicios operativos.
+
+## Límites y decisiones para la auditoría independiente
+
+- Las restricciones del instrumento proporcionadas por el llamador no están
+  verificadas contra IBKR. Los fixtures Forex y equity son ilustrativos;
+  el segundo instrumento es sintético y cotiza en EUR, con otro calendario,
+  unidad SHARE y mínimo/paso diferentes. Ninguno habilita operar.
+- La importación económica requiere contexto, plan y cutoff originales. Es una
+  comprobación de consistencia contra el evaluador puro preservado, no una prueba
+  de que el productor era auténtico o el escenario se ejecutó. Una incompatibilidad
+  de precisión, grilla, metadatos o versión produce error controlado.
+- El bundle no contiene estadística verificable; se representa con null. La fase 1
+  declara false y se conserva. No se añaden resultados ni se completa un bracket
+  ausente. Las métricas históricas permanecen en el original bajo sus unidades y
+  semántica V1; no se renombran como métricas aprobadas por V3.
+- Ajuste explícito frente al diseño amplio de Fase 0: se incluye RESEARCH en
+  `Environment` según V3.1 y se crean sobres de importación con nombres propios,
+  sin presentar como completos `StrategyVersion` o `EconomicAssessment` V3.
+- No se modificaron fuentes históricas, manifests, frontend, configuración,
+  adaptadores, bases ni permisos. No se creó ledger ni se inició V3.2.
