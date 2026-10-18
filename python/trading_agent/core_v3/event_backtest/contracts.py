@@ -1,7 +1,7 @@
 """Closed immutable simulation wire; audited financial primitives remain unchanged."""
 from dataclasses import dataclass, fields
 from datetime import datetime, timedelta
-from decimal import Decimal
+from decimal import Context, Decimal, localcontext
 from enum import Enum
 from typing import get_args, get_origin
 
@@ -245,6 +245,9 @@ class SimulatedFill(Record):
         object.__setattr__(self, 'at', utc(self.at))
         require((self.mid_price.currency, self.mid_price.per_unit) == (self.price.currency, self.price.per_unit),
                 'BACKTEST_FILL_UNITS')
+        require(self.quantity.unit == self.price.per_unit
+                and (self.price.amount >= self.mid_price.amount if self.side is Side.BUY
+                     else self.price.amount <= self.mid_price.amount), 'BACKTEST_FILL_ADVERSE_PRICE')
         _nonnegative(self.commission, self.spread_cost, self.slippage_cost, self.rounding_cost)
 
 
@@ -284,6 +287,11 @@ class PositionState(Record):
         identifier(self.trade_id)
         object.__setattr__(self, 'deadline', utc(self.deadline))
         require(self.entry.role is Role.ENTRY and self.entry.at < self.deadline, 'BACKTEST_POSITION_INVALID')
+        require(self.entry.side is (Side.BUY if self.direction is Direction.LONG else Side.SELL)
+                and (self.stop.currency, self.stop.per_unit) == (self.target.currency, self.target.per_unit)
+                == (self.entry.price.currency, self.entry.price.per_unit), 'BACKTEST_POSITION_UNITS')
+        require(self.stop.amount < self.entry.price.amount < self.target.amount if self.direction is Direction.LONG else
+                self.target.amount < self.entry.price.amount < self.stop.amount, 'BACKTEST_POSITION_GEOMETRY')
         _nonnegative(self.financing_accrued)
 
 
@@ -306,8 +314,12 @@ class TradeRecord(Record):
         identifier(self.reason)
         require(self.entry.role is Role.ENTRY and self.exit.role is Role.EXIT
                 and self.exit.at >= self.entry.at and self.entry.quantity == self.exit.quantity, 'BACKTEST_TRADE_INVALID')
+        require(self.entry.side is (Side.BUY if self.direction is Direction.LONG else Side.SELL)
+                and self.entry.side is not self.exit.side
+                and (self.entry.price.currency, self.entry.price.per_unit) == (self.exit.price.currency, self.exit.price.per_unit),
+                'BACKTEST_TRADE_TERMS')
         require(self.gross.currency == self.costs.total.currency == self.net.currency
-                and self.gross.add(Money(-self.costs.total.amount, self.net.currency)) == self.net, 'BACKTEST_NET_SUM')
+                and self.gross.add(Money(self.costs.total.amount.copy_negate(), self.net.currency)) == self.net, 'BACKTEST_NET_SUM')
         decimal_text(self.return_fraction)
 
 
@@ -353,7 +365,10 @@ class BacktestMetrics(Record):
         self.check_types()
         require(0 <= self.closed_trades <= 16 and self.winners + self.losers + self.breakeven == self.closed_trades
                 and min(self.winners, self.losers, self.breakeven, self.rejected_entries) >= 0, 'BACKTEST_METRIC_COUNTS')
-        require(self.gross.add(Money(-self.costs.amount, self.costs.currency)) == self.net, 'BACKTEST_METRIC_SUM')
+        require(self.gross.add(Money(self.costs.amount.copy_negate(), self.costs.currency)) == self.net, 'BACKTEST_METRIC_SUM')
+        money_fields = [getattr(self, f.name) for f in fields(self) if f.type is Money]
+        require(len({m.currency for m in money_fields}) == 1 and self.initial_capital.amount > 0, 'BACKTEST_METRIC_UNITS')
+        _nonnegative(self.costs, self.max_realized_drawdown, self.max_mark_drawdown, self.peak_exposure)
 
 
 @dataclass(frozen=True, slots=True)
@@ -415,3 +430,52 @@ class BacktestResult(Record):
         require(self.status is not Status.COMPLETE or (self.open_position is None and not self.pending_orders
                 and self.metrics is not None), 'BACKTEST_COMPLETION_INVALID')
         require(self.evidence is None or content_hash(self.evidence.request) == self.request_sha256, 'BACKTEST_EVIDENCE_MISMATCH')
+        require(all(a.at <= b.at for a, b in zip(self.events, self.events[1:])), 'BACKTEST_EVENT_TIME')
+        orders = {order.order_id: order for order in self.orders}
+        fills = {fill.fill_id: fill for fill in self.fills}
+        fill_events = {e.reference_id: e for e in self.events if e.kind is EventKind.FILL}
+        require(sum(e.kind is EventKind.FILL for e in self.events) == len(self.fills)
+                and len(fill_events) == len(self.fills) and set(fill_events) == set(fills), 'BACKTEST_FILL_EVENTS')
+        order_events = [e.reference_id for e in self.events if e.kind is EventKind.ORDER]
+        require(len(order_events) == len(self.orders) and set(order_events) == set(orders), 'BACKTEST_ORDER_EVENTS')
+        require(len({f.order_id for f in self.fills}) == len(self.fills), 'BACKTEST_DUPLICATE_ORDER_FILL')
+        for order in self.orders:
+            require(order.signal_sequence <= len(self.events), 'BACKTEST_SIGNAL_REFERENCE')
+            cause = self.events[order.signal_sequence-1]
+            require(cause.kind in (EventKind.SIGNAL, EventKind.FILL) and cause.at == order.decided_at
+                    and cause.bar_index == order.signal_bar, 'BACKTEST_SIGNAL_REFERENCE')
+        for fill in self.fills:
+            require(fill.order_id in orders, 'BACKTEST_FILL_ORDER_REFERENCE')
+            order, event = orders[fill.order_id], fill_events[fill.fill_id]
+            require((order.role, order.side, order.quantity) == (fill.role, fill.side, fill.quantity)
+                    and event.bar_index == fill.bar_index and event.at == fill.at and event.sequence > order.signal_sequence
+                    and fill.at >= order.decided_at and (fill.bar_index > order.signal_bar if fill.role is Role.ENTRY
+                    else fill.bar_index >= order.signal_bar), 'BACKTEST_FILL_CAUSALITY')
+        for trade in self.trades:
+            require(fills.get(trade.entry.fill_id) == trade.entry and fills.get(trade.exit.fill_id) == trade.exit,
+                    'BACKTEST_TRADE_FILL_REFERENCE')
+        used_fills = [fill.fill_id for trade in self.trades for fill in (trade.entry, trade.exit)]
+        if self.open_position is not None:
+            used_fills.append(self.open_position.entry.fill_id)
+        require(len(used_fills) == len(set(used_fills)) and set(used_fills) == set(fills), 'BACKTEST_FILL_ACCOUNTING')
+        require(len(self.fills) == 2*len(self.trades) + int(self.open_position is not None), 'BACKTEST_POSITION_FILL_COUNT')
+        if self.open_position is not None:
+            require(fills.get(self.open_position.entry.fill_id) == self.open_position.entry, 'BACKTEST_OPEN_FILL_REFERENCE')
+        for pending in self.pending_orders:
+            require(orders.get(pending.order_id) == pending and all(f.order_id != pending.order_id for f in self.fills),
+                    'BACKTEST_PENDING_ORDER_REFERENCE')
+        if self.metrics is not None:
+            require(self.evidence is not None, 'BACKTEST_EVIDENCE_REQUIRED')
+            metrics = self.metrics
+            with localcontext(Context(prec=160)):
+                require(metrics.closed_trades == len(self.trades)
+                        and metrics.winners == sum(t.net.amount > 0 for t in self.trades)
+                        and metrics.losers == sum(t.net.amount < 0 for t in self.trades)
+                        and metrics.gross.amount == sum((t.gross.amount for t in self.trades), Decimal(0))
+                        and metrics.costs.amount == sum((t.costs.total.amount for t in self.trades), Decimal(0)),
+                        'BACKTEST_AGGREGATE_MISMATCH')
+                opening_fee = Decimal(0) if self.open_position is None else self.open_position.entry.commission.amount
+                require(metrics.final_realized_capital.amount == metrics.initial_capital.amount+metrics.net.amount-opening_fee,
+                        'BACKTEST_CAPITAL_RECONCILIATION')
+                require(metrics.final_mark_capital == (self.equity[-1].mark_equity if self.equity
+                        else metrics.final_realized_capital), 'BACKTEST_MARK_RECONCILIATION')
