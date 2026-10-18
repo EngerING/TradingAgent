@@ -186,3 +186,16 @@ class CatalogIntegrationTests(unittest.TestCase):
             result = catalog.diagnose(validation, journal, req.inputs, series, now=AT)
             self.assertTrue(result.entry_rules_met)
             self.assertEqual('NO_TRADE', result.trading_decision)
+
+    def test_validation_and_revision_cannot_predate_the_version_they_reference(self):
+        from trading_agent.core_v3.strategy_catalog.service import Catalog
+        with tempfile.TemporaryDirectory() as root, ResearchJournal(root, budget()) as journal, Catalog(root) as catalog:
+            req = complete(journal)
+            cmd = command(req=req)
+            first = catalog.register(cmd, journal, req.inputs, now=AT + timedelta(seconds=1))
+            retrospective = replace(cmd, operation_id='past-check', idempotency_key='past-check-key', action=Action.REVALIDATE)
+            self.assertEqual(State.INVALIDATED, catalog.register(retrospective, journal, req.inputs, now=AT).state)
+            rule = cmd.strategy.entry_rules[0]
+            changed = replace(cmd.strategy, entry_rules=(Rule(rule.left, rule.operator, Operand(Indicator.SMA, 4, 0)),))
+            revision = command(name='past-revision', version=2, parent=first.target.record_sha256, req=req, strategy=changed)
+            self.assertEqual(State.REJECTED, catalog.register(revision, journal, req.inputs, now=AT).state)

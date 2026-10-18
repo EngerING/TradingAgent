@@ -4,7 +4,7 @@ from ..research_contracts import ResearchInputs
 from ..research_journal import ResearchJournal
 from ..strategy_v34.signals import CandleSeries, evaluate
 from .contracts import Action, CatalogRequest, State, TERMINAL
-from .research_link import SourceChanged, SourcePending, SourceUnavailable, capture, check_binding, verify
+from .research_link import SourceChanged, SourcePending, SourceUnavailable, capture, verify
 from .store import _Store
 
 
@@ -62,7 +62,7 @@ class Catalog:
             else:
                 proof = view.proof
             verify(journal, proof)
-            checked = check_binding(view.command, proof, inputs, now=now)
+            checked = self._store.check(view, proof, inputs, now=now)
             if not checked.valid:
                 view = self._store.event(view, State.INVALIDATED,
                     dict(proof=proof.to_dict(), check=checked.to_dict()), now=now)
@@ -75,7 +75,7 @@ class Catalog:
                     return self._store._outcome(view)
             # This read is after the independent catalog commit, with neither file locked together.
             verify(journal, proof)
-            checked = check_binding(view.command, proof, inputs, now=now)
+            checked = self._store.check(view, proof, inputs, now=now)
             if checked.valid:
                 view = self._store.event(view, State.VALIDATED, checked.to_dict(), now=now)
             else:

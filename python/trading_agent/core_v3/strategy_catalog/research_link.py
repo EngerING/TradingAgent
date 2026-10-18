@@ -1,5 +1,5 @@
 """Read-only V3.3 evidence bridge and pure V3.4/V3.2 checks."""
-from ..contracts import ContractError, content_hash, strict_json, require, utc
+from ..contracts import ContractError, content_hash, require, utc
 from ..research_contracts import BudgetPolicy, InstrumentIdentity, ResearchInputs, ResearchRequest, ResearchResult, TERMINAL
 from ..research_journal import ResearchJournal
 from ..strategy_v34.validation import validate

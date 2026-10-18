@@ -31,7 +31,15 @@ def _family(strategy):
     return strategy.instrument, strategy.timeframe, strategy.scenario.direction
 
 
-def _choice(command, proof, versions):
+def _check(command, proof, inputs, now, versions):
+    checked = check_binding(command, proof, inputs, now=now)
+    existing = versions.get((command.catalog_id, command.version))
+    if existing is not None and utc(now) < existing.recorded_at:
+        return CatalogCheck(inputs, utc(now), False, 'CATALOG_VERSION_FROM_FUTURE', None)
+    return checked
+
+
+def _choice(command, proof, versions, at):
     key = command.catalog_id, command.version
     existing = versions.get(key)
     if existing is not None:
@@ -48,6 +56,8 @@ def _choice(command, proof, versions):
     lineage = [v for (catalog_id, number), v in versions.items() if catalog_id == command.catalog_id]
     if lineage:
         latest = max(lineage, key=lambda v: v.registration.version)
+        if at < latest.recorded_at:
+            return State.REJECTED, None, 'CATALOG_PARENT_FROM_FUTURE'
         if command.version != latest.registration.version + 1 or command.parent_sha256 != latest.record_sha256:
             return State.REJECTED, None, 'PARENT_VERSION_CONFLICT'
         if _family(command.strategy) != _family(latest.registration.strategy):
@@ -149,7 +159,7 @@ class _Store:
             shape(payload, ('proof', 'check'))
             proof, checked = SourceProof.from_dict(payload['proof']), CatalogCheck.from_dict(payload['check'])
             require(view.proof is None or view.proof == proof, 'CATALOG_INTEGRITY')
-            require(checked == check_binding(cmd, proof, checked.inputs, now=at), 'CATALOG_INTEGRITY')
+            require(checked == _check(cmd, proof, checked.inputs, at, versions), 'CATALOG_INTEGRITY')
             require((state is State.PREPARED) == checked.valid, 'CATALOG_INTEGRITY')
             require(state is State.INVALIDATED or view.phase in (State.REQUESTED, State.PREPARED), 'CATALOG_INTEGRITY')
             view.proof, view.check, view.reason = proof, checked, checked.reason
@@ -161,9 +171,9 @@ class _Store:
                 view.phase = State.PREPARED
         elif state is State.RECORDED:
             require(view.phase is State.PREPARED and view.check.valid, 'CATALOG_INTEGRITY')
-            checked = check_binding(cmd, view.proof, view.check.inputs, now=at)
+            checked = _check(cmd, view.proof, view.check.inputs, at, versions)
             require(checked.valid, 'CATALOG_INTEGRITY')
-            expected_state, existing, reason = _choice(cmd, view.proof, versions)
+            expected_state, existing, reason = _choice(cmd, view.proof, versions, at)
             require(expected_state is State.RECORDED, 'CATALOG_INTEGRITY')
             version = CatalogVersion.from_dict(payload)
             if cmd.action is Action.REVALIDATE:
@@ -175,11 +185,11 @@ class _Store:
         elif state is State.VALIDATED:
             require(view.phase is State.RECORDED and view.target is not None, 'CATALOG_INTEGRITY')
             checked = CatalogCheck.from_dict(payload)
-            require(checked.valid and checked == check_binding(cmd, view.proof, checked.inputs, now=at), 'CATALOG_INTEGRITY')
+            require(checked.valid and checked == _check(cmd, view.proof, checked.inputs, at, versions), 'CATALOG_INTEGRITY')
             view.check, view.reason = checked, 'VALIDATED_FOR_BOUND_CONTEXT'
         elif state is State.DUPLICATE:
             require(view.phase is State.PREPARED, 'CATALOG_INTEGRITY')
-            decision, existing, reason = _choice(cmd, view.proof, versions)
+            decision, existing, reason = _choice(cmd, view.proof, versions, at)
             require(decision is State.DUPLICATE and CatalogRef.from_dict(payload) == CatalogRef.of(existing), 'CATALOG_INTEGRITY')
             view.target, view.reason = CatalogRef.of(existing), reason
         elif state in (State.REJECTED, State.RECOVERY_REQUIRED):
@@ -188,9 +198,9 @@ class _Store:
                 'RESEARCH_NOT_RECORDED', 'RESEARCH_SOURCE_REJECTED', 'RESEARCH_SOURCE_UNAVAILABLE',
                 'RESEARCH_PENDING', 'RESEARCH_NOT_FOUND', 'RESEARCH_PREFIX_CHANGED',
                 'VERSION_CONTENT_CONFLICT', 'PARENT_VERSION_CONFLICT', 'CATALOG_FAMILY_MISMATCH',
-                'VERSION_NOT_FOUND', 'REVALIDATION_SOURCE_MISMATCH'}, 'CATALOG_INTEGRITY')
+                'VERSION_NOT_FOUND', 'REVALIDATION_SOURCE_MISMATCH', 'CATALOG_PARENT_FROM_FUTURE'}, 'CATALOG_INTEGRITY')
             if state is State.REJECTED and view.phase is State.PREPARED:
-                decision, unused, reason = _choice(cmd, view.proof, versions)
+                decision, unused, reason = _choice(cmd, view.proof, versions, at)
                 require(decision is State.REJECTED and reason == payload['reason'], 'CATALOG_INTEGRITY')
             require(state is State.RECOVERY_REQUIRED or view.phase is not State.RECORDED, 'CATALOG_INTEGRITY')
             view.reason = payload['reason']
@@ -229,6 +239,11 @@ class _Store:
         with self._transaction():
             return self._load()
 
+    def check(self, view, proof, inputs, *, now):
+        with self._transaction():
+            versions = self._load()[1]
+            return _check(view.command, proof, inputs, now, versions)
+
     def claim(self, command, *, now):
         require(type(command) is CatalogRequest, 'CATALOG_REQUEST_REQUIRED')
         with self._transaction():
@@ -257,11 +272,11 @@ class _Store:
             current = views[view.command.operation_id]
             require(current.sequence == view.sequence and current.phase is State.PREPARED
                     and current.state not in TERMINAL, 'CATALOG_CONCURRENT_CHANGE')
-            checked = check_binding(current.command, current.proof, current.check.inputs, now=now)
+            checked = _check(current.command, current.proof, current.check.inputs, now, versions)
             if not checked.valid:
                 state, payload = State.INVALIDATED, dict(proof=current.proof.to_dict(), check=checked.to_dict())
             else:
-                state, existing, reason = _choice(current.command, current.proof, versions)
+                state, existing, reason = _choice(current.command, current.proof, versions, utc(now))
                 if state is State.REJECTED:
                     payload = {'reason': reason}
                 elif state is State.DUPLICATE:
