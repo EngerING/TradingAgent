@@ -1,0 +1,539 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:trading:core-v3:strategy-v34:v1",
+  "title": "Core V3.4 closed declarative synthetic research contracts",
+  "$comment": "Python validation additionally enforces cross-field geometry, exact instrument/request binding, candle sequence and availability, bounds on raw JSON, and economic recomputation. Schema acceptance never grants authority.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/Strategy"
+    },
+    {
+      "$ref": "#/$defs/CandleSeries"
+    },
+    {
+      "$ref": "#/$defs/SignalResult"
+    }
+  ],
+  "$defs": {
+    "Strategy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": "trading.core_v3.strategy_v34.strategy"
+        },
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "strategy_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$"
+        },
+        "request_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "instrument": {
+          "$ref": "#/$defs/InstrumentIdentity"
+        },
+        "timeframe": {
+          "type": "string",
+          "enum": [
+            "M1",
+            "M5",
+            "H1"
+          ]
+        },
+        "scenario": {
+          "$ref": "#/$defs/Scenario"
+        },
+        "entry_rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Rule"
+          },
+          "minItems": 1,
+          "maxItems": 8,
+          "uniqueItems": true
+        },
+        "exit_rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Rule"
+          },
+          "minItems": 1,
+          "maxItems": 8,
+          "uniqueItems": true
+        },
+        "max_holding_bars": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 43200
+        },
+        "scope": {
+          "type": "string",
+          "const": "DECLARATIVE_SYNTHETIC_RESEARCH_ONLY"
+        },
+        "trading_decision": {
+          "type": "string",
+          "const": "NO_TRADE"
+        },
+        "execution_authority": {
+          "type": "boolean",
+          "const": false
+        },
+        "paper_execution_eligible": {
+          "type": "boolean",
+          "const": false
+        },
+        "live_enabled": {
+          "type": "boolean",
+          "const": false
+        },
+        "statistically_validated": {
+          "type": "boolean",
+          "const": false
+        }
+      },
+      "required": [
+        "schema",
+        "schema_version",
+        "strategy_id",
+        "request_sha256",
+        "instrument",
+        "timeframe",
+        "scenario",
+        "entry_rules",
+        "exit_rules",
+        "max_holding_bars",
+        "scope",
+        "trading_decision",
+        "execution_authority",
+        "paper_execution_eligible",
+        "live_enabled",
+        "statistically_validated"
+      ]
+    },
+    "InstrumentIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": "trading.core_v3.research.instrument_identity"
+        },
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "instrument_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$"
+        },
+        "specification_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "content_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "schema",
+        "schema_version",
+        "instrument_id",
+        "specification_version",
+        "content_sha256"
+      ]
+    },
+    "Scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": "trading.core_v3.economic.scenario"
+        },
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "hypothesis_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$"
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "LONG",
+            "SHORT"
+          ]
+        },
+        "quantity": {
+          "$ref": "#/$defs/Quantity"
+        },
+        "entry": {
+          "$ref": "#/$defs/Price"
+        },
+        "stop": {
+          "$ref": "#/$defs/Price"
+        },
+        "target": {
+          "$ref": "#/$defs/Price"
+        },
+        "horizon_hours": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 720
+        },
+        "context_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "policy_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "schema",
+        "schema_version",
+        "hypothesis_id",
+        "direction",
+        "quantity",
+        "entry",
+        "stop",
+        "target",
+        "horizon_hours",
+        "context_sha256",
+        "policy_sha256"
+      ]
+    },
+    "Quantity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "amount": {
+          "type": "string",
+          "pattern": "^(?:0|[1-9][0-9]{0,17})(?:\\.[0-9]{1,12})?$",
+          "not": {
+            "pattern": "^0(?:\\.0+)?$"
+          }
+        },
+        "unit": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]{0,15}$"
+        }
+      },
+      "required": [
+        "amount",
+        "unit"
+      ]
+    },
+    "Price": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "amount": {
+          "type": "string",
+          "pattern": "^(?:0|[1-9][0-9]{0,17})(?:\\.[0-9]{1,12})?$",
+          "not": {
+            "pattern": "^0(?:\\.0+)?$"
+          }
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "per_unit": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]{0,15}$"
+        }
+      },
+      "required": [
+        "amount",
+        "currency",
+        "per_unit"
+      ]
+    },
+    "Rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": "trading.core_v3.strategy_v34.rule"
+        },
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "left": {
+          "$ref": "#/$defs/Operand"
+        },
+        "operator": {
+          "type": "string",
+          "enum": [
+            "GT",
+            "LT",
+            "CROSS_ABOVE",
+            "CROSS_BELOW"
+          ]
+        },
+        "right": {
+          "$ref": "#/$defs/Operand"
+        }
+      },
+      "required": [
+        "schema",
+        "schema_version",
+        "left",
+        "operator",
+        "right"
+      ]
+    },
+    "Operand": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": "trading.core_v3.strategy_v34.operand"
+        },
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "indicator": {
+          "type": "string",
+          "enum": [
+            "CLOSE",
+            "SMA"
+          ]
+        },
+        "period": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200
+        },
+        "lag": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 32
+        }
+      },
+      "required": [
+        "schema",
+        "schema_version",
+        "indicator",
+        "period",
+        "lag"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "indicator": {
+                "const": "CLOSE"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "period": {
+                "const": 1
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "period": {
+                "minimum": 2
+              }
+            }
+          }
+        }
+      ]
+    },
+    "CandleSeries": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": "trading.core_v3.strategy_v34.candle_series"
+        },
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "instrument": {
+          "$ref": "#/$defs/InstrumentIdentity"
+        },
+        "timeframe": {
+          "type": "string",
+          "enum": [
+            "M1",
+            "M5",
+            "H1"
+          ]
+        },
+        "bars": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Candle"
+          },
+          "minItems": 1,
+          "maxItems": 256,
+          "uniqueItems": true
+        },
+        "source_kind": {
+          "type": "string",
+          "enum": [
+            "SYNTHETIC",
+            "CALLER_UNVERIFIED",
+            "AUTHENTIC_CAPTURE",
+            "HISTORICAL_VERIFIED",
+            "DERIVED"
+          ],
+          "const": "SYNTHETIC"
+        }
+      },
+      "required": [
+        "schema",
+        "schema_version",
+        "instrument",
+        "timeframe",
+        "bars",
+        "source_kind"
+      ]
+    },
+    "Candle": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": "trading.core_v3.strategy_v34.candle"
+        },
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "closed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "available_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "open": {
+          "$ref": "#/$defs/Price"
+        },
+        "high": {
+          "$ref": "#/$defs/Price"
+        },
+        "low": {
+          "$ref": "#/$defs/Price"
+        },
+        "close": {
+          "$ref": "#/$defs/Price"
+        }
+      },
+      "required": [
+        "schema",
+        "schema_version",
+        "closed_at",
+        "available_at",
+        "open",
+        "high",
+        "low",
+        "close"
+      ]
+    },
+    "SignalResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": "trading.core_v3.strategy_v34.signal_result"
+        },
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "strategy_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "prefix_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "postflight_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "as_of": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "latest_close": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "used_bars": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256
+        },
+        "entry_rules_met": {
+          "type": "boolean"
+        },
+        "exit_rules_met": {
+          "type": "boolean"
+        },
+        "scope": {
+          "type": "string",
+          "const": "SYNTHETIC_RULE_DIAGNOSTIC_ONLY"
+        },
+        "trading_decision": {
+          "type": "string",
+          "const": "NO_TRADE"
+        },
+        "execution_authority": {
+          "type": "boolean",
+          "const": false
+        },
+        "paper_execution_eligible": {
+          "type": "boolean",
+          "const": false
+        },
+        "live_enabled": {
+          "type": "boolean",
+          "const": false
+        },
+        "statistically_validated": {
+          "type": "boolean",
+          "const": false
+        }
+      },
+      "required": [
+        "schema",
+        "schema_version",
+        "strategy_sha256",
+        "prefix_sha256",
+        "postflight_sha256",
+        "as_of",
+        "latest_close",
+        "used_bars",
+        "entry_rules_met",
+        "exit_rules_met",
+        "scope",
+        "trading_decision",
+        "execution_authority",
+        "paper_execution_eligible",
+        "live_enabled",
+        "statistically_validated"
+      ]
+    }
+  }
+}

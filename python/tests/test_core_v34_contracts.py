@@ -1,7 +1,5 @@
 """Declarative wire boundary: closed data, never executable source."""
 from dataclasses import FrozenInstanceError, replace
-from decimal import Decimal
-import json
 import unittest
 
 from test_core_v3_contracts import eurusd

@@ -19,7 +19,8 @@ def economic_basis(request: ResearchRequest, *, now):
 
 def validate(strategy: Strategy, request: ResearchRequest, timeframe: Timeframe, *, now):
     """Return a recalculated V3.2 postflight, never a promotion or execution permit."""
-    require(type(strategy) is Strategy and type(timeframe) is Timeframe, 'STRATEGY_TYPES_REQUIRED')
+    require(type(strategy) is Strategy and type(request) is ResearchRequest
+            and type(timeframe) is Timeframe, 'STRATEGY_TYPES_REQUIRED')
     require(strategy.request_sha256 == content_hash(request), 'STRATEGY_REQUEST_MISMATCH')
     require(strategy.instrument == request.instrument, 'STRATEGY_INSTRUMENT_MISMATCH')
     require(strategy.timeframe is timeframe, 'STRATEGY_TIMEFRAME_MISMATCH')
