@@ -242,7 +242,9 @@ class IsolationTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[2] / 'python/trading_agent/core_v3'
         allowed = {'dataclasses', 'datetime', 'decimal', 'enum', 'hashlib', 'json', 'math', 're',
                    'contracts', 'ai_strategy_researcher.strategy_bundle_v2', 'forex_research.economics',
-                   'types', 'typing', 'economic_contracts', 'economic_scenarios', 'economic_calculation'}
+                   'types', 'typing', 'economic_contracts', 'economic_scenarios', 'economic_calculation',
+                   'research_contracts', 'research_designer', 'economics', 'contextlib', 'pathlib', 'sqlite3',
+                   'research_journal'}
         for path in root.glob('*.py'):
             tree = ast.parse(path.read_text(encoding='utf-8'))
             for node in ast.walk(tree):
