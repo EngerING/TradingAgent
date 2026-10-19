@@ -6,7 +6,7 @@ import unittest
 from test_core_v36_contracts import dataset, policy
 from trading_agent.core_v3.contracts import ContractError, Money, content_hash
 from trading_agent.core_v3.statistical_validation.contracts import (
-    RobustnessScenario, Status, TemporalSplit, Partition, ValidationPolicy, ValidationResult)
+    Dependence, RobustnessScenario, Status, TemporalSplit, Partition, ValidationPolicy, ValidationResult)
 from trading_agent.core_v3.statistical_validation.planning import manifest
 from trading_agent.core_v3.statistical_validation.statistics import describe
 
@@ -67,3 +67,13 @@ class StatisticalContractTests(unittest.TestCase):
             RobustnessScenario('invalid', extra_opening_fee=Money(D('-1'), 'USD'))
         with self.assertRaises(ContractError):
             RobustnessScenario('invalid', extra_slippage_ticks=1, close_at_end=False)
+
+    def test_complete_requires_provenance_and_independent_counts_cannot_be_invented(self):
+        from trading_agent.core_v3.statistical_validation.statistics import bootstrap
+        value = bootstrap((D(1), D(2), D(3)), dependence=Dependence.UNKNOWN, seed=7,
+                          replicas=200, confidence_bps=9000, family_size=1)
+        with self.assertRaises(ContractError):
+            ValidationResult('0'*64, Status.COMPLETE, ('EXPLORATORY_CALCULATION_COMPLETE',), None)
+        for changes in (dict(observed_windows=-1), dict(independent_units=3), dict(family_size=0)):
+            with self.assertRaises(ContractError):
+                replace(value, **changes)

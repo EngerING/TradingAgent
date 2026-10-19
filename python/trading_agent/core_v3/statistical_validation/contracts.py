@@ -43,6 +43,8 @@ class StatisticalRecord(Record):
             value, name = getattr(self, field.name), field.name
             if isinstance(value, Decimal):
                 decimal_text(value)
+            if type(value) is int:
+                require(0 <= value < 2**63, 'STATISTICAL_COUNT_INVALID')
             if type(value) is str:
                 require(len(value) <= 160, 'STATISTICAL_STRING_LIMIT')
                 if name.endswith('_sha256'):
@@ -337,7 +339,11 @@ class UncertaintyEstimate(StatisticalRecord):
 
     def __post_init__(self):
         StatisticalRecord.__post_init__(self)
+        require(0 <= self.observed_windows <= 12 and 32 <= self.replicas <= 512
+                and 5000 <= self.confidence_bps <= 9900 and 1 <= self.family_size <= 256,
+                'INTERVAL_POLICY_INVALID')
         require((self.lower is None) == (self.upper is None), 'INTERVAL_INVALID')
+        require(self.lower is not None or self.independent_units is None, 'INDEPENDENT_UNITS_NOT_ESTABLISHED')
         if self.lower is not None:
             require(self.lower <= self.upper and self.dependence is Dependence.IID_WINDOW_BLOCKS_ASSUMED
                     and self.independent_units == self.observed_windows >= 2
@@ -409,7 +415,7 @@ class ValidationEvidence(StatisticalRecord):
                 and self.request.policy_sha256 == content_hash(self.policy)
                 and self.oos_status in ('OOS_NOT_ESTABLISHED', 'RETROSPECTIVE_SPLIT_ONLY')
                 and self.exploratory is True and self.exposure_scope == 'THIS_COORDINATOR_INSTANCE_ONLY'
-                and self.engine_version == ENGINE_VERSION and 0 <= self.actual_backtests <= 64,
+                and self.engine_version == ENGINE_VERSION and self.actual_backtests == len(self.observations) <= 64,
                 'VALIDATION_EVIDENCE_INVALID')
 
 
@@ -433,6 +439,7 @@ class ValidationResult(StatisticalRecord):
 
     def __post_init__(self):
         StatisticalRecord.__post_init__(self)
+        require(self.status is not Status.COMPLETE or self.evidence is not None, 'VALIDATION_PROVENANCE_REQUIRED')
         require(1 <= len(self.reasons) <= 32 and all(re.fullmatch('[A-Z][A-Z0-9_]{0,79}', r)
                 for r in self.reasons), 'STATISTICAL_REASON_INVALID')
         require(self.scope == 'SYNTHETIC_EXPLORATORY_STATISTICAL_RESEARCH_ONLY'
