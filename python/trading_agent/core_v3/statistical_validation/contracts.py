@@ -261,7 +261,7 @@ class ObservationRef(StatisticalRecord):
     observation_sha256: str
     result_sha256: str
     status: str
-    trades: int
+    trades: int | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -288,7 +288,7 @@ class StatisticalMetrics(StatisticalRecord):
         require(0 <= self.trades <= 256 and self.winners + self.losers + self.breakeven == self.trades
                 and min(self.winners, self.losers, self.breakeven) >= 0
                 and self.gross.currency == self.costs.currency == self.net.currency
-                and self.gross.add(Money(-self.costs.amount, self.costs.currency)) == self.net,
+                and self.gross.add(Money(self.costs.amount.copy_negate(), self.costs.currency)) == self.net,
                 'STATISTICAL_AGGREGATE_INVALID')
         require(self.costs.amount >= 0 and (self.win_rate is None or 0 <= self.win_rate <= 1),
                 'STATISTICAL_METRIC_INVALID')

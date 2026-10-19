@@ -72,3 +72,44 @@ class PlanningTests(unittest.TestCase):
             changed = replace(chunks[0], dataset_id='changed')
             with self.assertRaises(ContractError):
                 windows(plan, rules, (catalog.version('catalog-1', 1),), (changed,))
+
+    def test_purge_also_separates_scored_windows_across_folds(self):
+        with registered(timeframe=Timeframe.H1) as (_, cmd, catalog, _):
+            plan, rules, chunks = example(cmd, catalog, folds=2)
+            splits = list(plan.splits)
+            splits[3] = replace(splits[3], history_start=12, evaluation_start=15, evaluation_end=18,
+                                 reuse_test_declared=True)
+            splits[4] = replace(splits[4], history_start=27, evaluation_start=30, evaluation_end=33)
+            with self.assertRaises(ContractError):
+                windows(replace(plan, splits=tuple(splits)), rules, (catalog.version('catalog-1', 1),), chunks)
+
+    def test_multiple_chunks_retain_v36_window_limits(self):
+        with registered(timeframe=Timeframe.H1) as (_, cmd, catalog, _):
+            plan, rules, chunks = example(cmd, catalog, folds=4)
+            self.assertEqual(2, len(chunks))
+            self.assertGreater(plan.manifest.total_bars, 128)
+            values = windows(plan, rules, (catalog.version('catalog-1', 1),), chunks)
+            self.assertEqual(12, len(values))
+            self.assertTrue(all(len(data.bars) <= 128 for _, data, _ in values))
+
+    def test_warmup_available_after_decision_is_temporal_leakage(self):
+        with registered(timeframe=Timeframe.H1) as (_, cmd, catalog, _):
+            plan, rules, chunks = example(cmd, catalog)
+            data = chunks[0]
+            bars = list(data.bars)
+            bars[2] = replace(bars[2], available_at=bars[3].opened_at+timedelta(seconds=1))
+            chunks = (replace(data, bars=tuple(bars)),)
+            plan = replace(plan, manifest=manifest('dataset-1', chunks))
+            with self.assertRaisesRegex(ContractError, 'TEMPORAL_LEAKAGE'):
+                windows(plan, rules, (catalog.version('catalog-1', 1),), chunks)
+
+    def test_incompatible_account_currencies_block_aggregation_before_execution(self):
+        from test_core_v35_contracts import request
+        with registered(timeframe=Timeframe.H1) as (_, cmd, catalog, _), registered(
+                timeframe=Timeframe.H1, req=request(account_currency='EUR')) as (_, _, other, _):
+            plan, rules, chunks = example(cmd, catalog)
+            versions = catalog.version('catalog-1', 1), other.version('catalog-1', 1)
+            second = replace(plan.candidates[0], candidate_id='candidate-2', catalog_ref=CatalogRef.of(versions[1]))
+            plan = replace(plan, candidates=plan.candidates+(second,))
+            with self.assertRaisesRegex(ContractError, 'INCOMPARABLE_WINDOWS'):
+                windows(plan, replace(rules, declared_family_size=2), versions, chunks)

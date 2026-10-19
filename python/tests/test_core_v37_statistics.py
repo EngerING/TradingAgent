@@ -33,3 +33,30 @@ class StatisticsTests(unittest.TestCase):
         kwargs['family_size'] = 256
         self.assertEqual('BOOTSTRAP_RESOLUTION_INSUFFICIENT',
                          bootstrap((D('1'), D('2'), D('3')), **kwargs).reason)
+
+    def test_zero_trades_has_no_winner_rate_expectancy_or_dispersion(self):
+        result = describe((), (), 'EUR')
+        self.assertEqual(D(0), result.net.amount)
+        self.assertIsNone(result.win_rate)
+        self.assertIsNone(result.expectancy)
+        self.assertIsNone(result.sample_stddev)
+
+    def test_realized_reward_risk_dispersion_and_extreme_sensitivity(self):
+        result = describe((D('2'), D('-2'), D('20')), (D('3'), D('-1'), D('21')), 'USD')
+        self.assertEqual(D('5.5'), result.realized_reward_risk)
+        self.assertEqual(D(0), result.without_largest_absolute_trade)
+        self.assertGreater(result.sample_stddev, D(10))
+
+    def test_costs_cannot_be_negative_and_samples_are_bounded(self):
+        from trading_agent.core_v3.contracts import ContractError
+        for net, gross in (((D('1'),), (D('0'),)), ((D(0),)*257, (D(0),)*257)):
+            with self.assertRaises(ContractError):
+                describe(net, gross, 'USD')
+
+    def test_ambient_decimal_precision_does_not_change_statistics(self):
+        from decimal import localcontext
+        expected = describe((D('.0322'), D('-1.2678')), (D('1.04'), D('-.26')), 'USD')
+        with localcontext() as context:
+            context.prec = 3
+            actual = describe((D('.0322'), D('-1.2678')), (D('1.04'), D('-.26')), 'USD')
+        self.assertEqual(expected, actual)

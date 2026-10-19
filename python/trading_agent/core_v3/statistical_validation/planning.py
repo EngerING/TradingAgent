@@ -29,7 +29,8 @@ def windows(plan, policy, versions, chunks):
             'STATISTICAL_RESOURCE_LIMIT')
     require(sum(len(c.to_json().encode('utf-8')) for c in chunks)+len(plan.to_json().encode('utf-8'))
             +len(policy.to_json().encode('utf-8')) <= policy.max_input_bytes, 'STATISTICAL_INPUT_BYTES')
-    runs = len(plan.candidates)*len(plan.splits)*(1+sum(s.close_at_end is not None for s in plan.scenarios))
+    # Cost proofs are work too, even though they are not reported as V3.6 backtests.
+    runs = len(plan.candidates)*len(plan.splits)*(1+len(plan.scenarios))
     require(runs <= policy.max_backtests and runs*128+policy.bootstrap_replicas*len(plan.splits)
             *len(plan.candidates) <= policy.max_work_units, 'STATISTICAL_WORK_LIMIT')
     require(policy.declared_family_size >= len(plan.candidates)*policy.parameter_variants*(1+len(plan.scenarios)),
@@ -59,6 +60,9 @@ def windows(plan, policy, versions, chunks):
         for right in scored[index+1:]:
             require(left.evaluation_end <= right.evaluation_start or right.evaluation_end <= left.evaluation_start,
                     'SCORED_WINDOWS_OVERLAP')
+    chronological = tuple(sorted(scored, key=lambda s: s.evaluation_start))
+    require(all(b.evaluation_start-a.evaluation_end >= horizon+policy.embargo_bars
+                for a, b in zip(chronological, chronological[1:])), 'TEMPORAL_PURGE_REQUIRED')
     # Fold progression must advance reserved windows, even for expanding development windows.
     tests = tuple(s for s in plan.splits if s.partition is Partition.TEST)
     require(all(a.evaluation_end <= b.evaluation_start for a, b in zip(tests, tests[1:])),
