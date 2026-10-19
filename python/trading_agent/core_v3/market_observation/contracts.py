@@ -105,6 +105,9 @@ class RawEvent(Record):
     raw_frame_b64: str = ''
     diagnostic: str = ''
     redacted: bool = False
+    raw_frame_sha256: str | None = None
+    raw_frame_size: int = 0
+    wire_request_id: int | None = None
 
     def __post_init__(self):
         self.check_types()
@@ -118,6 +121,9 @@ class RawEvent(Record):
         require(self.price_text is None or len(self.price_text) <= 128, 'OBS_PRICE_LENGTH')
         require(len(self.raw_frame_b64) <= 22000 and len(self.diagnostic) <= 80
                 and all(c in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789' for c in self.diagnostic), 'OBS_RAW_LIMIT')
+        require(0 <= self.raw_frame_size <= 16384 and (self.raw_frame_sha256 is not None or self.raw_frame_size == 0), 'OBS_RAW_SIZE')
+        if self.raw_frame_sha256 is not None:
+            _hash(self.raw_frame_sha256)
         self.to_json()  # Reject invalid Unicode and enforce inherited document budget.
 
 

@@ -1,6 +1,7 @@
 """Own bounded SQLite ledger; validate and commit original before publication."""
 from dataclasses import dataclass
 from pathlib import Path
+import os
 import sqlite3
 
 from ..contracts import require, identifier, content_hash, ContractError
@@ -43,9 +44,32 @@ class Journal:
         self.anchor = checkpoint
         self.db = None
         self._parent = self._identity(self.path.parent)
+        self._file = None
         self._storage()
         existed = self.path.exists()
         try:
+            if existed:
+                self._file = self._identity(self.path)
+                # Identify bytes before SQLite can recover or change an unrelated database.
+                with self.path.open('rb') as stream:
+                    header = stream.read(100)
+                require(len(header) == 100 and header[:16] == b'SQLite format 3\0' and header[18:20] == b'\x01\x01'
+                        and int.from_bytes(header[68:72], 'big') == 0x56333931, 'OBS_STORAGE_IDENTITY')
+                self.db = sqlite3.connect(self.path, timeout=2, isolation_level=None)
+                self.db.setlimit(sqlite3.SQLITE_LIMIT_LENGTH, 131072)
+                def read_only(action, arg1, arg2, database, source):
+                    allowed = action in (sqlite3.SQLITE_SELECT, sqlite3.SQLITE_READ, sqlite3.SQLITE_FUNCTION)
+                    allowed = allowed or (action == sqlite3.SQLITE_PRAGMA and arg1 in ('journal_mode','quick_check') and arg2 is None)
+                    return sqlite3.SQLITE_OK if allowed else sqlite3.SQLITE_DENY
+                self.db.set_authorizer(read_only)
+                require(self.db.execute('PRAGMA journal_mode').fetchone() == ('delete',), 'OBS_STORAGE_MODE')
+                self.history()
+                self.close()
+            else:
+                fd = os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+                os.close(fd)
+                self._file = self._identity(self.path)
+            self._storage()
             self.db = sqlite3.connect(self.path, timeout=2, isolation_level=None)
             self.db.execute('PRAGMA journal_mode=DELETE')
             self.db.execute('PRAGMA synchronous=FULL')
@@ -56,6 +80,7 @@ class Journal:
             self.db.setlimit(sqlite3.SQLITE_LIMIT_LENGTH, 131072)
             if not existed:
                 self.db.execute('BEGIN IMMEDIATE')
+                self.db.execute('PRAGMA application_id=1446197553')
                 self.db.execute('CREATE TABLE meta(digest TEXT NOT NULL)')
                 self.db.execute('INSERT INTO meta VALUES(?)', (self.metadata,))
                 self.db.execute('CREATE TABLE events(seq INTEGER PRIMARY KEY, connection TEXT NOT NULL, received_seq INTEGER NOT NULL, previous TEXT NOT NULL, digest TEXT NOT NULL, document TEXT NOT NULL, UNIQUE(connection,received_seq))')
@@ -65,8 +90,10 @@ class Journal:
                     self.db.execute(sql)
                 self.db.execute('COMMIT')
             self.history()
-        except BaseException:
+        except BaseException as exc:
             self.close()
+            if isinstance(exc, sqlite3.Error):
+                raise ContractError('OBS_STORAGE_FAILURE') from None
             raise
 
     @staticmethod
@@ -76,6 +103,8 @@ class Journal:
 
     def _storage(self):
         require(self._identity(self.path.parent) == self._parent, 'OBS_DIRECTORY_CHANGED')
+        if self._file is not None:
+            require(self.path.exists() and self._identity(self.path) == self._file, 'OBS_FILE_CHANGED')
         total = 0
         for suffix in ('', '-journal', '-wal', '-shm'):
             path = Path(str(self.path)+suffix)

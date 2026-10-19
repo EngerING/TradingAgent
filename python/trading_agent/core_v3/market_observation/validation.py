@@ -84,7 +84,8 @@ def _step(state, event, policy, as_of):
             if state.bid and state.ask:
                 bid, ask = parse_decimal(state.bid.price_text), parse_decimal(state.ask.price_text)
                 ages = [int((as_of-side.received_at).total_seconds()*1000000) for side in (state.bid, state.ask)]
-                if max(ages) > policy.side_max_age_ms*1000:
+                mono_ages = [event.monotonic_ns-side.monotonic_ns for side in (state.bid, state.ask)]
+                if max(ages) > policy.side_max_age_ms*1000 or max(mono_ages) > policy.side_max_age_ms*1000000:
                     reasons.append('SIDE_RECEIPT_STALE')
                 if bid > ask or ask-bid > policy.max_spread:
                     reasons.append('SPREAD_INVALID')
