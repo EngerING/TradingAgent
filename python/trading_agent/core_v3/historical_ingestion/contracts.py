@@ -1,6 +1,6 @@
 """Separate real-material boundary; hashes identify bytes, never authenticate origin."""
 from dataclasses import dataclass, fields
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from decimal import Decimal
 import re
 from typing import get_args, get_origin
@@ -117,3 +117,51 @@ class ReviewReceipt(Record):
     @classmethod
     def from_dict(cls, data):
         require(False, 'H38_HOST_REVIEW_REQUIRED')
+
+
+@dataclass(frozen=True, slots=True)
+class Session(Record):
+    SCHEMA = 'trading.core_v3.historical.session'
+    session_id: str
+    opening_date: str
+    opened_at: datetime
+    closed_at: datetime
+
+    def __post_init__(self):
+        self.check_types()
+        identifier(self.session_id)
+        require(re.fullmatch(r'\d{4}-\d{2}-\d{2}', self.opening_date) is not None, 'H38_SESSION_DATE')
+        try:
+            date.fromisoformat(self.opening_date)
+        except ValueError:
+            require(False, 'H38_SESSION_DATE')
+        for name in ('opened_at', 'closed_at'):
+            object.__setattr__(self, name, utc(getattr(self, name)))
+        require(timedelta(0) < self.closed_at-self.opened_at <= timedelta(days=2), 'H38_SESSION_TIME')
+
+
+@dataclass(frozen=True, slots=True)
+class SessionCalendar(Record):
+    SCHEMA = 'trading.core_v3.historical.calendar'
+    calendar_id: str
+    revision: str
+    timezone_name: str
+    evidence_sha256: str
+    coverage_start: datetime
+    coverage_end: datetime
+    sessions: tuple[Session, ...]
+
+    def __post_init__(self):
+        self.check_types()
+        identifier(self.calendar_id)
+        identifier(self.revision)
+        _hash(self.evidence_sha256)
+        require(1 <= len(self.timezone_name) <= 80, 'H38_TIMEZONE')
+        for name in ('coverage_start', 'coverage_end'):
+            object.__setattr__(self, name, utc(getattr(self, name)))
+        require(timedelta(0) < self.coverage_end-self.coverage_start <= timedelta(days=370), 'H38_COVERAGE')
+        require(len({s.session_id for s in self.sessions}) == len(self.sessions), 'H38_DUPLICATE_SESSION')
+        previous = self.coverage_start
+        for session in self.sessions:
+            require(previous <= session.opened_at < session.closed_at <= self.coverage_end, 'H38_SESSION_ORDER')
+            previous = session.closed_at
