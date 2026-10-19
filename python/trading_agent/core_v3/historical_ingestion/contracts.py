@@ -77,7 +77,7 @@ class DatasetSpec(Record):
         unit(self.price_unit)
         decimal_text(self.tick)
         require(self.tick > 0, 'H38_TICK')
-        require(self.data_origin in ('PROVIDER_EXPORT', 'TEST_FIXTURE'), 'H38_ORIGIN')
+        require(self.data_origin in ('PROVIDER_EXPORT', 'SYNTHETIC_TEST_FIXTURE'), 'H38_ORIGIN')
         require((self.kind == 'OHLC' and self.representation in ('MID', 'BID', 'ASK', 'TRADE')
                  and 1 <= self.interval_seconds <= 86400 and self.quote_max_gap_seconds == 0)
                 or (self.kind == 'QUOTE' and self.representation == 'BID_ASK'

@@ -38,10 +38,10 @@ V3.6 exige tipo exacto `SyntheticDataset` y `source_kind=SYNTHETIC` en
 `event_backtest/contracts.py:81-92`; su reader exige ese tipo. V3.7 vuelve a
 exigir SYNTHETIC en `statistical_validation/contracts.py:80-84` y reconstruye
 SyntheticDataset en planning. **No se modifica ninguno de esos límites.**
-V3.8 usa tipos propios, `source_kind=REAL_HISTORICAL`, sin heredar de
+V3.8 usa tipos propios, `source_kind=REAL_HISTORICAL_UNVERIFIED`, sin heredar de
 SyntheticDataset, sin conversores, adaptadores, entradas al motor ni permisos.
 Este identificador declara la clase de material solicitado, no su autenticidad.
-Los fixtures conservan `data_origin=TEST_FIXTURE`; un fichero real exige
+Los fixtures conservan `data_origin=source_kind=SYNTHETIC_TEST_FIXTURE`; un fichero real exige
 `data_origin=PROVIDER_EXPORT`. Resultado: `NO_TRADE`, scope de ingesta solamente,
 backtest/paper/live/execution/statistical eligibility false, incluso aceptado.
 La integración al backtester y su auditoría necesitan otra fase expresamente
@@ -54,7 +54,7 @@ sin extras, claves duplicadas, bool como enteros, floats financieros, NaN,
 infinito o colecciones mutables. Decimales de texto exactos con límites V3.1;
 precios positivos, grilla de tick exacta, moneda/unidad explícitas. Identidad
 por proveedor, símbolo del proveedor, instrumento, venue, moneda y unidad.
-CSV `OHLC` con representación MID/BID/ASK/TRADE explícita o `QUOTE` BID_ASK.
+CSV canónico de pruebas (sin afirmar esquema de proveedor) `OHLC` con representación MID/BID/ASK/TRADE explícita o `QUOTE` BID_ASK.
 No generar bid/ask desde mid ni reconstruir ticks desde OHLC. RAW únicamente:
 ajustes, splits, dividendos y revisiones no documentados se rechazan.
 
@@ -159,3 +159,28 @@ V3.7. No reutilizar el transporte Paper sugerido por el grafo para esta ingesta.
 Las lecciones históricas se leyeron. El intérprete anotado no tiene instalado
 graphify (reflect falló con No module named graphify): se usó BFS determinista
 sobre graph.json, sin instalar paquetes, red, modelos ni reconstruir el grafo.
+
+
+## Precisión de alcance aportada por el usuario durante el diseño
+
+Proveedor inicial de referencia: **Dukascopy Bank SA**; EUR/USD, H1, CSV,
+UTC explícito y BID/ASK por separado. Un mes inicial; enero 2024–diciembre 2025
+es el dataset ampliado previsto, no disponible ni validado en esta entrega.
+El usuario exige no inventar columnas y deja pendiente cerrar el adaptador
+hasta aportar una exportación real y revisar sus columnas/configuración.
+
+Por tanto se separan dos fronteras: parser **canónico de fixtures sintéticos**
+y recepción de originales Dukascopy **sin interpretación de esquema** en
+cuarentena. Ningún original real pasará por el formato canónico inventando
+columnas. El parser genérico rechazará material PROVIDER_EXPORT mientras no
+exista un adaptador de esquema real revisado; ni siquiera un receipt externo
+levanta esa limitación. El intake Dukascopy conserva bytes, configuración
+declarada y hashes; emite FORMAT_UNVERIFIED, siempre NO_TRADE y sin registros
+normalizados. Esto es una función de custodia completa y verificable, no una
+implementación pretendida del esquema real pendiente. Fixtures identificados
+SYNTHETIC_TEST_FIXTURE nunca acreditan el formato real de Dukascopy.
+
+Límite inicial: 4096 filas y 1 MiB por fichero canónico; un mes H1 cabe sin
+crear un supuesto 24x7. La recepción opaca permite hasta 16 MiB de CSV original.
+La ampliación de dos años deberá usar lotes acotados y una comprobación posterior
+de continuidad entre lotes; no se afirma validación global de ese periodo.

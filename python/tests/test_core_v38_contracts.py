@@ -15,7 +15,7 @@ def instant(hour=0):
 def spec(**changes):
     values = dict(provider_id='fixture-provider', export_id='export-1', instrument_id='EURUSD',
         symbol='EURUSD', venue='FIXTURE', quote_currency='USD', price_unit='EUR', tick=Decimal('0.0001'),
-        data_origin='TEST_FIXTURE', kind='OHLC', representation='MID', interval_seconds=3600,
+        data_origin='SYNTHETIC_TEST_FIXTURE', kind='OHLC', representation='MID', interval_seconds=3600,
         quote_max_gap_seconds=0, timezone_name='UTC', available_basis='PROVIDER_PUBLISHED',
         window_start=instant(0), window_end=instant(2), exported_at=instant(3), observed_at=instant(4),
         raw_sha256='a'*64, evidence_sha256='b'*64, calendar_sha256='c'*64, tzif_sha256='d'*64)
