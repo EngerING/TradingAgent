@@ -41,10 +41,12 @@ def collect(adapter, journal, *, now=lambda: datetime.now(timezone.utc)):
                 # A resumed producer must establish a new epoch; old quotes cannot survive restart.
                 require(event.kind is Kind.CONNECTED, 'OBS_NEW_EPOCH_REQUIRED')
                 if before:
-                    last = journal.history()[-1].value.event
+                    history = journal.history()
+                    last = history[-1].value.event
                     require(event.connection_id != last.connection_id, 'OBS_NEW_EPOCH_REQUIRED')
                     from dataclasses import replace
-                    gap = replace(last, sequence=last.sequence+1, kind=Kind.GAP, received_at=event.received_at,
+                    next_sequence = max(row.value.event.sequence for row in history if row.value.event.connection_id == last.connection_id)+1
+                    gap = replace(last, sequence=next_sequence, kind=Kind.GAP, received_at=event.received_at,
                                   monotonic_ns=event.monotonic_ns, contract=None, data_type=None,
                                   price_text=None, tick_type=None, source_at=None, raw_frame_b64='',
                                   raw_frame_sha256=None, raw_frame_size=0, wire_request_id=None,

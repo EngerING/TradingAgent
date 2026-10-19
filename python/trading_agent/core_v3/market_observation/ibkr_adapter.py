@@ -7,7 +7,7 @@ import struct
 import time
 import uuid
 
-from ..contracts import ContractError, require
+from ..contracts import ContractError, require, content_hash
 from .authorization import Approval, Scope
 from .contracts import CapturePolicy, RawEvent, Origin, Kind, SessionKind
 from .ibkr_protocol import Command, encode, handshake, decode, fields
@@ -19,15 +19,18 @@ def _now():
 
 class _Epoch:
     """One connection's preflight. Shared only with a labelled transcript fixture."""
-    def __init__(self, session_id, connection_id, origin, session_kind, now, mono):
+    def __init__(self, session_id, connection_id, origin, session_kind, now, mono, approval=None):
         self.session_id, self.connection_id, self.origin, self.session_kind = session_id, connection_id, origin, session_kind
         self.now, self.mono, self.sequence = now, mono, 0
         self.contract, self.ended, self.accounts = None, False, False
+        self.attestation = approval.grant.attestation_sha256 if approval else None
+        self.grant_hash = content_hash(approval.grant.to_dict()) if approval else None
 
     def raw(self, kind, **values):
         self.sequence += 1
         return RawEvent(self.session_id, self.connection_id, 101, self.sequence, kind,
-                        self.now(), self.mono(), self.origin, self.session_kind, **values)
+                        self.now(), self.mono(), self.origin, self.session_kind,
+                        host_attestation_sha256=self.attestation, capture_grant_sha256=self.grant_hash, **values)
 
     def message(self, payload, policy, approval=None):
         try:
@@ -136,7 +139,7 @@ class IBKRReader:
                 if self.closed or self.mono() >= deadline or emitted+3 >= self.policy.max_events:
                     break
                 epoch = _Epoch(self.approval.grant.session_id, 'ibkr-'+uuid.uuid4().hex,
-                               Origin.SOCKET, self.approval.grant.session_kind, self.now, self.mono)
+                               Origin.SOCKET, self.approval.grant.session_kind, self.now, self.mono, self.approval)
                 try:
                     self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     self._socket.settimeout(2)

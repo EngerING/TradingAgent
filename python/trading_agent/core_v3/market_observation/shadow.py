@@ -9,6 +9,7 @@ from ..economic_contracts import _hash
 from .authorization import Approval, Scope
 from .contracts import Origin, DataType
 from .journal import Journal
+from .validation import micros
 
 
 @dataclass(frozen=True, slots=True)
@@ -132,6 +133,11 @@ def observe(journal, spec, *, cutoff, approval=None, now=None):
         available = ()
         eligible = value.accepted and quote is not None
         if quote:
+            source_age = None if quote.bid_source_at is None or quote.ask_source_at is None else max(
+                micros(generated_at-t) for t in (quote.bid_source_at,quote.ask_source_at))
+            if max(micros(generated_at-t) for t in (quote.bid_received_at,quote.ask_received_at)) > journal.policy.side_max_age_ms*1000:
+                uncertainty.append('RECEIPT_TOO_OLD_AT_GENERATION')
+                eligible = False
             # Raw per-connection sequences are mapped to durable global journal indices.
             indices = tuple(r.sequence for r in rows[:row.sequence] if r.value.event.connection_id == raw.connection_id
                             and r.value.event.sequence in (quote.bid_sequence, quote.ask_sequence))
@@ -139,10 +145,10 @@ def observe(journal, spec, *, cutoff, approval=None, now=None):
             if quote.data_type is not DataType.LIVE:
                 uncertainty.append('FEED_NOT_LIVE')
                 eligible = False
-            if quote.source_age_us is None:
+            if source_age is None:
                 uncertainty.append('SOURCE_AGE_UNKNOWN')
                 eligible = eligible and spec.allow_unknown_source_time
-            elif quote.source_age_us > spec.max_source_age_ms*1000:
+            elif source_age > spec.max_source_age_ms*1000:
                 uncertainty.append('SOURCE_TOO_OLD')
                 eligible = False
             if eligible:
@@ -154,7 +160,7 @@ def observe(journal, spec, *, cutoff, approval=None, now=None):
                             incomplete = True
                             break
                         subsequent.append(SubsequentCondition(signal.causal_sequence, row.sequence, generated_at,
-                                          quote.bid, quote.ask, row.sha256, quote.source_age_us))
+                                          quote.bid, quote.ask, row.sha256, source_age))
                 matches = quote.bid > spec.threshold if spec.operator == 'BID_GT' else quote.ask < spec.threshold
                 if matches:
                     direction = spec.direction

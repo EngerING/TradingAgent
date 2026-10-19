@@ -1,11 +1,14 @@
 """Closed immutable observation records. Provenance is a declaration, not authority."""
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 from datetime import datetime
-from decimal import Decimal
+from decimal import Decimal, localcontext
 from enum import Enum
+import base64
+import binascii
+import hashlib
 
 from ..contracts import require, identifier, utc, decimal_text
-from ..economic_contracts import _hash, _typed_value
+from ..economic_contracts import _hash
 from ..historical_ingestion.contracts import Record
 
 
@@ -108,6 +111,8 @@ class RawEvent(Record):
     raw_frame_sha256: str | None = None
     raw_frame_size: int = 0
     wire_request_id: int | None = None
+    host_attestation_sha256: str | None = None
+    capture_grant_sha256: str | None = None
 
     def __post_init__(self):
         self.check_types()
@@ -124,6 +129,18 @@ class RawEvent(Record):
         require(0 <= self.raw_frame_size <= 16384 and (self.raw_frame_sha256 is not None or self.raw_frame_size == 0), 'OBS_RAW_SIZE')
         if self.raw_frame_sha256 is not None:
             _hash(self.raw_frame_sha256)
+        for digest in (self.host_attestation_sha256, self.capture_grant_sha256):
+            if digest is not None:
+                _hash(digest)
+        require(not self.redacted or not self.raw_frame_b64, 'OBS_REDACTION')
+        if self.raw_frame_b64:
+            try:
+                raw_bytes = base64.b64decode(self.raw_frame_b64, validate=True)
+            except (binascii.Error, ValueError):
+                require(False, 'OBS_RAW_ENCODING')
+            require(len(raw_bytes) == self.raw_frame_size and hashlib.sha256(raw_bytes).hexdigest() == self.raw_frame_sha256, 'OBS_RAW_HASH')
+        else:
+            require(self.raw_frame_size == 0 or self.redacted, 'OBS_RAW_MISSING')
         self.to_json()  # Reject invalid Unicode and enforce inherited document budget.
 
 
@@ -147,7 +164,9 @@ class Quote(Record):
         self.check_types()
         for value in (self.bid, self.ask, self.spread):
             decimal_text(value)
-        require(0 < self.bid <= self.ask and self.spread == self.ask-self.bid, 'OBS_QUOTE')
+        with localcontext() as context:
+            context.prec = 160
+            require(0 < self.bid <= self.ask and self.spread == self.ask-self.bid, 'OBS_QUOTE')
 
 
 @dataclass(frozen=True, slots=True)

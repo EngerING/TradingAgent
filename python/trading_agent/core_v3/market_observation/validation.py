@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import localcontext
 
 from ..contracts import ContractError, parse_decimal, require, utc
-from .contracts import CapturePolicy, RawEvent, Quote, ValidatedEvent, Kind, DataType
+from .contracts import CapturePolicy, RawEvent, Quote, ValidatedEvent, Kind, DataType, Origin
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,6 +24,10 @@ class State:
     last_mid: object = None
 
 
+def micros(delta):
+    return (delta.days*86400+delta.seconds)*1000000+delta.microseconds
+
+
 def step(state, event, policy, *, as_of):
     require(type(state) is State and type(event) is RawEvent and type(policy) is CapturePolicy, 'OBS_EXACT_TYPE')
     as_of = utc(as_of)
@@ -34,6 +38,10 @@ def step(state, event, policy, *, as_of):
 
 def _step(state, event, policy, as_of):
     reasons = []
+    if event.raw_frame_size > policy.max_frame_bytes:
+        reasons.append('FRAME_POLICY_LIMIT')
+    if event.origin is Origin.SOCKET and (event.host_attestation_sha256 is None or event.capture_grant_sha256 is None):
+        reasons.append('HOST_ATTESTATION_NOT_REFERENCED')
     if event.kind is Kind.CONNECTED:
         if event.sequence != 1 or event.connection_id == state.connection:
             reasons.append('CONNECTION_EPOCH_INVALID')
@@ -83,7 +91,7 @@ def _step(state, event, policy, as_of):
             state = replace(state, **{'bid' if event.kind is Kind.BID else 'ask': event})
             if state.bid and state.ask:
                 bid, ask = parse_decimal(state.bid.price_text), parse_decimal(state.ask.price_text)
-                ages = [int((as_of-side.received_at).total_seconds()*1000000) for side in (state.bid, state.ask)]
+                ages = [micros(as_of-side.received_at) for side in (state.bid, state.ask)]
                 mono_ages = [event.monotonic_ns-side.monotonic_ns for side in (state.bid, state.ask)]
                 if max(ages) > policy.side_max_age_ms*1000 or max(mono_ages) > policy.side_max_age_ms*1000000:
                     reasons.append('SIDE_RECEIPT_STALE')
@@ -94,7 +102,7 @@ def _step(state, event, policy, as_of):
                     reasons.append('PRICE_JUMP')
                 if not reasons:
                     sources = (state.bid.source_at, state.ask.source_at)
-                    age = None if None in sources else max(int((as_of-t).total_seconds()*1000000) for t in sources)
+                    age = None if None in sources else max(micros(as_of-t) for t in sources)
                     quote = Quote(bid, ask, ask-bid, state.bid.sequence, state.ask.sequence,
                             state.bid.received_at, state.ask.received_at, *sources, age, state.data_type, state.contract)
                     state = replace(state, last_mid=mid)

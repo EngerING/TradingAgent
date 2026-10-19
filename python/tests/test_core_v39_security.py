@@ -57,6 +57,12 @@ class SecurityTests(unittest.TestCase):
         for changes in ({'max_events':4097},{'max_disk_bytes':True},{'max_reconnects':3}):
             with self.assertRaises(ContractError): policy(**changes)
 
+    def test_raw_frame_hash_size_redaction_and_encoding_cannot_diverge(self):
+        raw=prices()[0]
+        for changes in ({'raw_frame_b64':'eA=='}, {'raw_frame_size':1,'raw_frame_sha256':'0'*64},
+                        {'raw_frame_b64':'***'}, {'raw_frame_b64':'eA==','redacted':True}):
+            with self.assertRaises(ContractError): replace(raw,**changes)
+
     def test_monotonic_side_age_catches_accumulated_small_wall_drift(self):
         raws = list(prices()[:-1])
         base = raws[-1]
@@ -127,6 +133,25 @@ class SecurityTests(unittest.TestCase):
                 collect(FixtureAdapter(second),j,now=lambda:AT+timedelta(seconds=2))
                 self.assertEqual('COLLECTOR_RESTART_GAP',j.history()[5].value.event.diagnostic)
                 self.assertIsNone(j.history()[-1].value.quote)
+
+    def test_restart_after_reorder_uses_unoccupied_receive_key(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with Journal(Path(directory)/'own.sqlite',policy(),'session-1',Origin.FIXTURE,SessionKind.PAPER) as j:
+                for raw in prices()+(event(7,Kind.NOTICE),event(6,Kind.NOTICE)):
+                    j.append(raw,as_of=raw.received_at)
+                second=replace(prices()[0],connection_id='connection-2',received_at=AT+timedelta(seconds=2),monotonic_ns=2000000000)
+                collect(FixtureAdapter((second,)),j,now=lambda:AT+timedelta(seconds=2))
+                self.assertEqual(8,j.history()[-2].value.event.sequence)
+                self.assertEqual('connection-2',j.history()[-1].value.event.connection_id)
+
+    def test_shadow_rechecks_quote_age_at_actual_generation_time(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with Journal(Path(directory)/'own.sqlite',policy(),'session-1',Origin.FIXTURE,SessionKind.PAPER) as j:
+                for index,raw in enumerate(prices()):
+                    j.append(raw,as_of=AT+timedelta(seconds=60) if index==0 else raw.received_at)
+                result=observe(j,spec(allow_unknown_source_time=True),cutoff=AT+timedelta(seconds=61))
+                self.assertEqual('NO_TRADE',result.signals[-1].hypothetical_direction)
+                self.assertIn('RECEIPT_TOO_OLD_AT_GENERATION',result.signals[-1].uncertainty)
 
     def test_outgoing_bytes_match_installed_official_sdk_without_connecting(self):
         # Oracle dependency is test-only and already installed; no client.run/connect.
