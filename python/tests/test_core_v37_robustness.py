@@ -54,15 +54,20 @@ class RobustnessTests(unittest.TestCase):
                 self.assertIsNone(proof)
 
     def test_execution_policy_is_rerun_and_decimal_context_is_fixed(self):
-        with registered(timeframe=Timeframe.H1) as (_, cmd, catalog, journal):
+        with registered(timeframe=Timeframe.H1) as (research, cmd, catalog, journal):
             plan, rules, chunks = example(cmd, catalog)
             split, data, warmup = windows(plan, rules, (catalog.version('catalog-1', 1),), chunks)[0]
             base = observe(plan.candidates[0], split, data, warmup, rules.backtest,
                            content_hash(plan.manifest), catalog, journal, 'base')
+            catalog.register(replace(cmd, operation_id='unrelated', idempotency_key='unrelated',
+                                     catalog_id='unrelated'), journal, research.inputs,
+                             now=plan.candidates[0].research_cutoff)
             value, extra, _ = evaluate(base, RobustnessScenario('execution', close_at_end=False),
                 plan.candidates[0], split, warmup, catalog, journal, rules, content_hash(plan.manifest), 2)
             self.assertEqual('RERUN_V36', value.method)
             self.assertNotEqual(base.request.policy_sha256, extra.request.policy_sha256)
+            self.assertEqual(base.request.catalog_sequence, extra.request.catalog_sequence)
+            self.assertEqual(base.request.catalog_sha256, extra.request.catalog_sha256)
             shock = RobustnessScenario('commission', extra_opening_fee=Money(D('.1'), 'USD'))
             expected = evaluate(base, shock, plan.candidates[0], split, warmup,
                                 catalog, journal, rules, content_hash(plan.manifest), 3)[0]

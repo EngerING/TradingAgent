@@ -106,7 +106,8 @@ def evaluate(base, scenario, candidate, split, warmup, catalog, journal, policy,
         rules = replace(base.policy, policy_id='execution-stress', close_at_end=scenario.close_at_end,
                         max_trades=min(base.policy.max_trades, remaining_trades))
         observation = observe(candidate, split, base.dataset, warmup, rules, manifest_hash,
-            catalog, journal, 'observation-'+str(index), scenario.scenario_id, policy.max_observation_bytes)
+            catalog, journal, 'observation-'+str(index), scenario.scenario_id, policy.max_observation_bytes,
+            source_pin=base.request)
         metrics = observation.result.metrics
         if observation.result.status is not Status.COMPLETE or metrics is None:
             value, _, proof = unknown()
