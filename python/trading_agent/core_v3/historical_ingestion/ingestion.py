@@ -81,6 +81,10 @@ def ingest_canonical(raw, spec, calendar, tzif, evidence, reviews=(), *, cutoff)
             issues.append(Issue(0, code))
     if not evidence:
         issues.append(Issue(0, 'H38_EVIDENCE_REQUIRED'))
+    if sha256(evidence) == sha256(raw):
+        issues.append(Issue(0, 'H38_SELF_EVIDENCE'))
+    if calendar.evidence_sha256 != spec.evidence_sha256:
+        issues.append(Issue(0, 'H38_CALENDAR_EVIDENCE'))
     if spec.observed_at > cutoff:
         issues.append(Issue(0, 'H38_OBSERVED_AFTER_CUTOFF'))
     matched = tuple(r for r in reviews if r.provider_id == spec.provider_id
@@ -89,7 +93,7 @@ def ingest_canonical(raw, spec, calendar, tzif, evidence, reviews=(), *, cutoff)
     review = matched[0] if len(matched) == 1 else None
     if review is None:
         issues.append(Issue(0, 'H38_REVIEW_REQUIRED' if not matched else 'H38_AMBIGUOUS_REVIEW'))
-    if spec.data_origin == 'PROVIDER_EXPORT':
+    if spec.data_origin == 'PROVIDER_EXPORT' or not spec.provider_id.startswith('fixture-'):
         # A generic fixture schema must not silently masquerade as a provider adapter.
         issues.append(Issue(0, 'H38_PROVIDER_FORMAT_UNVERIFIED'))
     else:
@@ -105,6 +109,10 @@ def ingest_canonical(raw, spec, calendar, tzif, evidence, reviews=(), *, cutoff)
             issues.extend(quality)
         except ContractError as error:
             issues.append(Issue(0, str(error)))
+        except OverflowError:
+            issues.append(Issue(0, 'H38_TIMESTAMP_RANGE'))
+    if len(issues) > 256:
+        issues = issues[:255] + [Issue(0, 'H38_ISSUE_LIMIT')]
     report = QualityReport(count, len(records), complete, expected, gaps, tuple(issues))
     manifest = IngestionManifest('QUARANTINED' if issues else 'READY_FOR_INSPECTION', spec.data_origin,
         sha256(raw), content_hash(spec), content_hash(calendar), sha256(tzif), sha256(evidence),

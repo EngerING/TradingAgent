@@ -54,3 +54,9 @@ class Contracts(unittest.TestCase):
             ReviewReceipt.from_dict(review.to_dict())
         with self.assertRaises(ContractError):
             replace(review, method='HASH_IS_AUTHENTICITY')
+
+    def test_metadata_decoder_also_rejects_unknown_minus_zero_offset(self):
+        data = spec().to_dict()
+        data['exported_at'] = '2026-01-05T03:00:00-00:00'
+        with self.assertRaises(ContractError):
+            DatasetSpec.from_dict(data)

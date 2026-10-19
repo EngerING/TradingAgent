@@ -17,7 +17,7 @@ EVIDENCE = b'SYNTHETIC fixture evidence; no real provider origin is attested.'
 
 def bundle(raw=None, **changes):
     raw = (HEADER+ROWS).encode() if raw is None else raw
-    cal, zone = calendar(), tzif()
+    cal, zone = replace(calendar(), evidence_sha256=hashlib.sha256(EVIDENCE).hexdigest()), tzif()
     value = spec(raw_sha256=hashlib.sha256(raw).hexdigest(),
         calendar_sha256=content_hash(cal), tzif_sha256=hashlib.sha256(zone).hexdigest(),
         evidence_sha256=hashlib.sha256(EVIDENCE).hexdigest(), **changes)

@@ -11,7 +11,9 @@ def private_path(value):
     if not isinstance(value, (str, bytes, os.PathLike)):
         return False
     path = Path(os.path.abspath(os.fsdecode(value)))
-    return any(p.casefold().rstrip(' .') == '.local' for p in path.parts + path.resolve().parts)
+    if any(p.casefold().rstrip(' .') == '.local' for p in path.parts):
+        return True
+    return any(p.casefold().rstrip(' .') == '.local' for p in path.resolve().parts)
 
 
 def guard(event, args):

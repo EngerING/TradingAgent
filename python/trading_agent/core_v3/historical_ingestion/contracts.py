@@ -37,6 +37,8 @@ class Record(EconomicRecord):
                 require(type(value) is list and len(value) <= MAX_ROWS, 'H38_COLLECTION_LIMIT')
                 result[field.name] = tuple(_decode(v, get_args(field.type)[0]) for v in value)
             else:
+                if field.type is datetime:
+                    require(type(value) is str and not value.endswith('-00:00'), 'H38_UNKNOWN_OFFSET')
                 result[field.name] = _decode(value, field.type)
         return cls(**result)
 

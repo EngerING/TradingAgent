@@ -39,6 +39,10 @@ class TimeRules(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(ContractError):
                 parse_timestamp(value, zone)
 
+    def test_unknown_offset_minus_zero_is_not_explicit_utc(self):
+        with self.assertRaises(ContractError):
+            parse_timestamp('2026-01-05T00:00:00-00:00', load_zone(tzif(), 'UTC'))
+
     def test_calendar_wire_and_holiday_early_close(self):
         sessions = (Session('fri', '2026-01-02', dt('2026-01-02T00:00Z'), dt('2026-01-02T01:00Z')),
                     Session('mon', '2026-01-05', dt('2026-01-05T00:00Z'), dt('2026-01-05T02:00Z')))
@@ -63,5 +67,7 @@ class TimeRules(unittest.TestCase):
                 expected_intervals(value, start, end, interval)
 
     def test_bad_tzif_rejected(self):
-        with self.assertRaises(ContractError):
-            load_zone(b'not a zone', 'UTC')
+        for raw in (b'not a zone', b'TZif\0'+b'\0'*15, tzif()[:43], tzif()[:55],
+                    tzif()[:-1], tzif()[:-6]+b'XX\n'):
+            with self.subTest(raw=raw), self.assertRaises(ContractError):
+                load_zone(raw, 'UTC')
