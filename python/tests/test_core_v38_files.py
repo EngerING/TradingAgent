@@ -7,7 +7,7 @@ import unittest
 
 from trading_agent.core_v3.contracts import ContractError, canonical_bytes, content_hash
 from trading_agent.core_v3.historical_ingestion.files import ingest_local, archive_local, read_local, verify_archive
-from trading_agent.core_v3.historical_ingestion.dukascopy_intake import DukascopySettings, stage_export
+from trading_agent.core_v3.historical_ingestion.dukascopy_intake import DukascopySettings, stage_export, verify_export
 from test_core_v38_contracts import instant
 from test_core_v38_ingestion import bundle
 
@@ -79,6 +79,22 @@ class Files(unittest.TestCase):
             self.assertIn('NO_TRADE', text)
             self.assertEqual((bid/'normalized.jsonl').read_bytes(), b'')
             self.assertEqual(stage_export(root, 'bid.csv', root/'archive', settings, cutoff=instant(5)), bid)
+            self.assertEqual(verify_export(bid, cutoff=instant(5)), settings)
+            (bid/'normalized.jsonl').write_bytes(b'forged normalized data')
+            with self.assertRaises(ContractError):
+                verify_export(bid, cutoff=instant(5))
+
+    def test_dukascopy_settings_reject_other_scope_and_untrusted_permissions(self):
+        value = DukascopySettings('EURUSD', 'H1', 'UTC', 'BID', '2024-01',
+            instant(3), instant(4), 'SYNTHETIC_TEST_FIXTURE', 'fixture-config')
+        for changes in ({'side': 'MID'}, {'timezone_name': 'LOCAL'}, {'month': '2024-13'},
+                        {'instrument': 'USDJPY'}, {'provider': 'OTHER'}, {'timeframe': 'M1'}):
+            with self.subTest(changes=changes), self.assertRaises(ContractError):
+                replace(value, **changes)
+        with self.assertRaises(ContractError):
+            DukascopySettings.from_dict(value.to_dict() | {'approved': True})
+        with self.assertRaises(ContractError):
+            DukascopySettings.from_dict(value.to_dict() | {'observed_at': '2026-01-05T04:00:00-00:00'})
 
     def test_hardlinked_inputs_are_rejected(self):
         with tempfile.TemporaryDirectory() as folder:

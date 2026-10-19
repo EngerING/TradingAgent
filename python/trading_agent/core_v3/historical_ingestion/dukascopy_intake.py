@@ -5,7 +5,7 @@ import re
 
 from ..contracts import canonical_bytes, identifier, require, utc
 from .contracts import Record
-from .files import ARCHIVE_LIMIT, read_local, store_bundle
+from .files import ARCHIVE_LIMIT, _verify_bytes, read_local, store_bundle
 from .ingestion import sha256
 
 
@@ -42,14 +42,10 @@ class DukascopySettings(Record):
         require(start <= self.exported_at.date() and self.exported_at <= self.observed_at, 'H38_EXPORT_TIME')
 
 
-def stage_export(input_root, csv_name, output_root, settings, *, cutoff, evidence_name=None):
-    """Keep original bytes and declared settings; do not guess, map or approve columns."""
+def _custody_files(raw, settings, evidence, cutoff):
     require(type(settings) is DukascopySettings, 'H38_DUKASCOPY_SETTINGS')
     cutoff = utc(cutoff)
     require(settings.observed_at <= cutoff, 'H38_OBSERVED_AFTER_CUTOFF')
-    require(type(csv_name) is str and csv_name.lower().endswith('.csv'), 'H38_CSV_EXTENSION')
-    raw = read_local(input_root, csv_name, max_bytes=ARCHIVE_LIMIT)
-    evidence = b'' if evidence_name is None else read_local(input_root, evidence_name)
     manifest = {'schema': 'trading.core_v3.historical.dukascopy.custody', 'schema_version': 1,
         'status': 'QUARANTINED', 'reason': 'DUKASCOPY_FORMAT_UNVERIFIED',
         'provider': settings.provider, 'data_origin': settings.data_origin,
@@ -61,5 +57,24 @@ def stage_export(input_root, csv_name, output_root, settings, *, cutoff, evidenc
         'scope': 'OFFLINE_HISTORICAL_INGESTION_ONLY', 'trading_decision': 'NO_TRADE',
         'backtest_eligible': False, 'execution_authority': False, 'paper_execution_eligible': False,
         'live_enabled': False, 'statistically_validated': False, 'normalized_rows': 0}
-    return store_bundle(output_root, {'raw.csv': raw, 'settings.json': canonical_bytes(settings),
-        'evidence.bin': evidence, 'manifest.json': canonical_bytes(manifest), 'normalized.jsonl': b''})
+    return {'raw.csv': raw, 'settings.json': canonical_bytes(settings), 'evidence.bin': evidence,
+            'manifest.json': canonical_bytes(manifest), 'normalized.jsonl': b''}
+
+
+def stage_export(input_root, csv_name, output_root, settings, *, cutoff, evidence_name=None):
+    """Keep original bytes and declared settings; do not guess, map or approve columns."""
+    require(type(csv_name) is str and csv_name.lower().endswith('.csv'), 'H38_CSV_EXTENSION')
+    require(type(settings) is DukascopySettings, 'H38_DUKASCOPY_SETTINGS')
+    require(settings.observed_at <= utc(cutoff), 'H38_OBSERVED_AFTER_CUTOFF')
+    raw = read_local(input_root, csv_name, max_bytes=ARCHIVE_LIMIT)
+    evidence = b'' if evidence_name is None else read_local(input_root, evidence_name)
+    return store_bundle(output_root, _custody_files(raw, settings, evidence, cutoff))
+
+
+def verify_export(target, *, cutoff):
+    """Recompute opaque custody bytes. This never validates columns or provider authenticity."""
+    settings = DukascopySettings.from_json(read_local(target, 'settings.json'))
+    raw = read_local(target, 'raw.csv', max_bytes=ARCHIVE_LIMIT)
+    evidence = read_local(target, 'evidence.bin')
+    _verify_bytes(target, _custody_files(raw, settings, evidence, cutoff))
+    return settings
