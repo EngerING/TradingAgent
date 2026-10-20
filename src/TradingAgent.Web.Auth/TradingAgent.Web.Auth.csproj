@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../../build/web/Web.props" />
+  <ItemGroup><FrameworkReference Include="Microsoft.AspNetCore.App" /><ProjectReference Include="../TradingAgent.Identity.Supabase/TradingAgent.Identity.Supabase.csproj" /></ItemGroup>
+</Project>

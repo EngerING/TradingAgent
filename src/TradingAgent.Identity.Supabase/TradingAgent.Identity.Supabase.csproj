@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../../build/web/Web.props" />
+  <ItemGroup><FrameworkReference Include="Microsoft.AspNetCore.App" /><PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.23.0" /></ItemGroup>
+  <ItemGroup><ProjectReference Include="../TradingAgent.Identity.Persistence/TradingAgent.Identity.Persistence.csproj" /></ItemGroup>
+</Project>
