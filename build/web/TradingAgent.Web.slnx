@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../../src/TradingAgent.Web/TradingAgent.Web.csproj" />
+  <Project Path="../../tests/TradingAgent.Web.Tests/TradingAgent.Web.Tests.csproj" />
+</Solution>
