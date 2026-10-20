@@ -6,30 +6,19 @@ from math import isfinite
 from ..market import Candle
 from ..research_indicators import calculate, settings
 from .contracts import (INDICATOR_NAMES, Indicator, Instrument, MarketAssessment,
-                        Policy, Provenance, Quality)
+                        Policy, Provenance, Quality, indicator_unit, indicator_warmups)
 from .fixtures import FixtureBar, _generate, is_local_fixture
 from .serialization import AnalystError, digest, require, utc
 
 
-def _warmups(policy):
-    signal = policy.macd_slow + policy.macd_signal - 1
-    return dict(ema_fast=policy.ema_fast, ema_slow=policy.ema_slow, rsi=policy.rsi + 1,
-                macd=policy.macd_slow, macd_signal=signal, macd_histogram=signal,
-                atr=policy.atr, ema_fast_slope=policy.ema_fast + policy.slope,
-                ema_slow_slope=policy.ema_slow + policy.slope,
-                log_return_std=policy.volatility + 1, range=1, atr_ratio=policy.atr)
-
-
 def _indicators(policy, instrument, count, point=None, *, unavailable=False):
-    warmups, result = _warmups(policy), []
+    warmups, result = indicator_warmups(policy), []
     for name in INDICATOR_NAMES:
         value = None if point is None else point[name]
         if value is not None:
             require(type(value) in (float, int) and isfinite(value), 'MA_CALCULATION_NONFINITE')
             value = Decimal(str(value))
-        unit = ('INDEX_0_100' if name == 'rsi' else 'LOG_RETURN_PER_BAR'
-                if name == 'log_return_std' else 'DIMENSIONLESS' if name == 'atr_ratio'
-                else instrument.price_unit + ('_PER_BAR' if name.endswith('_slope') else ''))
+        unit = indicator_unit(name, instrument)
         status = 'UNAVAILABLE' if unavailable else 'READY' if value is not None else 'WARMUP'
         result.append(Indicator(name, value, unit, warmups[name], count, status))
     return tuple(result)
@@ -43,7 +32,7 @@ def _seconds(delta):
 
 def _inspect(bars, instrument, minutes):
     reasons, seen, previous = [], set(), None
-    duplicates = missing = discontinuities = 0
+    duplicates = discontinuities = 0
     epoch = datetime(1970, 1, 1, tzinfo=timezone.utc)
     for bar in bars:
         if bar.instrument != instrument:
@@ -69,13 +58,12 @@ def _inspect(bars, instrument, minutes):
                 reasons.append('MA_BAR_ORDER')
                 discontinuities += 1
             elif gap > 0:
-                missing += max(1, int(gap // (minutes * 60)))
                 discontinuities += 1
                 reasons.append('MA_MISSING_BARS')
             if bar.available_at < previous.available_at:
                 reasons.append('MA_AVAILABILITY_ORDER')
         previous = bar
-    return tuple(dict.fromkeys(reasons)), missing, duplicates, discontinuities
+    return tuple(dict.fromkeys(reasons)), duplicates, discontinuities
 
 
 def evaluate(source, *, cutoff, policy=None, instrument=None, minutes=60):
@@ -103,7 +91,7 @@ def evaluate(source, *, cutoff, policy=None, instrument=None, minutes=60):
             bars[-1].closed_at if known_period else None,
             max(b.available_at for b in bars) if known_period else None,
             Provenance() if provenance is None else provenance,
-            _indicators(policy, instrument, len(bars), point, unavailable=not valid),
+            _indicators(policy, instrument, quality.evaluated_bars or 0, point, unavailable=not valid),
             point['trend'] if status == 'COMPLETE' else 'UNKNOWN',
             point['volatility'] if status == 'COMPLETE' else 'UNKNOWN',
             quality, policy, policy.sha256(), status)
@@ -119,14 +107,18 @@ def evaluate(source, *, cutoff, policy=None, instrument=None, minutes=60):
             require(type(bar) is FixtureBar, 'MA_BAR_TYPE')
             bar.__post_init__()
             require(type(bar.minutes) is int and bar.minutes in (15, 60, 240), 'MA_TIMEFRAME')
+            require(2000 <= bar.opened_at.year <= 2100, 'MA_BAR_TIME_RANGE')
         bars = tuple(b for b in source.bars if b.closed_at <= cutoff and b.available_at <= cutoff)
         expected = tuple(b for b in _generate(source.recipe)
                          if b.closed_at <= cutoff and b.available_at <= cutoff)
     except AnalystError as exc:
         return output('VALIDATION_ERROR', Quality(reasons=(str(exc),)))
 
-    reasons, missing, duplicates, discontinuities = _inspect(bars, instrument, minutes)
+    reasons, duplicates, discontinuities = _inspect(bars, instrument, minutes)
     issues = list(reasons)
+    missing = len({b.opened_at for b in expected} - {b.opened_at for b in bars})
+    if missing:
+        issues.append('MA_MISSING_BARS')
     if source.recipe.instrument != instrument:
         issues.append('MA_INSTRUMENT_MISMATCH')
     if source.recipe.minutes != minutes:

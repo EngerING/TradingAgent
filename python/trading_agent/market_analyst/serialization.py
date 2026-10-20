@@ -29,7 +29,7 @@ def utc(value):
 def decimal_text(value):
     require(type(value) is Decimal and value.is_finite(), 'MA_DECIMAL_REQUIRED')
     require(len(value.as_tuple().digits) <= 64 and -40 <= value.as_tuple().exponent <= 12
-            and abs(value) <= Decimal('1e12'), 'MA_DECIMAL_RANGE')
+            and value.copy_abs() <= Decimal('1e12'), 'MA_DECIMAL_RANGE')
     if not value:
         return '0'
     text = format(value, 'f')
@@ -110,7 +110,8 @@ def _decode(value, annotation):
                 and re.fullmatch(r'-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?', value), 'MA_DECIMAL_TEXT')
         value = Decimal(value)
     elif annotation is datetime:
-        require(type(value) is str and len(value) <= 40 and not value.endswith('-00:00'),
+        require(type(value) is str and len(value) <= 40
+                and value.endswith(('+00:00', 'Z')),
                 'MA_UTC_REQUIRED')
         try:
             value = datetime.fromisoformat(value)
@@ -153,7 +154,10 @@ class Record:
     @classmethod
     def from_json(cls, raw):
         require(type(raw) is str and len(raw) <= MAX_JSON_BYTES, 'MA_DOCUMENT_LIMIT')
-        require(len(raw.encode('utf-8')) <= MAX_JSON_BYTES, 'MA_DOCUMENT_LIMIT')
+        try:
+            require(len(raw.encode('utf-8')) <= MAX_JSON_BYTES, 'MA_DOCUMENT_LIMIT')
+        except UnicodeEncodeError:
+            raise AnalystError('MA_JSON_ENCODING') from None
 
         def pairs(items):
             result = {}

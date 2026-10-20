@@ -11,6 +11,21 @@ INDICATOR_NAMES = ('ema_fast', 'ema_slow', 'rsi', 'macd', 'macd_signal',
                    'log_return_std', 'range', 'atr_ratio')
 
 
+def indicator_warmups(policy):
+    signal = policy.macd_slow + policy.macd_signal - 1
+    return dict(ema_fast=policy.ema_fast, ema_slow=policy.ema_slow, rsi=policy.rsi + 1,
+                macd=policy.macd_slow, macd_signal=signal, macd_histogram=signal,
+                atr=policy.atr, ema_fast_slope=policy.ema_fast + policy.slope,
+                ema_slow_slope=policy.ema_slow + policy.slope,
+                log_return_std=policy.volatility + 1, range=1, atr_ratio=policy.atr)
+
+
+def indicator_unit(name, instrument):
+    return ('INDEX_0_100' if name == 'rsi' else 'LOG_RETURN_PER_BAR'
+            if name == 'log_return_std' else 'DIMENSIONLESS' if name == 'atr_ratio'
+            else instrument.price_unit + ('_PER_BAR' if name.endswith('_slope') else ''))
+
+
 @dataclass(frozen=True, slots=True)
 class Instrument(Record):
     symbol: str = 'EUR/USD'
@@ -95,6 +110,13 @@ class Indicator(Record):
         require(self.status in ('READY', 'WARMUP', 'UNAVAILABLE'), 'MA_INDICATOR_STATUS')
         require((self.status == 'READY') == (self.value is not None), 'MA_INDICATOR_VALUE')
         require(self.status != 'READY' or self.observed_bars >= self.warmup_bars, 'MA_WARMUP')
+        if self.value is not None:
+            if self.name == 'rsi':
+                require(0 <= self.value <= 100, 'MA_RSI_RANGE')
+            if self.name in ('atr', 'range', 'atr_ratio', 'log_return_std'):
+                require(self.value >= 0, 'MA_NONNEGATIVE_METRIC')
+            if self.name in ('ema_fast', 'ema_slow'):
+                require(self.value > 0, 'MA_POSITIVE_METRIC')
 
 
 @dataclass(frozen=True, slots=True)
@@ -188,6 +210,12 @@ class MarketAssessment(Record):
         require(self.policy_sha256 == self.policy.sha256() and self.engine_version == ENGINE_VERSION,
                 'MA_VERSION_BINDING')
         require(tuple(i.name for i in self.indicators) == INDICATOR_NAMES, 'MA_INDICATOR_SET')
+        warmups = indicator_warmups(self.policy)
+        for indicator in self.indicators:
+            require(indicator.unit == indicator_unit(indicator.name, self.instrument)
+                    and indicator.warmup_bars == warmups[indicator.name]
+                    and indicator.observed_bars == (self.quality.evaluated_bars or 0),
+                    'MA_INDICATOR_BINDING')
         times = (self.window_start, self.window_end, self.last_closed_at, self.available_at)
         require(all(t is None for t in times) or all(t is not None for t in times), 'MA_PERIOD')
         if self.window_start is not None:
@@ -199,4 +227,8 @@ class MarketAssessment(Record):
         else:
             require(self.trend != 'UNKNOWN' and self.volatility != 'UNKNOWN'
                     and not self.quality.reasons and all(i.status == 'READY' for i in self.indicators)
-                    and self.source.source_kind == 'SYNTHETIC_TEST_FIXTURE', 'MA_COMPLETE')
+                    and self.source.source_kind == 'SYNTHETIC_TEST_FIXTURE'
+                    and self.window_start is not None and self.quality.age_seconds is not None
+                    and self.quality.age_seconds <= self.policy.max_age_seconds
+                    and (self.quality.missing_bars, self.quality.duplicates,
+                         self.quality.discontinuities) == (0, 0, 0), 'MA_COMPLETE')
