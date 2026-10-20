@@ -186,6 +186,19 @@ Los tests observan ConnectStart durante el ciclo SQL y exigen exclusivamente el
 endpoint PostgreSQL del fixture. Tooling/NuGet/runner quedan fuera de ese contador.
 El sentinel financiero ficticio permanece intacto. No es un firewall ni sandbox.
 
+Primera ejecución CI verificada:
+[39503947487](https://github.com/EngerING/TradingAgent/actions/runs/39503947487),
+commit `7adabf1b3360321fbaf865cb009a25de58fdb947`, árbol
+`0e1b76fc1f3a2531166067cb8ad7aded8b47b60f`: **61+21 aprobadas,0 fallidas,0 omitidas**.
+PostgreSQL17.11 Debian, SDK10.0.402, build0 warnings/errors, NuGet0 vulnerabilidades
+reportadas. Se descargó y contrastó el
+[artefacto12302112977](https://github.com/EngerING/TradingAgent/actions/runs/39503947487/artifacts/12302112977)
+con sus13 archivos; SHA-256 del ZIP
+`bc747cda378ac27b8713fe5c870da2dd9f495fe2b86916e3d26b712e7b5c0c75`.
+435 ConnectStart observados, todos al endpoint desechable. Los TRX registran
+11.729984s para M01.2 y0.9964526s para M01.1. Este cierre añade documentación;
+cualquier ejecución posterior conserva su propia identidad y artefacto.
+
 ## Revisión y límites
 
 Se aplicaron ingeniería senior, Graphify, TDD incremental, seguridad/PostgreSQL,
@@ -195,7 +208,9 @@ Git y revisión adversarial interna con contexto separado. Graphify histórico:
 
 Regresiones de revisión: separación issuer/runtime; scopes globales Paper/Live;
 frescura administrativa; expiración SQL NULL; precondición owner tras lock;
-deriva ACL privada. Las pruebas reproducen los cierres. Incidencias de desarrollo:
+deriva ACL privada y privilegios financieros por columna. Las pruebas reproducen
+los cierres. El tercer ciclo encontró la última omisión por columna; se corrigió
+y verificó con regresión, sin iniciar un cuarto ciclo interno. Incidencias de desarrollo:
 nombre de índice reservado, fixture con varias sentencias parametrizadas y forma
 del JSON NuGet sin frameworks; se corrigieron sin debilitar controles históricos.
 

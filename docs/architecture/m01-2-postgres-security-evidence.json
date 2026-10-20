@@ -139,7 +139,32 @@
     "m011_expected_tests": 21,
     "no_skips": true,
     "retention_days": 14,
-    "status": "Pending initial branch publication; artifacts bound to their exact commit are authoritative"
+    "status": "PASS for verified implementation commit; final documentation self reference omitted",
+    "verified_execution": {
+      "commit": "7adabf1b3360321fbaf865cb009a25de58fdb947",
+      "tree": "0e1b76fc1f3a2531166067cb8ad7aded8b47b60f",
+      "run_id": 39503947487,
+      "url": "https://github.com/EngerING/TradingAgent/actions/runs/39503947487",
+      "conclusion": "success",
+      "m012_passed": 61,
+      "m011_passed": 21,
+      "failed": 0,
+      "skipped": 0,
+      "m012_duration_seconds": 11.729984,
+      "m011_duration_seconds": 0.9964526,
+      "sdk": "10.0.402",
+      "postgres": "17.11 (Debian 17.11-1.pgdg12+2)",
+      "warnings": 0,
+      "errors": 0,
+      "vulnerable_packages_reported": 0,
+      "socket_connect_starts": 435,
+      "connections_outside_disposable_postgres": 0,
+      "artifact_id": 12302112977,
+      "artifact_url": "https://github.com/EngerING/TradingAgent/actions/runs/39503947487/artifacts/12302112977",
+      "artifact_sha256": "bc747cda378ac27b8713fe5c870da2dd9f495fe2b86916e3d26b712e7b5c0c75",
+      "artifact_files": 13,
+      "downloaded_and_content_verified": true
+    }
   },
   "financial_operations_executed": 0,
   "operational_database_connections": 0,
@@ -224,9 +249,9 @@
     },
     {
       "path": "docs/architecture/m01-2-postgres-security.md",
-      "bytes": 13995,
-      "lines": 215,
-      "sha256": "c46123004273e5e6f2b8fee99efb96e43be907bcbfa697e7411e3561cb751cce"
+      "bytes": 15005,
+      "lines": 230,
+      "sha256": "c99a1d6f404f07bcce1bc8322a6693e36cba0101dedbc9efccac9d7c12012461"
     },
     {
       "path": "src/TradingAgent.Identity.Migrations/.gitattributes",
@@ -360,5 +385,6 @@
       "lines": 131,
       "sha256": "281ba80bc36fc578a7f0d40cc325a77869adfefa67c5dce2a72b02ecad31cfb4"
     }
-  ]
+  ],
+  "result_validator_negative_check": "Incomplete/zero-test TRX rejected locally"
 }
