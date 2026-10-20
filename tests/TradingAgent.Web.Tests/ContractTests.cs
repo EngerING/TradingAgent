@@ -40,8 +40,9 @@ public sealed class ContractTests
     public async Task UnconfiguredPortsNeverVerifyAnIdentityOrGrantAccess()
     {
         var ports = new UnconfiguredSecurity();
-        Assert.Equal(IdentityVerificationStatus.Unavailable,
-            await ports.VerifyAsync("untrusted-input".AsMemory(), CancellationToken.None));
+        var verification = await ports.VerifyAsync("untrusted-input".AsMemory(), CancellationToken.None);
+        Assert.Equal(IdentityVerificationStatus.Unavailable, verification.Status);
+        Assert.Null(verification.Identity);
         Assert.Same(SessionView.Unavailable, await ports.GetCurrentAsync(CancellationToken.None));
         Assert.Equal(AccessDecision.Denied,
             await ports.CheckAsync(Guid.NewGuid(), WebCapability.ResearchRead, Guid.NewGuid(), CancellationToken.None));

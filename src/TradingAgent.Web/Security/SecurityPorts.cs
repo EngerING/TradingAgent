@@ -4,10 +4,20 @@ public enum IdentityVerificationStatus { Unavailable }
 public enum AccessDecision { Denied }
 public enum WebCapability { ResearchRead }
 
+/// <summary>The result reserves an identity field without claiming verification in this stage.</summary>
+public sealed class IdentityVerification
+{
+    private IdentityVerification() { }
+
+    public static IdentityVerification Unavailable { get; } = new();
+    public IdentityVerificationStatus Status => IdentityVerificationStatus.Unavailable;
+    public ExternalIdentity? Identity => null;
+}
+
 public interface IExternalIdentityVerifier
 {
     // No claim decoding, token retention or provider connection exists in M01.1.
-    ValueTask<IdentityVerificationStatus> VerifyAsync(ReadOnlyMemory<char> credential, CancellationToken cancellationToken);
+    ValueTask<IdentityVerification> VerifyAsync(ReadOnlyMemory<char> credential, CancellationToken cancellationToken);
 }
 
 public interface IWebSessionReader
@@ -25,10 +35,10 @@ public interface IWebAuthorizer
 /// <summary>Explicitly unavailable ports; these are not a mock identity provider or a session store.</summary>
 public sealed class UnconfiguredSecurity : IExternalIdentityVerifier, IWebSessionReader, IWebAuthorizer
 {
-    public ValueTask<IdentityVerificationStatus> VerifyAsync(ReadOnlyMemory<char> credential, CancellationToken cancellationToken)
+    public ValueTask<IdentityVerification> VerifyAsync(ReadOnlyMemory<char> credential, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return ValueTask.FromResult(IdentityVerificationStatus.Unavailable);
+        return ValueTask.FromResult(IdentityVerification.Unavailable);
     }
 
     public ValueTask<SessionView> GetCurrentAsync(CancellationToken cancellationToken)

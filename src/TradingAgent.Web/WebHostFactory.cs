@@ -25,9 +25,9 @@ public static class WebHostFactory
         });
         builder.Services.AddRouting();
         // No scheme/handler, cookie, JWT or default identity provider is installed.
-        builder.Services.AddAuthentication();
-        builder.Services.AddAuthorizationBuilder().SetFallbackPolicy(
-            new AuthorizationPolicyBuilder().RequireAssertion(_ => false).Build());
+        builder.Services.AddAuthenticationCore();
+        var denyAll = new AuthorizationPolicyBuilder().RequireAssertion(_ => false).Build();
+        builder.Services.AddAuthorizationBuilder().SetFallbackPolicy(denyAll).SetDefaultPolicy(denyAll);
         builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, UnavailableAuthorizationHandler>();
         builder.Services.AddSingleton<IExternalIdentityVerifier, UnconfiguredSecurity>();
         builder.Services.AddSingleton<IWebSessionReader, UnconfiguredSecurity>();
@@ -50,6 +50,18 @@ public static class WebHostFactory
                 await context.Response.WriteAsJsonAsync(WebError.Create(WebErrorCode.InternalError), context.RequestAborted);
             }
         });
+        app.UseStatusCodePages(async statusContext =>
+        {
+            var context = statusContext.HttpContext;
+            var code = context.Response.StatusCode switch
+            {
+                404 => WebErrorCode.NotFound,
+                405 => WebErrorCode.MethodNotAllowed,
+                503 => WebErrorCode.ServiceUnavailable,
+                _ => WebErrorCode.InternalError
+            };
+            await context.Response.WriteAsJsonAsync(WebError.Create(code), context.RequestAborted);
+        });
         app.UseRouting();
         app.UseAuthentication();
         app.UseAuthorization();
@@ -62,22 +74,15 @@ public static class WebHostFactory
         public async Task HandleAsync(RequestDelegate next, HttpContext context, AuthorizationPolicy policy,
             PolicyAuthorizationResult authorizeResult)
         {
-            if (authorizeResult.Succeeded)
+            if (authorizeResult.Succeeded || context.GetEndpoint() is not RouteEndpoint)
             {
                 await next(context);
                 return;
             }
 
-            // Unknown routes remain 404; a mapped future protected route fails closed with 503.
-            var status = context.GetEndpoint() is null ? 404 : context.Response.StatusCode == 405 ? 405 : 503;
-            context.Response.StatusCode = status;
-            var code = status switch
-            {
-                404 => WebErrorCode.NotFound,
-                405 => WebErrorCode.MethodNotAllowed,
-                _ => WebErrorCode.ServiceUnavailable
-            };
-            await context.Response.WriteAsJsonAsync(WebError.Create(code), context.RequestAborted);
+            // Routing owns 404/405; every mapped protected route is unavailable in M01.1.
+            context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+            await context.Response.WriteAsJsonAsync(WebError.Create(WebErrorCode.ServiceUnavailable), context.RequestAborted);
         }
     }
 }
