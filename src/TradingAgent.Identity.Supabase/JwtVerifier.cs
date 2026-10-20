@@ -45,7 +45,7 @@ public sealed class JwtVerifier(JwksCache keys, AuthConfiguration configuration,
                 {
                     var at = DateTimeOffset.FromUnixTimeSeconds(method.GetProperty("timestamp").GetInt64());
                     if (at > issued || at > now) throw new AuthException(AuthFailure.Invalid);
-                    if (method.GetProperty("method").GetString() == "totp" && (mfa is null || at > mfa)) mfa = at;
+                    if (method.GetProperty("method").GetString() is "totp" or "mfa/totp" && (mfa is null || at > mfa)) mfa = at;
                 }
             }
             return new(new IdentityKey(configuration.Issuer, subject), session, aal, issued, expiry, mfa);

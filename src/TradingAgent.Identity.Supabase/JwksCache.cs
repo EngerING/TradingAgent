@@ -28,7 +28,8 @@ public sealed class JwksCache(IServiceScopeFactory scopes, TimeProvider clock) :
                     if (set.Keys.Count is < 1 or > 10 || set.Keys.Select(k => k.Kid).Distinct(StringComparer.Ordinal).Count() != set.Keys.Count ||
                         set.Keys.Any(k => k.Kty != "EC" || k.Crv != "P-256" || k.Use != "sig" || k.Alg != "ES256" || string.IsNullOrWhiteSpace(k.Kid) || k.Kid.Length > 128 || !string.IsNullOrEmpty(k.D)))
                         throw new AuthException(AuthFailure.Unavailable);
-                    keys = set.GetSigningKeys().ToArray(); if (keys.Length != set.Keys.Count) throw new AuthException(AuthFailure.Unavailable);
+                    var candidate = set.GetSigningKeys().ToArray(); if (candidate.Length != set.Keys.Count) throw new AuthException(AuthFailure.Unavailable);
+                    keys = candidate;
                     fetched = now;
                 }
                 catch (AuthException) when (now - fetched < TimeSpan.FromMinutes(10) && match.Length == 1) { return match; }

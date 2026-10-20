@@ -10,7 +10,10 @@ public sealed class AccessCredential(string token, VerifiedIdentity identity)
     public override string ToString() => "[REDACTED_AUTH_CREDENTIAL]";
 }
 public sealed record TotpFactor(Guid Id, bool Verified);
-public sealed record TotpEnrollment(Guid FactorId, string Secret, string Uri);
+public sealed record TotpEnrollment(Guid FactorId, string Secret, string Uri)
+{
+    public override string ToString() => "[REDACTED_TOTP_ENROLLMENT]";
+}
 public sealed record TotpChallenge(Guid Id, DateTimeOffset ExpiresAt);
 
 public sealed class SupabaseAuthClient(AuthTransport transport, JwtVerifier verifier)
@@ -74,5 +77,11 @@ public sealed class SupabaseAuthClient(AuthTransport transport, JwtVerifier veri
     public async Task LogoutAsync(AccessCredential credential, CancellationToken cancellationToken)
     {
         using var document = await transport.SendAsync(HttpMethod.Post, "/auth/v1/logout?scope=local", null, credential.Token, cancellationToken).ConfigureAwait(false);
+    }
+    public async Task RemoveUnverifiedFactorAsync(AccessCredential credential, Guid factor, CancellationToken cancellationToken)
+    {
+        var factors = await CheckUserAsync(credential, cancellationToken).ConfigureAwait(false);
+        if (!factors.Any(f => f.Id == factor && !f.Verified)) throw new AuthException(AuthFailure.Invalid);
+        using var document = await transport.SendAsync(HttpMethod.Delete, $"/auth/v1/factors/{factor:D}", null, credential.Token, cancellationToken).ConfigureAwait(false);
     }
 }

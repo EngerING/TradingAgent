@@ -16,6 +16,11 @@ deniega sesiones previas, aunque sus filas SQL sigan existentes hasta expirar.
 Las cookies contienen referencias aleatorias opacas, separadas para preauth y
 sesión. El almacén limita entradas y las elimina al vencer; las mutaciones de
 preauth se serializan y cada challenge se consume antes de enviar verify.
+La sesión de este piloto se limita también al deadline original de preauth
+(máximo5min desde contraseña). Así el puente de cancelación preauth→sesión no
+vence antes que una cookie MFA demorada potencialmente utilizable. Se conserva
+ese puente hasta el mismo límite; logout con solo preauth revoca la sesión ya
+emitida aunque su respuesta HTTP todavía no haya llegado al navegador.
 
 La verificación JWT usa IdentityModel, ES256 y endpoints derivados de configuración
 confiable, no de claims. Identidad/issuer/session_id se ligan entre password,

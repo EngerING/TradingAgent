@@ -34,7 +34,8 @@ public sealed class AuthTransport(HttpClient client, AuthConfiguration configura
                 memory.Write(buffer, 0, count);
             }
             var document = JsonDocument.Parse(memory.ToArray(), new JsonDocumentOptions { MaxDepth = 16 });
-            EnsureUnique(document.RootElement); return document;
+            try { EnsureUnique(document.RootElement); return document; }
+            catch { document.Dispose(); throw; }
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested) { throw new AuthException(AuthFailure.Unavailable); }
         catch (HttpRequestException) { throw new AuthException(AuthFailure.Unavailable); }
@@ -58,6 +59,6 @@ public static class AuthServices
         services.AddSingleton(configuration); services.AddSingleton(TimeProvider.System); services.AddSingleton<JwksCache>(); services.AddSingleton<JwtVerifier>();
         services.AddTransient<SupabaseAuthClient>();
         return services.AddHttpClient<AuthTransport>(client => client.Timeout = TimeSpan.FromSeconds(4)).RemoveAllLoggers()
-            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false, UseCookies = false, UseProxy = false, MaxConnectionsPerServer = 8, ConnectTimeout = TimeSpan.FromSeconds(2), MaxResponseHeadersLength = 16 });
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false, UseCookies = false, UseProxy = false, MaxConnectionsPerServer = 8, ConnectTimeout = TimeSpan.FromSeconds(2), MaxResponseHeadersLength = 16, PooledConnectionLifetime = TimeSpan.FromMinutes(2), PooledConnectionIdleTimeout = TimeSpan.FromSeconds(30) });
     }
 }

@@ -9,6 +9,8 @@ public sealed class JwtTests
     [Theory]
     [InlineData("expired")] [InlineData("issuer")] [InlineData("audience")] [InlineData("service")] [InlineData("anonymous")]
     [InlineData("subject")] [InlineData("session")] [InlineData("future")] [InlineData("nbf")] [InlineData("aal")] [InlineData("none")]
+    [InlineData("longlife")] [InlineData("missingiat")] [InlineData("missingexp")] [InlineData("duplicate")] [InlineData("jku")]
+    [InlineData("hs256")]
     public async Task InvalidJwtIsDenied(string variant)
     {
         await using var provider = new SimulatedAuth(); await provider.StartAsync();
@@ -20,6 +22,12 @@ public sealed class JwtTests
         await using var provider = new SimulatedAuth(); await provider.StartAsync(); var user = Guid.NewGuid(); var session = Guid.NewGuid();
         var proof = await provider.Services.GetRequiredService<JwtVerifier>().VerifyAsync(provider.Token(user, session).AsMemory(), CancellationToken.None);
         Assert.NotNull(proof); Assert.Equal(user, proof.Identity.Subject); Assert.Equal(session, proof.ProviderSessionId); Assert.Equal(2, proof.AssuranceLevel);
+    }
+    [Fact]
+    public async Task LegacyTotpMethodWithSignedTimestampIsAlsoAccepted()
+    {
+        await using var provider = new SimulatedAuth(); await provider.StartAsync();
+        Assert.NotNull(await provider.Services.GetRequiredService<JwtVerifier>().VerifyAsync(provider.Token(Guid.NewGuid(), Guid.NewGuid(), variant: "legacytotp").AsMemory(), CancellationToken.None));
     }
     [Fact]
     public async Task AalOneAndMissingMfaEvidenceCannotIssueSession()
