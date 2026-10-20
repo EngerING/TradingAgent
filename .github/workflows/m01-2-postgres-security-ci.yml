@@ -1,0 +1,103 @@
+name: M01.2 PostgreSQL security audit
+
+on:
+  push:
+    branches:
+      - codex/m01-2-postgres-security
+
+permissions:
+  contents: read
+
+jobs:
+  security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_GENERATE_ASPNET_CERTIFICATE: 'false'
+      DOTNET_NOLOGO: '1'
+      DOTNET_CLI_UI_LANGUAGE: en
+    services:
+      postgres:
+        image: postgres:17.11-bookworm@sha256:3645570cccdfa447589da9f57dd740faa29b30938e861289a5574b6ca6b03826
+        env:
+          # Public fixture for this ephemeral CI cluster; never an operational credential.
+          POSTGRES_PASSWORD: m012-public-bootstrap-only
+          POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256 --set=cluster_name=m012_disposable_ci
+        ports:
+          - 5432/tcp
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout exact push without stored credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Verify identity and preservation of all baseline files
+        run: ./build/identity/preservation.ps1
+
+      - name: Install exact SDK without dependency cache
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: '10.0.402'
+          cache: false
+
+      - name: Build audit and test M01.2 against disposable PostgreSQL
+        env:
+          M012_TEST_PORT: ${{ job.services.postgres.ports[5432] }}
+          M012_BOOTSTRAP_PASSWORD: m012-public-bootstrap-only
+          M012_CLUSTER_MARKER: m012_disposable_ci
+          NUGET_PACKAGES: ${{ runner.temp }}/m012-nuget-packages
+          NUGET_HTTP_CACHE_PATH: ${{ runner.temp }}/m012-nuget-http-cache
+        run: ./build/identity/check.ps1 -Dotnet dotnet
+
+      - name: Run unchanged 21-test M01.1 suite and dependency audit
+        env:
+          NUGET_PACKAGES: ${{ runner.temp }}/m012-nuget-packages
+          NUGET_HTTP_CACHE_PATH: ${{ runner.temp }}/m012-nuget-http-cache
+        run: |
+          ./build/web/check.ps1 -Dotnet dotnet
+          ./build/identity/verify-results.ps1 -Trx ./tmp/m011/check/m011.trx -Assembly TradingAgent.Web.Tests.dll -Expected ./build/identity/expected-m011-tests.json -Summary ./artifacts/m012/m011-summary.json
+
+      - name: Validate complete evidence and write job summary
+        if: always()
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $required = @('identity.json','sdk-version.txt','restore.log','build.log','dependencies.json','m012.trx','summary.json','isolation.json','m011-summary.json')
+          foreach ($file in $required) { if (!(Test-Path -LiteralPath "./artifacts/m012/$file")) { throw "Missing evidence: $file" } }
+          $summary = Get-Content ./artifacts/m012/summary.json -Raw | ConvertFrom-Json
+          $baseline = Get-Content ./artifacts/m012/m011-summary.json -Raw | ConvertFrom-Json
+          $isolation = Get-Content ./artifacts/m012/isolation.json -Raw | ConvertFrom-Json
+          $identity = Get-Content ./artifacts/m012/identity.json -Raw | ConvertFrom-Json
+          if ($isolation.connections_outside_disposable_postgres -ne 0 -or $isolation.socket_connect_starts -lt 1 -or $identity.preservation -ne 'PASS') { throw 'Isolation or preservation failed.' }
+          "M01.2: $($summary.passed) passed, $($summary.failed) failed, $($summary.skipped) skipped. M01.1: $($baseline.passed) passed. PostgreSQL: $($isolation.postgres_version). OFFLINE / NO_TRADE. Independent audit pending." >> $env:GITHUB_STEP_SUMMARY
+
+      - name: Preserve allowlisted evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: m012-security-evidence-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            artifacts/m012/identity.json
+            artifacts/m012/sdk-version.txt
+            artifacts/m012/restore.log
+            artifacts/m012/build.log
+            artifacts/m012/dependencies.json
+            artifacts/m012/m012.trx
+            artifacts/m012/summary.json
+            artifacts/m012/isolation.json
+            artifacts/m012/m011-summary.json
+            tmp/m011/check/restore.log
+            tmp/m011/check/build.log
+            tmp/m011/check/dependencies.json
+            tmp/m011/check/m011.trx

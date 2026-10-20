@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../../build/web/Web.props" />
+  <ItemGroup><PackageReference Include="Npgsql" Version="10.0.3" /></ItemGroup>
+  <ItemGroup><EmbeddedResource Include="../../build/identity/schema-manifest.json" LogicalName="identity.manifest.json" /></ItemGroup>
+</Project>

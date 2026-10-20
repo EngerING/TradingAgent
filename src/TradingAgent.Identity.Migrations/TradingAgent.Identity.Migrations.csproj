@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../../build/web/Web.props" />
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../TradingAgent.Identity.Persistence/TradingAgent.Identity.Persistence.csproj" /></ItemGroup>
+  <ItemGroup><EmbeddedResource Include="Sql/*.sql" /></ItemGroup>
+</Project>

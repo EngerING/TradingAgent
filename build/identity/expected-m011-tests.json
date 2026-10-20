@@ -1,0 +1,23 @@
+[
+  "TradingAgent.Web.Tests.BoundaryTests.ExceptionResponsesContainNoInternalDetailsEvenInDevelopment",
+  "TradingAgent.Web.Tests.BoundaryTests.HealthContainsOnlyLivenessAndNeverIssuesACookie",
+  "TradingAgent.Web.Tests.BoundaryTests.OnlyHealthIsMappedAndFutureProtectedRoutesFailClosed",
+  "TradingAgent.Web.Tests.BoundaryTests.OtherRoutesAndMethodsCannotExposeDataOrExecute(method: \"DELETE\", path: \"/health\", expected: 405)",
+  "TradingAgent.Web.Tests.BoundaryTests.OtherRoutesAndMethodsCannotExposeDataOrExecute(method: \"GET\", path: \"/bff/session\", expected: 404)",
+  "TradingAgent.Web.Tests.BoundaryTests.OtherRoutesAndMethodsCannotExposeDataOrExecute(method: \"GET\", path: \"/dashboardHub\", expected: 404)",
+  "TradingAgent.Web.Tests.BoundaryTests.OtherRoutesAndMethodsCannotExposeDataOrExecute(method: \"GET\", path: \"/proxy/api/dashboard\", expected: 404)",
+  "TradingAgent.Web.Tests.BoundaryTests.OtherRoutesAndMethodsCannotExposeDataOrExecute(method: \"GET\", path: \"/swagger/v1/swagger.json\", expected: 404)",
+  "TradingAgent.Web.Tests.BoundaryTests.OtherRoutesAndMethodsCannotExposeDataOrExecute(method: \"POST\", path: \"/api/emergency/settle\", expected: 404)",
+  "TradingAgent.Web.Tests.BoundaryTests.OtherRoutesAndMethodsCannotExposeDataOrExecute(method: \"POST\", path: \"/api/orders\", expected: 404)",
+  "TradingAgent.Web.Tests.BoundaryTests.OtherRoutesAndMethodsCannotExposeDataOrExecute(method: \"POST\", path: \"/bff/auth/login\", expected: 404)",
+  "TradingAgent.Web.Tests.BoundaryTests.OtherRoutesAndMethodsCannotExposeDataOrExecute(method: \"POST\", path: \"/health\", expected: 405)",
+  "TradingAgent.Web.Tests.ContractTests.ErrorsUseClosedCodesAndServerGeneratedCorrelationWithoutDetails",
+  "TradingAgent.Web.Tests.ContractTests.ExternalIdentityIsIssuerAndSubjectRatherThanEmailOrAuthority",
+  "TradingAgent.Web.Tests.ContractTests.PortsRespectCancellationInsteadOfContinuingWork",
+  "TradingAgent.Web.Tests.ContractTests.SessionViewCannotPresentAnActiveSessionOrExecutionPermission",
+  "TradingAgent.Web.Tests.ContractTests.UnconfiguredPortsNeverVerifyAnIdentityOrGrantAccess",
+  "TradingAgent.Web.Tests.IsolationTests.CompiledHostHasNoOperationalOrOutboundOrFileWriteCapabilities",
+  "TradingAgent.Web.Tests.IsolationTests.ContainerHasNoProviderSchemeBusinessWorkerOrOutboundClient",
+  "TradingAgent.Web.Tests.IsolationTests.DefaultAndFallbackPoliciesDenyEvenAnAuthenticatedPrincipal",
+  "TradingAgent.Web.Tests.IsolationTests.InMemoryHostAndUnavailablePortsMakeZeroSocketConnectionsOrDnsRequests"
+]

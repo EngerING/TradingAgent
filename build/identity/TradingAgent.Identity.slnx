@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="../../src/TradingAgent.Identity.Persistence/TradingAgent.Identity.Persistence.csproj" />
+  <Project Path="../../src/TradingAgent.Identity.Migrations/TradingAgent.Identity.Migrations.csproj" />
+  <Project Path="../../tests/TradingAgent.Identity.Tests/TradingAgent.Identity.Tests.csproj" />
+</Solution>

@@ -1,0 +1,364 @@
+{
+  "schema": "trading.m012.postgres_security_evidence",
+  "schema_version": 1,
+  "inspection_date": "2026-10-20",
+  "timezone": "America/La_Paz",
+  "mode": "OFFLINE",
+  "decision": "NO_TRADE",
+  "branch": "codex/m01-2-postgres-security",
+  "baseline_commit": "6fb5068e8ab77658530874856bdabb05b9af2316",
+  "baseline_tree": "ee49b76516288c0f79d6e438a7e668390c95d7e3",
+  "final_commit_and_tree": "Recorded by CI identity.json and final delivery; self reference omitted",
+  "local_build": {
+    "sdk": "10.0.402",
+    "runtime": "10.0.13",
+    "target": "net10.0",
+    "configuration": "Release",
+    "warnings": 0,
+    "errors": 0,
+    "command": "./build/identity/local-test.ps1",
+    "restore_locked": true,
+    "nuget_audit": "true/all/low",
+    "vulnerable_packages_reported": 0,
+    "dependency_projects": 3,
+    "audit_suppressions": 0
+  },
+  "local_tests": {
+    "assembly": "TradingAgent.Identity.Tests.dll",
+    "total": 61,
+    "passed": 61,
+    "failed": 0,
+    "skipped": 0,
+    "duration_seconds": 22.7350528,
+    "expected_test_manifest": "PASS",
+    "mode": "OFFLINE",
+    "decision": "NO_TRADE"
+  },
+  "m011_rerun": {
+    "assembly": "TradingAgent.Web.Tests.dll",
+    "total": 21,
+    "passed": 21,
+    "failed": 0,
+    "skipped": 0,
+    "duration_seconds": 0.8892896,
+    "expected_test_manifest": "PASS",
+    "mode": "OFFLINE",
+    "decision": "NO_TRADE"
+  },
+  "isolation": {
+    "mode": "OFFLINE",
+    "decision": "NO_TRADE",
+    "socket_connect_starts": 380,
+    "connections_outside_disposable_postgres": 0,
+    "scope": "SQL fixture lifecycle; tooling excluded",
+    "postgres_version": "17.5"
+  },
+  "postgres": {
+    "local": "17.5 isolated new cluster; no existing service used",
+    "ci_image": "postgres:17.11-bookworm@sha256:3645570cccdfa447589da9f57dd740faa29b30938e861289a5574b6ca6b03826",
+    "image_manifest_verified_from": "registry-1.docker.io/v2/library/postgres/manifests/17.11-bookworm",
+    "image_source_commit": "2603e26e245e558218728ee14e0a42dcb020dc7f",
+    "operational_version_not_inspected": true,
+    "local_docker_daemon_unavailable": true
+  },
+  "preservation": {
+    "base_files": 729,
+    "raw_sha256_differences": 0,
+    "baseline_manifest_sha256": "d7ff0c41c845778216e5c669245eeeccc46c1cd1709106083d7b0183a13d393c",
+    "protected_git_objects": {
+      "python/trading_agent/core_v3": "0c6a3c211249151582556862d610ffe29ae221a0",
+      "python/trading_agent/market_analyst": "1cdcffba113842977a881b57912be1e101eae688",
+      "src/TradingAgent.Infrastructure": "c9322ebfb7e813c71ba6098eedabf5ba8b6970dd",
+      "src/TradingAgent.Core": "e7c3f7cfa0ed45a8e6f18100c14f639c8f8c37a6",
+      "src/TradingAgent.Api": "3cb11938debcbf3f1d21001a9d6b10611f86751b",
+      "src/TradingAgent.ConfigurationLab": "dce30b74b09fadc1d08636d67cf7b6057c10126c",
+      "src/TradingAgent.ResearchLab": "81c1937682094bfc1c87f962537600fce897f609",
+      "frontend": "8b2101aeb2c3cd8661e95ee8ae13511e5dff09e2",
+      "src/TradingAgent.Web": "220a78a53d2dbaaee7094b156dd283ab886c7aae",
+      "tests/TradingAgent.Web.Tests": "21fe88719c1f3816ebf800d5fb16f6b8dd608173",
+      "tests/TradingAgent.Tests": "a57fbf2b61587b948533388f82271963a421144e",
+      "build/web": "fa8dc4abf916dc7c50a5832103cf4f47fafac0ad",
+      "Directory.Build.props": "e8f7495b8834700231914c090846d2a2bece5c95",
+      "TradingAgent.sln": "85f076d47efc02709bc44708ac9b86e5bcc5f514",
+      ".github/workflows/m01-1-bff-ci.yml": "940a5213f9965872f1879d8f42c982b6aa9bccf8"
+    },
+    "historical_migration_sha256": {
+      "src/TradingAgent.Infrastructure/Migrations/001_initial.sql": "68e4482d97be7486fffc5742003fd747369107e5926daddc81f2d486642c5786",
+      "src/TradingAgent.Infrastructure/Migrations/002_retention.sql": "717a7cb43391a86503e7daad1a17eb3004f709f3384dce9362a06061bb648ade",
+      "src/TradingAgent.Infrastructure/Migrations/003_paper_observations.sql": "23bd421bf499a1c31e62788a9a136edeb2e5be4a64a667fe20e8d963fc4f4618",
+      "src/TradingAgent.Infrastructure/Migrations/004_paper_lab.sql": "02a1908795d4b01fa108d384ec0ded8a2cc37bbe0ddb42f88578b526a0db3a82",
+      "src/TradingAgent.Infrastructure/Migrations/005_ford_diagnostic.sql": "d4246a0cdd07defa89b70d971421c63bf6dd0c54abfef8f1bed733673f91a189",
+      "src/TradingAgent.Infrastructure/Migrations/006_eurusd_shadow.sql": "3b07d269b5f63f19744ffc6813abd1954b238104eccc18b79b4c81707ac3e183",
+      "src/TradingAgent.Infrastructure/Migrations/007_dashboard_chat.sql": "8be0634a1cf952871d0080de0685d356b8dd6a39cb7de5fe45ad8a2a5804fd4e",
+      "src/TradingAgent.Infrastructure/Migrations/008_eurusd_exploratory.sql": "1499b01c574d0ea5117ebf18dd420c3d7b4734d117c52e7d0f46b0606e2cfa38",
+      "src/TradingAgent.Infrastructure/Migrations/009_kronos.sql": "0f33c41ca04201a06e5a0acb81e256e72a1393603dea35c71a417461036d933e",
+      "src/TradingAgent.Infrastructure/Migrations/010_r10_price_risk.sql": "9895ea6574a804b7ed03272ff86a5f669b53551fcbf732ce9db78d11c781cc78",
+      "src/TradingAgent.Infrastructure/Migrations/011_aggressive_growth.sql": "332b5a62e60e62f5f5925a5ce703085839e9d131f5b4789de9751f6386165343"
+    },
+    "main": "f67fa92086d10b9562df214f4e869344bf0753d8",
+    "m011_branch": "6fb5068e8ab77658530874856bdabb05b9af2316",
+    "market_analyst_branch": "b1643b2ba31e1430ce3384b83bff471adb5de17a",
+    "preexisting_untracked": {
+      "docs/architecture/core-v3-phase0-audit.md": "419d1e97b7f7017bddebd3074b1433d48702a59a274194f017129933e4314537",
+      "docs/manual/TradingAgent_Manual_Tecnico_Integral.pdf": "1f31321892f532b3d5de1bc3d574bd5f66c3af38ae634d7173b6b173c49b3944"
+    }
+  },
+  "schema_manifest": {
+    "1": "b6720dc5b59525e4e366245e938f6a64cf5eaf7eb7e064dbe26f13c67474f326",
+    "2": "1709f1dbbefff00cf2de962ef27690a94ab3a6d80eae759f4cc5bd017b6e477e"
+  },
+  "review": {
+    "type": "Internal adversarial review in separate agent context; manual independent package requested by user",
+    "bounded_cycles": 3,
+    "no_external_cli_or_transmission": true,
+    "regressions": [
+      "issuer/runtime credential separation",
+      "Paper administrator reactivating latent Live authority",
+      "administrative verified_at freshness",
+      "SQL NULL proof expiry",
+      "owner scope precondition after lock",
+      "private ACL drift",
+      "financial column privileges"
+    ],
+    "limit": "Last cycle found column ACL omission; fixed and verified by regression; no fourth internal cycle. Independent audit pending."
+  },
+  "secret_review": {
+    "tracked_and_new_pattern_scan": "PASS",
+    "sensitive_paths": "PASS",
+    "manual_new_source_and_workflow_review": "PASS",
+    "real_credentials_requested_or_stored": false,
+    "public_ci_bootstrap_password": "Synthetic ephemeral container fixture only; runtime passwords generated with CSPRNG",
+    "limitation": "Pattern/content review cannot prove universal absence of secrets."
+  },
+  "ci": {
+    "workflow": ".github/workflows/m01-2-postgres-security-ci.yml",
+    "runner": "ubuntu-24.04",
+    "permissions": "contents: read",
+    "trigger": "push only codex/m01-2-postgres-security",
+    "expected_tests": 61,
+    "m011_expected_tests": 21,
+    "no_skips": true,
+    "retention_days": 14,
+    "status": "Pending initial branch publication; artifacts bound to their exact commit are authoritative"
+  },
+  "financial_operations_executed": 0,
+  "operational_database_connections": 0,
+  "bff_connected": false,
+  "supabase_provider_implemented": false,
+  "next_stage_authorized": false,
+  "limitations": [
+    "Only disposable database targets implemented",
+    "Trusted verifier/issuer and PostgreSQL owner/host are outside runtime isolation",
+    "No downstream financial authorization or instantaneous revocation claim",
+    "Ambiguous commit has no automatic retry",
+    "No production backup/rotation or operational PostgreSQL certification",
+    "NuGet audit covers known package advisories, not the shared runtime"
+  ],
+  "inventory_hash_basis": "Git index blob bytes (canonical checkout content); evidence self hash omitted",
+  "new_file_inventory_excluding_this_evidence": [
+    {
+      "path": ".github/workflows/m01-2-postgres-security-ci.yml",
+      "bytes": 4618,
+      "lines": 103,
+      "sha256": "3137028ab059744354a6b9bf85f77963928ab39eecf30ebf9887893ca04182c7"
+    },
+    {
+      "path": "build/identity/TradingAgent.Identity.slnx",
+      "bytes": 329,
+      "lines": 5,
+      "sha256": "25695fbe1eb64d226e72f1caa88b11a558fbc8e1d9e1380520cc478b6a35525f"
+    },
+    {
+      "path": "build/identity/check.ps1",
+      "bytes": 4033,
+      "lines": 50,
+      "sha256": "49c6d39bbe4f4f5e2381e32ea19033095ab301ae1215123f906c440e23496b58"
+    },
+    {
+      "path": "build/identity/expected-m011-tests.json",
+      "bytes": 2542,
+      "lines": 23,
+      "sha256": "bbc1854fc445ca39667b3fd38d805baf5e42bc0f07f53f9eb40c0ce437743b4d"
+    },
+    {
+      "path": "build/identity/expected-tests.json",
+      "bytes": 7666,
+      "lines": 63,
+      "sha256": "249d646799dda3cd0a89d30d9da8c2cc747979261b83611ab0fc5e260d9df0b2"
+    },
+    {
+      "path": "build/identity/global.json",
+      "bytes": 79,
+      "lines": 1,
+      "sha256": "3f9b8063fdc946bf82db965d9a228d4ea581390f83680ee3b952fb0ec00b2cf3"
+    },
+    {
+      "path": "build/identity/local-test.ps1",
+      "bytes": 2327,
+      "lines": 34,
+      "sha256": "65c8001166f348185879b53206dcadd03215110cc747ee54c1f424bafdea9bc9"
+    },
+    {
+      "path": "build/identity/preservation.ps1",
+      "bytes": 3326,
+      "lines": 37,
+      "sha256": "88164abecfa5dbd477402bc585bdaf0bf3787df5fd7d9b341b7bd44fd16b8a0c"
+    },
+    {
+      "path": "build/identity/schema-manifest.json",
+      "bytes": 153,
+      "lines": 4,
+      "sha256": "4aacc5054409bf93a1de03c9b1523e72956d701a0eba795770cb9bb87fbcfab1"
+    },
+    {
+      "path": "build/identity/verify-results.ps1",
+      "bytes": 2294,
+      "lines": 26,
+      "sha256": "bdafc6a90397bcb64ca79104b9742497b7e2a155c60fc8cd5b74da60cb672068"
+    },
+    {
+      "path": "docs/architecture/m01-2-external-review.md",
+      "bytes": 3574,
+      "lines": 60,
+      "sha256": "08bb37a5812480af4c7f6b2f53d3b9e7f643c90ae33a5882738a0f6f79b64cbe"
+    },
+    {
+      "path": "docs/architecture/m01-2-postgres-security.md",
+      "bytes": 13995,
+      "lines": 215,
+      "sha256": "c46123004273e5e6f2b8fee99efb96e43be907bcbfa697e7411e3561cb751cce"
+    },
+    {
+      "path": "src/TradingAgent.Identity.Migrations/.gitattributes",
+      "bytes": 22,
+      "lines": 1,
+      "sha256": "61fe742a68e860c59a145056eef6fdfdcd53569116a3d5e53f0692ec81b6cdc6"
+    },
+    {
+      "path": "src/TradingAgent.Identity.Migrations/MigrationRunner.cs",
+      "bytes": 4744,
+      "lines": 56,
+      "sha256": "1f1bbf5f7c7d3ea55ea94d9b5b746d856181bc0d5ac01b03de5db1406b378ee1"
+    },
+    {
+      "path": "src/TradingAgent.Identity.Migrations/Program.cs",
+      "bytes": 1032,
+      "lines": 17,
+      "sha256": "cb4747204be9c006c4e2a07fb69a7e35643a6e2a9eab17fade3414c1db18f376"
+    },
+    {
+      "path": "src/TradingAgent.Identity.Migrations/Sql/V001__schema.sql",
+      "bytes": 8363,
+      "lines": 95,
+      "sha256": "b6720dc5b59525e4e366245e938f6a64cf5eaf7eb7e064dbe26f13c67474f326"
+    },
+    {
+      "path": "src/TradingAgent.Identity.Migrations/Sql/V002__operations.sql",
+      "bytes": 15074,
+      "lines": 169,
+      "sha256": "1709f1dbbefff00cf2de962ef27690a94ab3a6d80eae759f4cc5bd017b6e477e"
+    },
+    {
+      "path": "src/TradingAgent.Identity.Migrations/TradingAgent.Identity.Migrations.csproj",
+      "bytes": 356,
+      "lines": 6,
+      "sha256": "0f39ee9f8bac614bfc9499d0857ef6b407d257d3f08cfc63eb40a0b24231fb3f"
+    },
+    {
+      "path": "src/TradingAgent.Identity.Migrations/packages.lock.json",
+      "bytes": 1114,
+      "lines": 34,
+      "sha256": "e0faca830b95cbe7ddd17c93bbe050472ac548c069bdb2d7e7d93419425eaab9"
+    },
+    {
+      "path": "src/TradingAgent.Identity.Persistence/Contracts.cs",
+      "bytes": 7575,
+      "lines": 134,
+      "sha256": "a62f7c0e2246de0e53a27731c325311ea40cb4c029237dc7e9bde0f5187f1fbd"
+    },
+    {
+      "path": "src/TradingAgent.Identity.Persistence/Repositories.cs",
+      "bytes": 12394,
+      "lines": 156,
+      "sha256": "fb0afca701b22f55d200a8072f08bade132c513691fe8655211e867291c6658a"
+    },
+    {
+      "path": "src/TradingAgent.Identity.Persistence/SecurityAuditReader.cs",
+      "bytes": 1753,
+      "lines": 27,
+      "sha256": "8578f756d850093e87f71f07383595f4e389707d9153570f577752e563d1deae"
+    },
+    {
+      "path": "src/TradingAgent.Identity.Persistence/SecurityDatabase.cs",
+      "bytes": 10197,
+      "lines": 145,
+      "sha256": "99e0ef48eebd9173f7ca3b33082d85ae485c3d27dceb9cd8c220ae936a220f1d"
+    },
+    {
+      "path": "src/TradingAgent.Identity.Persistence/TradingAgent.Identity.Persistence.csproj",
+      "bytes": 309,
+      "lines": 5,
+      "sha256": "697e4b8ada6680cf1fd969b233dd780a7cf891995f097b02ad4fb7d0db89acae"
+    },
+    {
+      "path": "src/TradingAgent.Identity.Persistence/packages.lock.json",
+      "bytes": 995,
+      "lines": 29,
+      "sha256": "394acf13f58ebe99a2479e010d851af03e7150e08ab645131dcc2edb085f6fad"
+    },
+    {
+      "path": "tests/TradingAgent.Identity.Tests/ConcurrencyTests.cs",
+      "bytes": 12226,
+      "lines": 142,
+      "sha256": "d6afd906cc86819b05cd433451bb4382bde8acd4adb4a4d550b2cbbc119fc323"
+    },
+    {
+      "path": "tests/TradingAgent.Identity.Tests/ConnectionObserver.cs",
+      "bytes": 675,
+      "lines": 17,
+      "sha256": "22e23de26f780a8cf6f25c868273f581606fcde1994a9250fb0a98b8bc5308f2"
+    },
+    {
+      "path": "tests/TradingAgent.Identity.Tests/ContractTests.cs",
+      "bytes": 3174,
+      "lines": 64,
+      "sha256": "fda2236f9da6bcc93275bbb884e746b4a2504cc8a700b6dc3af911b060f35c56"
+    },
+    {
+      "path": "tests/TradingAgent.Identity.Tests/DatabaseFixture.cs",
+      "bytes": 11137,
+      "lines": 150,
+      "sha256": "bc8b1700e2112af23928b8768a42444543b2332c2c492b2a79d15ac8ed6284cc"
+    },
+    {
+      "path": "tests/TradingAgent.Identity.Tests/IsolationTests.cs",
+      "bytes": 2320,
+      "lines": 39,
+      "sha256": "33bac3841ec955e7032f85d4a0346bd985057bcabe784e021f7522e55de75ada"
+    },
+    {
+      "path": "tests/TradingAgent.Identity.Tests/SecurityTests.cs",
+      "bytes": 22598,
+      "lines": 256,
+      "sha256": "3aaf6ece15b210adf93364b7255ba699303abbf6d0942a08bc6836bd7e3d3eec"
+    },
+    {
+      "path": "tests/TradingAgent.Identity.Tests/SqlTests.cs",
+      "bytes": 2958,
+      "lines": 33,
+      "sha256": "cea10c81826edda11de3b1b9d55f09eefd939e8efdb8ce50fe997e9414993dd2"
+    },
+    {
+      "path": "tests/TradingAgent.Identity.Tests/TradingAgent.Identity.Tests.csproj",
+      "bytes": 690,
+      "lines": 11,
+      "sha256": "f076222ed743810339c9089e46acf637f7415c78b865d0b9f1a24a26b734cb0b"
+    },
+    {
+      "path": "tests/TradingAgent.Identity.Tests/packages.lock.json",
+      "bytes": 4894,
+      "lines": 131,
+      "sha256": "281ba80bc36fc578a7f0d40cc325a77869adfefa67c5dce2a72b02ecad31cfb4"
+    }
+  ]
+}
