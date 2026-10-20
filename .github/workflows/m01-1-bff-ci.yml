@@ -1,0 +1,274 @@
+name: M01.1 BFF independent checks
+
+on:
+  push:
+    branches:
+      - codex/m01-1-bff-foundations
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: windows-2025
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_GENERATE_ASPNET_CERTIFICATE: 'false'
+      DOTNET_NOLOGO: '1'
+      DOTNET_CLI_UI_LANGUAGE: en
+      NUGET_PACKAGES: ${{ runner.temp }}/m011-nuget-packages
+      NUGET_HTTP_CACHE_PATH: ${{ runner.temp }}/m011-nuget-http
+      CI_RESULTS_DIRECTORY: ${{ github.workspace }}/tmp/m011/check
+    steps:
+      - name: Checkout exact push commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Record identity and enforce preservation
+        id: identity
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-StrictMode -Version Latest
+          function Read-Git([string[]] $Arguments) {
+            $value = & git @Arguments
+            if ($LASTEXITCODE -ne 0) { throw 'Git identity/preservation read failed.' }
+            return ($value -join "`n").Trim()
+          }
+          $audited = '2979fa42e3c75e093f191fc5fe4c4507a425645e'
+          $head = Read-Git @('rev-parse', 'HEAD')
+          $tree = Read-Git @('rev-parse', 'HEAD^{tree}')
+          $directory = $env:CI_RESULTS_DIRECTORY
+          New-Item -ItemType Directory -Force -Path $directory | Out-Null
+          $identity = [ordered]@{
+            audited_commit = $audited; commit = $head; tree = $tree
+            ref = $env:GITHUB_REF; event = $env:GITHUB_EVENT_NAME
+            run_id = $env:GITHUB_RUN_ID; mode = 'OFFLINE'; decision = 'NO_TRADE'
+            preservation = 'NOT_VERIFIED'; protected_objects = @{}
+          }
+          try {
+            if ($head -cne $env:GITHUB_SHA -or $env:GITHUB_REF -cne 'refs/heads/codex/m01-1-bff-foundations' -or
+                $env:GITHUB_EVENT_NAME -cne 'push') { throw 'Unexpected commit, branch or event.' }
+            & git merge-base --is-ancestor $audited HEAD
+            if ($LASTEXITCODE -ne 0) { throw 'Audited commit is not an ancestor.' }
+            $allowed = @('.github/workflows/m01-1-bff-ci.yml', 'docs/architecture/m01-1-bff-ci.md')
+            $changes = Read-Git @('diff', '--name-status', '--no-renames', $audited, 'HEAD')
+            foreach ($change in ($changes -split "`n" | Where-Object { $_ })) {
+              $entry = $change -split "`t"
+              if ($entry.Count -ne 2 -or $entry[0] -cne 'A' -or $allowed -cnotcontains $entry[1]) {
+                throw 'Diff exceeds the two authorized CI additions.'
+              }
+            }
+            $paths = @('python/trading_agent/core_v3', 'python/trading_agent/market_analyst',
+              'src/TradingAgent.Api', 'src/TradingAgent.Core', 'src/TradingAgent.Infrastructure',
+              'src/TradingAgent.ConfigurationLab', 'src/TradingAgent.ResearchLab', 'frontend',
+              'src/TradingAgent.Web', 'tests/TradingAgent.Web.Tests', 'tests/TradingAgent.Tests',
+              'Directory.Build.props', 'TradingAgent.sln', 'build/web/check.ps1')
+            foreach ($path in $paths) {
+              $before = Read-Git @('rev-parse', "${audited}:$path")
+              $after = Read-Git @('rev-parse', "HEAD:$path")
+              if ($before -cne $after) { throw "Protected Git object changed: $path" }
+              $identity.protected_objects[$path] = $after
+            }
+            $identity.preservation = 'PASS'
+          }
+          finally {
+            $identity | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $directory 'identity.json') -Encoding utf8
+          }
+
+      - name: Install exact SDK without dependency cache
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: '10.0.402'
+          cache: false
+
+      - name: Verify selected SDK
+        id: sdk
+        working-directory: build/web
+        run: |
+          $version = dotnet --version
+          $exitCode = $LASTEXITCODE
+          $version | Set-Content -LiteralPath (Join-Path $env:CI_RESULTS_DIRECTORY 'sdk-version.txt') -Encoding utf8
+          if ($exitCode -ne 0 -or $version -cne '10.0.402') { throw 'Exact SDK 10.0.402 was not selected.' }
+
+      - name: Run unchanged M01.1 check from repository root
+        id: check
+        run: ./build/web/check.ps1 -Dotnet dotnet
+
+      - name: Validate TRX, assembly, build and audit evidence
+        if: always()
+        env:
+          IDENTITY_OUTCOME: ${{ steps.identity.outcome }}
+          SDK_OUTCOME: ${{ steps.sdk.outcome }}
+          CHECK_OUTCOME: ${{ steps.check.outcome }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-StrictMode -Version Latest
+          $directory = $env:CI_RESULTS_DIRECTORY
+          New-Item -ItemType Directory -Force -Path $directory | Out-Null
+          $summary = [ordered]@{
+            status = 'FAIL'; mode = 'OFFLINE'; decision = 'NO_TRADE'
+            commit = $env:GITHUB_SHA; total = $null; executed = $null; passed = $null
+            failed = $null; skipped = $null; duration_seconds = $null; summed_test_seconds = $null
+            assembly = $null; assembly_sha256 = $null; sdk = $null
+            build = 'NOT_VERIFIED'; nuget_audit = 'NOT_VERIFIED'; problem = $null
+          }
+          try {
+            $identity = Get-Content -Raw -LiteralPath (Join-Path $directory 'identity.json') | ConvertFrom-Json
+            if ($identity.commit -cne $env:GITHUB_SHA -or $identity.preservation -cne 'PASS') {
+              throw 'Identity or preservation evidence is not valid.'
+            }
+            $summary.tree = $identity.tree
+            $summary.sdk = (Get-Content -Raw -LiteralPath (Join-Path $directory 'sdk-version.txt')).Trim()
+            if ($summary.sdk -cne '10.0.402') { throw 'SDK evidence mismatch.' }
+            $settings = [System.Xml.XmlReaderSettings]::new()
+            $settings.DtdProcessing = [System.Xml.DtdProcessing]::Prohibit
+            $settings.XmlResolver = $null
+            $reader = [System.Xml.XmlReader]::Create((Join-Path $directory 'm011.trx'), $settings)
+            try {
+              $trx = [System.Xml.XmlDocument]::new()
+              $trx.XmlResolver = $null
+              $trx.Load($reader)
+            } finally { $reader.Dispose() }
+            $ns = [System.Xml.XmlNamespaceManager]::new($trx.NameTable)
+            $ns.AddNamespace('t', 'http://microsoft.com/schemas/VisualStudio/TeamTest/2010')
+            $counters = $trx.SelectSingleNode('/t:TestRun/t:ResultSummary/t:Counters', $ns)
+            if ($null -eq $counters) { throw 'TRX counters are missing.' }
+            foreach ($field in @('total', 'executed', 'passed', 'failed', 'notExecuted', 'error', 'timeout',
+                'aborted', 'inconclusive', 'passedButRunAborted', 'notRunnable', 'disconnected', 'warning', 'inProgress', 'pending')) {
+              if (-not $counters.HasAttribute($field)) { throw "Missing TRX counter: $field" }
+            }
+            foreach ($field in @('total', 'executed', 'passed', 'failed')) {
+              $summary[$field] = [int]$counters.GetAttribute($field)
+            }
+            $summary.skipped = [int]$counters.GetAttribute('notExecuted')
+            $results = @($trx.SelectNodes('/t:TestRun/t:Results/t:UnitTestResult', $ns))
+            $culture = [Globalization.CultureInfo]::InvariantCulture
+            $times = $trx.SelectSingleNode('/t:TestRun/t:Times', $ns)
+            $start = [DateTimeOffset]::Parse($times.GetAttribute('start'), $culture)
+            $finish = [DateTimeOffset]::Parse($times.GetAttribute('finish'), $culture)
+            $summary.duration_seconds = ($finish - $start).TotalSeconds
+            $definitions = @($trx.SelectNodes('/t:TestRun/t:TestDefinitions/t:UnitTest', $ns))
+            $summary.reported_assemblies = @($definitions | ForEach-Object {
+              [IO.Path]::GetFileName($_.GetAttribute('storage').Replace('\', '/'))
+            } | Select-Object -Unique)
+            if ($summary.total -lt 21 -or $summary.executed -ne $summary.total -or $summary.passed -ne $summary.total -or
+                $summary.failed -ne 0 -or $summary.skipped -ne 0 -or $results.Count -ne $summary.total) {
+              throw 'TRX must contain at least21 executed/passed results, zero failures/skips and consistent counters.'
+            }
+            foreach ($field in @('error', 'timeout', 'aborted', 'inconclusive', 'passedButRunAborted',
+                'notRunnable', 'disconnected', 'warning', 'inProgress', 'pending')) {
+              if ([int]$counters.GetAttribute($field) -ne 0) { throw "Nonzero TRX counter: $field" }
+            }
+            if ($trx.SelectSingleNode('/t:TestRun/t:ResultSummary', $ns).GetAttribute('outcome') -cne 'Completed') {
+              throw 'TRX run was not completed.'
+            }
+            $prefix = 'TradingAgent.Web.Tests.'
+            $expected = @(
+              'BoundaryTests.HealthContainsOnlyLivenessAndNeverIssuesACookie',
+              'BoundaryTests.OnlyHealthIsMappedAndFutureProtectedRoutesFailClosed',
+              'BoundaryTests.ExceptionResponsesContainNoInternalDetailsEvenInDevelopment',
+              'ContractTests.ExternalIdentityIsIssuerAndSubjectRatherThanEmailOrAuthority',
+              'ContractTests.SessionViewCannotPresentAnActiveSessionOrExecutionPermission',
+              'ContractTests.UnconfiguredPortsNeverVerifyAnIdentityOrGrantAccess',
+              'ContractTests.PortsRespectCancellationInsteadOfContinuingWork',
+              'ContractTests.ErrorsUseClosedCodesAndServerGeneratedCorrelationWithoutDetails',
+              'IsolationTests.InMemoryHostAndUnavailablePortsMakeZeroSocketConnectionsOrDnsRequests',
+              'IsolationTests.ContainerHasNoProviderSchemeBusinessWorkerOrOutboundClient',
+              'IsolationTests.CompiledHostHasNoOperationalOrOutboundOrFileWriteCapabilities',
+              'IsolationTests.DefaultAndFallbackPoliciesDenyEvenAnAuthenticatedPrincipal',
+              'BoundaryTests.OtherRoutesAndMethodsCannotExposeDataOrExecute(method: "POST", path: "/health", expected: 405)',
+              'BoundaryTests.OtherRoutesAndMethodsCannotExposeDataOrExecute(method: "DELETE", path: "/health", expected: 405)',
+              'BoundaryTests.OtherRoutesAndMethodsCannotExposeDataOrExecute(method: "GET", path: "/bff/session", expected: 404)',
+              'BoundaryTests.OtherRoutesAndMethodsCannotExposeDataOrExecute(method: "POST", path: "/bff/auth/login", expected: 404)',
+              'BoundaryTests.OtherRoutesAndMethodsCannotExposeDataOrExecute(method: "POST", path: "/api/orders", expected: 404)',
+              'BoundaryTests.OtherRoutesAndMethodsCannotExposeDataOrExecute(method: "POST", path: "/api/emergency/settle", expected: 404)',
+              'BoundaryTests.OtherRoutesAndMethodsCannotExposeDataOrExecute(method: "GET", path: "/proxy/api/dashboard", expected: 404)',
+              'BoundaryTests.OtherRoutesAndMethodsCannotExposeDataOrExecute(method: "GET", path: "/dashboardHub", expected: 404)',
+              'BoundaryTests.OtherRoutesAndMethodsCannotExposeDataOrExecute(method: "GET", path: "/swagger/v1/swagger.json", expected: 404)'
+            ) | ForEach-Object { $prefix + $_ }
+            $names = @($results | ForEach-Object { $_.GetAttribute('testName') })
+            if (@($names | Select-Object -Unique).Count -ne $results.Count) { throw 'Duplicate TRX test names.' }
+            foreach ($name in $expected) {
+              if ($names -cnotcontains $name) { throw "Missing original M01.1 test: $name" }
+            }
+            if ($definitions.Count -ne $results.Count) { throw 'Test definition/result count mismatch.' }
+            $testSeconds = 0.0
+            foreach ($result in $results) {
+              if ($result.GetAttribute('outcome') -cne 'Passed') { throw 'A TRX result did not pass.' }
+              $definition = @($definitions | Where-Object { $_.GetAttribute('id') -ceq $result.GetAttribute('testId') })
+              if ($definition.Count -ne 1) { throw 'TRX result has no unique assembly definition.' }
+              $method = $definition[0].SelectSingleNode('t:TestMethod', $ns)
+              foreach ($path in @($definition[0].GetAttribute('storage'), $method.GetAttribute('codeBase'))) {
+                $normalized = $path.Replace('\', '/').ToLowerInvariant()
+                if (-not $normalized.EndsWith('/tests/tradingagent.web.tests/bin/release/net10.0/tradingagent.web.tests.dll')) {
+                  throw 'Unexpected tested assembly or configuration.'
+                }
+              }
+              $duration = [TimeSpan]::Parse($result.GetAttribute('duration'), $culture).TotalSeconds
+              if ($duration -lt 0) { throw 'Negative test duration.' }
+              $testSeconds += $duration
+            }
+            if ($summary.duration_seconds -le 0) { throw 'Invalid TRX run duration.' }
+            $summary.summed_test_seconds = $testSeconds
+            $summary.assembly = 'tests/TradingAgent.Web.Tests/bin/Release/net10.0/TradingAgent.Web.Tests.dll'
+            $summary.assembly_sha256 = (Get-FileHash -LiteralPath $summary.assembly -Algorithm SHA256).Hash.ToLowerInvariant()
+            $buildLog = Get-Content -Raw -LiteralPath (Join-Path $directory 'build.log')
+            $restoreLog = Get-Content -Raw -LiteralPath (Join-Path $directory 'restore.log')
+            if ($buildLog -notmatch '(?m)^\s*0 Warning\(s\)\s*$' -or $buildLog -notmatch '(?m)^\s*0 Error\(s\)\s*$' -or
+                ($buildLog + $restoreLog) -match '\bNU190[0-5]\b') { throw 'Build/audit warning or incomplete build evidence.' }
+            $summary.build = 'PASS: Release, warnings as errors, zero warnings/errors'
+            $audit = Get-Content -Raw -LiteralPath (Join-Path $directory 'dependencies.json') | ConvertFrom-Json
+            if ($audit.version -ne 1 -or @($audit.projects).Count -ne 2 -or
+                ($audit.PSObject.Properties['problems'] -and @($audit.problems).Count -gt 0)) { throw 'Incomplete dependency audit.' }
+            foreach ($project in $audit.projects) {
+              if (@($project.frameworks).Count -ne 1 -or $project.frameworks[0].framework -cne 'net10.0') {
+                throw 'Unexpected audit framework scope.'
+              }
+              foreach ($property in @('topLevelPackages', 'transitivePackages')) {
+                if ($project.frameworks[0].PSObject.Properties[$property] -and @($project.frameworks[0].$property).Count -gt 0) {
+                  throw 'Vulnerable dependency reported.'
+                }
+              }
+            }
+            $summary.nuget_audit = 'PASS: direct/transitive, no vulnerable packages reported'
+            & git diff --exit-code --quiet
+            if ($LASTEXITCODE -ne 0) { throw 'Tracked working tree changed during checks.' }
+            & git diff --cached --exit-code --quiet
+            if ($LASTEXITCODE -ne 0) { throw 'Git index changed during checks.' }
+            if ($env:IDENTITY_OUTCOME -cne 'success' -or $env:SDK_OUTCOME -cne 'success' -or
+                $env:CHECK_OUTCOME -cne 'success') { throw 'An identity, SDK or check step did not succeed.' }
+            $summary.status = 'PASS'
+          }
+          catch {
+            $summary.problem = $_.Exception.Message
+            throw
+          }
+          finally {
+            $json = $summary | ConvertTo-Json -Depth 4
+            $json | Set-Content -LiteralPath (Join-Path $directory 'summary.json') -Encoding utf8
+            $json | Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Encoding utf8
+            Write-Output $json
+          }
+
+      - name: Preserve evidence even after failure
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: m011-bff-${{ github.sha }}-${{ github.run_attempt }}
+          retention-days: 14
+          if-no-files-found: warn
+          include-hidden-files: false
+          path: |
+            tmp/m011/check/restore.log
+            tmp/m011/check/build.log
+            tmp/m011/check/m011.trx
+            tmp/m011/check/dependencies.json
+            tmp/m011/check/identity.json
+            tmp/m011/check/sdk-version.txt
+            tmp/m011/check/summary.json
