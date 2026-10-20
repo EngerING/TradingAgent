@@ -243,6 +243,20 @@ JWT/budgets/bindings, logout demorado/factores/inscripciones, y sensibilidad del
 test de cuota por cuenta. Se corrigieron con regresiones; no hubo cuarto ciclo.
 El [paquete manual](m01-3-external-review.md) se prepara sin enviar código a terceros.
 
+Primera CI verificada: [ejecución39517204064](https://github.com/EngerING/TradingAgent/actions/runs/39517204064),
+commit `bbca133f7d55851798c6e6dede18faabff1930b2`, árbol
+`a4542cf2aec6638dca0e8e6c5c66f5b59d1d9ead`.
+Se descargó y comprobó el [artefacto12308905129](https://github.com/EngerING/TradingAgent/actions/runs/39517204064/artifacts/12308905129):
+SHA-256 `0c784fe170a208adfaabd6801c777336fb0c6ed00490ec174eab1eb98b03e660`.
+Los TRX verifican64/61/21 aprobadas, cero fallos/omitidas, nombres y ensamblados
+exactos; duraciones10.087081s/11.417760s/1.039012s. Release: cero advertencias y
+errores. NuGet: cero vulnerabilidades conocidas reportadas. SDK10.0.402 y
+PostgreSQL17.11 desechable; cero conexiones fuera de ese destino durante el ciclo
+observado. No hubo conexión a Supabase alojado. El commit de cierre solo registra
+esta evidencia y vuelve a ejecutar la misma CI; su identidad final se entrega
+con su propio artefacto para evitar una autorreferencia de hash. Estos resultados
+permiten revisar M01.3A, no sustituyen la auditoría independiente.
+
 Fuentes: [claims Supabase](https://supabase.com/docs/guides/auth/jwt-fields),
 [métodos AMR del SDK oficial](https://github.com/supabase/auth-js/blob/master/src/lib/types.ts),
 [sesiones y límites de revocación](https://supabase.com/docs/guides/auth/sessions),

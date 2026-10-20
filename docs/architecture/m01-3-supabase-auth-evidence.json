@@ -206,7 +206,62 @@
       21
     ],
     "retention_days": 14,
-    "status": "Pending initial branch publication; exact run artifacts authoritative"
+    "status": "First execution SUCCESS; evidence downloaded and verified. Final documentation commit reruns identical workflow; exact final identity is in its artifact and delivery.",
+    "verified_execution": {
+      "commit": "bbca133f7d55851798c6e6dede18faabff1930b2",
+      "tree": "a4542cf2aec6638dca0e8e6c5c66f5b59d1d9ead",
+      "artifact_sha256": "0c784fe170a208adfaabd6801c777336fb0c6ed00490ec174eab1eb98b03e660",
+      "tests": {
+        "m013": {
+          "assembly": "TradingAgent.Auth.Tests.dll",
+          "passed": 64,
+          "failed": 0,
+          "skipped": 0,
+          "duration_seconds": 10.087081,
+          "trx_sha256": "115d6c41cc05641d0f28e90c1a8af01e210deabe005dc7c0495e8501def29634"
+        },
+        "m012": {
+          "assembly": "TradingAgent.Identity.Tests.dll",
+          "passed": 61,
+          "failed": 0,
+          "skipped": 0,
+          "duration_seconds": 11.41776,
+          "trx_sha256": "6f4b70bd9558faa8f2d75fce9b63572e62a4f511c50d7c5fe8bb238b2e0f3b84"
+        },
+        "m011": {
+          "assembly": "TradingAgent.Web.Tests.dll",
+          "passed": 21,
+          "failed": 0,
+          "skipped": 0,
+          "duration_seconds": 1.039012,
+          "trx_sha256": "1b42241ae411f601e598faf47bed600f7ac010990c708a935d8fca61aa019070"
+        }
+      },
+      "m013_isolation": {
+        "mode": "OFFLINE",
+        "decision": "NO_TRADE",
+        "socket_connect_starts": 339,
+        "connections_outside_disposable_postgres": 0,
+        "scope": "SQL fixture lifecycle; tooling excluded",
+        "postgres_version": "17.11 (Debian 17.11-1.pgdg12+2)"
+      },
+      "m012_isolation": {
+        "mode": "OFFLINE",
+        "decision": "NO_TRADE",
+        "socket_connect_starts": 432,
+        "connections_outside_disposable_postgres": 0,
+        "scope": "SQL fixture lifecycle; tooling excluded",
+        "postgres_version": "17.11 (Debian 17.11-1.pgdg12+2)"
+      },
+      "total_passed": 146,
+      "build": "Release; 0 warnings; 0 errors; NuGet known vulnerable packages: 0",
+      "run_id": 39517204064,
+      "url": "https://github.com/EngerING/TradingAgent/actions/runs/39517204064",
+      "conclusion": "success",
+      "artifact_id": 12308905129,
+      "artifact_url": "https://github.com/EngerING/TradingAgent/actions/runs/39517204064/artifacts/12308905129",
+      "validation": "TRX names, counters, assembly identity, exact commit/tree, SDK, build logs, dependency reports and isolation inspected from downloaded archive"
+    }
   },
   "secret_review": {
     "known_pattern_and_new_sensitive_path_scan": "PASS",
@@ -288,9 +343,9 @@
     },
     {
       "path": "docs/architecture/m01-3-supabase-auth.md",
-      "bytes": 15159,
-      "lines": 252,
-      "sha256": "2f8efc0732b67fd2afcf5c51810b1316450c6aaa17fc764c98a2de0e569bcd25"
+      "bytes": 16223,
+      "lines": 266,
+      "sha256": "0f732b0ba823d3470a3af317d33322d7cbf824a9c9a98bfc1b1e8f4350b8d348"
     },
     {
       "path": "src/TradingAgent.Identity.Supabase/AuthConfiguration.cs",
