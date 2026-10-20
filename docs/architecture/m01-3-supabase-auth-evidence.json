@@ -1,0 +1,466 @@
+{
+  "schema": "trading.m013.synthetic_auth_evidence",
+  "schema_version": 1,
+  "inspection_date": "2026-10-20",
+  "timezone": "America/La_Paz",
+  "mode": "OFFLINE",
+  "decision": "NO_TRADE",
+  "scope": "M01.3A_SYNTHETIC_AUTH_AND_DISPOSABLE_POSTGRES_ONLY",
+  "branch": "codex/m01-3-supabase-auth",
+  "baseline_commit": "f4130ea9671da9b0990ac62bff40a9aa83f60e4d",
+  "baseline_tree": "3c2a872570bfbde9e688b97a40007e267707c469",
+  "final_commit_and_tree": "Exact identity in CI artifact and final delivery; self reference omitted",
+  "build": {
+    "sdk": "10.0.402",
+    "shared_runtime": "10.0.13",
+    "identitymodel": "8.23.0",
+    "target": "net10.0",
+    "configuration": "Release",
+    "warnings": 0,
+    "errors": 0,
+    "locked_restore": true,
+    "nuget_audit": "true/all/low",
+    "vulnerable_packages_reported": 0,
+    "auth_inventory_projects": 5,
+    "command": "./build/auth/local-test.ps1"
+  },
+  "local_tests": {
+    "m013": {
+      "assembly": "TradingAgent.Auth.Tests.dll",
+      "total": 64,
+      "passed": 64,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 26.2069126,
+      "expected_test_manifest": "PASS",
+      "mode": "OFFLINE",
+      "decision": "NO_TRADE"
+    },
+    "m012": {
+      "assembly": "TradingAgent.Identity.Tests.dll",
+      "total": 61,
+      "passed": 61,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 24.609695799999997,
+      "expected_test_manifest": "PASS",
+      "mode": "OFFLINE",
+      "decision": "NO_TRADE"
+    },
+    "m011": {
+      "assembly": "TradingAgent.Web.Tests.dll",
+      "total": 21,
+      "passed": 21,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 0.8447123,
+      "expected_test_manifest": "PASS",
+      "mode": "OFFLINE",
+      "decision": "NO_TRADE"
+    }
+  },
+  "isolation": {
+    "auth_fixture": {
+      "mode": "OFFLINE",
+      "decision": "NO_TRADE",
+      "socket_connect_starts": 339,
+      "connections_outside_disposable_postgres": 0,
+      "scope": "SQL fixture lifecycle; tooling excluded",
+      "postgres_version": "17.5"
+    },
+    "m012_fixture": {
+      "mode": "OFFLINE",
+      "decision": "NO_TRADE",
+      "socket_connect_starts": 377,
+      "connections_outside_disposable_postgres": 0,
+      "scope": "SQL fixture lifecycle; tooling excluded",
+      "postgres_version": "17.5"
+    },
+    "auth_http": "ASP.NET TestServer in process; no provider TCP listener or hosted project",
+    "jwt_keys": "CSPRNG ECDSA P-256 generated per fixture, never saved",
+    "financial_operations": 0,
+    "operational_db_connections": 0,
+    "real_supabase_connections": 0,
+    "limitation": "Exercised paths and assembly structure, not OS sandbox; registry/CI tooling excluded"
+  },
+  "preservation": {
+    "base_files": 764,
+    "raw_sha256_differences": 0,
+    "manifest_digest": "0d219cdb0bfa36d9644200b529cc6ec9cde823912e2908efa0823d53f285e7a3",
+    "protected_git_objects": {
+      "python/trading_agent/core_v3": "0c6a3c211249151582556862d610ffe29ae221a0",
+      "python/trading_agent/market_analyst": "1cdcffba113842977a881b57912be1e101eae688",
+      "src/TradingAgent.Infrastructure": "c9322ebfb7e813c71ba6098eedabf5ba8b6970dd",
+      "src/TradingAgent.Core": "e7c3f7cfa0ed45a8e6f18100c14f639c8f8c37a6",
+      "src/TradingAgent.Api": "3cb11938debcbf3f1d21001a9d6b10611f86751b",
+      "src/TradingAgent.ConfigurationLab": "dce30b74b09fadc1d08636d67cf7b6057c10126c",
+      "src/TradingAgent.ResearchLab": "81c1937682094bfc1c87f962537600fce897f609",
+      "frontend": "8b2101aeb2c3cd8661e95ee8ae13511e5dff09e2",
+      "src/TradingAgent.Web": "220a78a53d2dbaaee7094b156dd283ab886c7aae",
+      "tests/TradingAgent.Web.Tests": "21fe88719c1f3816ebf800d5fb16f6b8dd608173",
+      "src/TradingAgent.Identity.Persistence": "6aa8d4dcaa734d44a511ac77a813709c8396781d",
+      "src/TradingAgent.Identity.Migrations": "e5b49b4be3d29bee1f3a361c2a36f4912ebb55d3",
+      "tests/TradingAgent.Identity.Tests": "ed1995de96a6072955ac3cba938524ea17e65e0e",
+      "build/web": "fa8dc4abf916dc7c50a5832103cf4f47fafac0ad",
+      "build/identity": "8bfc7a243f903165bfbf20071368087307c6c545",
+      "Directory.Build.props": "e8f7495b8834700231914c090846d2a2bece5c95",
+      "TradingAgent.sln": "85f076d47efc02709bc44708ac9b86e5bcc5f514",
+      ".github/workflows/m01-1-bff-ci.yml": "940a5213f9965872f1879d8f42c982b6aa9bccf8",
+      ".github/workflows/m01-2-postgres-security-ci.yml": "e12acf05ed5fcc80d73d3ca01f23bad3971604e4"
+    },
+    "historical_migration_sha256": {
+      "src/TradingAgent.Infrastructure/Migrations/001_initial.sql": "68e4482d97be7486fffc5742003fd747369107e5926daddc81f2d486642c5786",
+      "src/TradingAgent.Infrastructure/Migrations/002_retention.sql": "717a7cb43391a86503e7daad1a17eb3004f709f3384dce9362a06061bb648ade",
+      "src/TradingAgent.Infrastructure/Migrations/003_paper_observations.sql": "23bd421bf499a1c31e62788a9a136edeb2e5be4a64a667fe20e8d963fc4f4618",
+      "src/TradingAgent.Infrastructure/Migrations/004_paper_lab.sql": "02a1908795d4b01fa108d384ec0ded8a2cc37bbe0ddb42f88578b526a0db3a82",
+      "src/TradingAgent.Infrastructure/Migrations/005_ford_diagnostic.sql": "d4246a0cdd07defa89b70d971421c63bf6dd0c54abfef8f1bed733673f91a189",
+      "src/TradingAgent.Infrastructure/Migrations/006_eurusd_shadow.sql": "3b07d269b5f63f19744ffc6813abd1954b238104eccc18b79b4c81707ac3e183",
+      "src/TradingAgent.Infrastructure/Migrations/007_dashboard_chat.sql": "8be0634a1cf952871d0080de0685d356b8dd6a39cb7de5fe45ad8a2a5804fd4e",
+      "src/TradingAgent.Infrastructure/Migrations/008_eurusd_exploratory.sql": "1499b01c574d0ea5117ebf18dd420c3d7b4734d117c52e7d0f46b0606e2cfa38",
+      "src/TradingAgent.Infrastructure/Migrations/009_kronos.sql": "0f33c41ca04201a06e5a0acb81e256e72a1393603dea35c71a417461036d933e",
+      "src/TradingAgent.Infrastructure/Migrations/010_r10_price_risk.sql": "9895ea6574a804b7ed03272ff86a5f669b53551fcbf732ce9db78d11c781cc78",
+      "src/TradingAgent.Infrastructure/Migrations/011_aggressive_growth.sql": "332b5a62e60e62f5f5925a5ce703085839e9d131f5b4789de9751f6386165343"
+    },
+    "main": "f67fa92086d10b9562df214f4e869344bf0753d8",
+    "m012": "f4130ea9671da9b0990ac62bff40a9aa83f60e4d",
+    "preexisting_untracked": {
+      "docs/architecture/core-v3-phase0-audit.md": "419d1e97b7f7017bddebd3074b1433d48702a59a274194f017129933e4314537",
+      "docs/manual/TradingAgent_Manual_Tecnico_Integral.pdf": "1f31321892f532b3d5de1bc3d574bd5f66c3af38ae634d7173b6b173c49b3944"
+    }
+  },
+  "status_matrix": {
+    "implemented": "Adapter, JWT/JWKS, MFA workflow, opt-in BFF, temporary references, SQL roles/grants, CSRF, limits and CI",
+    "tested_with_simulated_provider": true,
+    "tested_with_hosted_supabase": false,
+    "m013b_authorized": false,
+    "m014_authorized": false,
+    "pending_infrastructure": [
+      "Development project authorization",
+      "TLS host composition",
+      "External credential provisioning",
+      "Demonstrated remote active-session assurance"
+    ],
+    "unsupported": [
+      "Refresh or durable token vault",
+      "Google OAuth or public signup",
+      "Active recovery/invitation/logout-all endpoints",
+      "Financial endpoints or execution"
+    ]
+  },
+  "security_profile": {
+    "jwt": "ES256/P-256; exact issuer/audience; strict time/UUID/AAL/human/duplicate claims validation",
+    "amr_methods": [
+      "totp",
+      "mfa/totp"
+    ],
+    "freshness": "Signed method timestamp, bound to current challenge; not the current read time",
+    "jwks_keys_max": 10,
+    "jwks_refresh_minutes": 5,
+    "jwks_max_age_minutes": 10,
+    "jwks_min_attempt_seconds": 30,
+    "response_max_bytes": 65536,
+    "token_max_bytes": 16384,
+    "body_max_bytes": 4096,
+    "pending_plus_bridges_max": 128,
+    "sessions_max": 128,
+    "account_budgets_max": 256,
+    "mfa_operations_per_pending": 5,
+    "mfa_operations_per_account_5min": 15,
+    "posts_per_process_minute": 20,
+    "session_max": "Original preauth deadline, at most 5min from password and <=JWT/SQL expiry",
+    "cookies": "Secure HttpOnly Strict Path=/ no Domain, opaque only",
+    "provider_session_confirmed_active": false,
+    "sensitive_operations": "Closed; getUser is insufficient to assert remote session liveness",
+    "access_token_storage": "Bounded server memory only; no refresh retained; restart denies old references",
+    "sql_token_slots": "Unchanged NULL-only constraints",
+    "logging": "Source-generated event1301: closed operation category and status only, tests assert absence of secrets"
+  },
+  "review": {
+    "type": "Internal separate-context adversarial review, not independent audit",
+    "cycles": 3,
+    "manual_external_package": "docs/architecture/m01-3-external-review.md",
+    "external_clis_or_transmission": false,
+    "regressions": [
+      "JWT audience/duplicate context",
+      "Challenge result issuer/sub/session binding and signed freshness",
+      "Cross-preauth account attempt budget sensitivity",
+      "Logout before and after MFA completion",
+      "Factor discovery via BFF on new device",
+      "Recovery of orphaned unverified enrollment",
+      "No deletion of verified MFA",
+      "HttpClient connection lifetime bound"
+    ],
+    "followup": "Independent audit and M01.3B approval required"
+  },
+  "ci": {
+    "workflow": ".github/workflows/m01-3-supabase-auth-ci.yml",
+    "runner": "ubuntu-24.04",
+    "sdk": "10.0.402",
+    "postgres_image": "postgres:17.11-bookworm@sha256:3645570cccdfa447589da9f57dd740faa29b30938e861289a5574b6ca6b03826",
+    "local_postgres": "17.5 new isolated cluster; Docker daemon not started",
+    "permissions": "contents: read",
+    "cache": false,
+    "expected_tests": [
+      64,
+      61,
+      21
+    ],
+    "retention_days": 14,
+    "status": "Pending initial branch publication; exact run artifacts authoritative"
+  },
+  "secret_review": {
+    "known_pattern_and_new_sensitive_path_scan": "PASS",
+    "manual_source_workflow_review": "PASS",
+    "credentials_requested": false,
+    "real_secrets_stored": false,
+    "public_fixtures": "Ephemeral CI bootstrap and literal dummy TOTP/OTP only; app DB passwords generated",
+    "limitations": "Pattern and content review is not a universal detection guarantee; no .local inspection"
+  },
+  "official_sources": [
+    "https://supabase.com/docs/guides/auth/sessions",
+    "https://supabase.com/docs/guides/auth/jwt-fields",
+    "https://github.com/supabase/auth-js/blob/master/src/lib/types.ts",
+    "https://github.com/supabase/auth/blob/master/openapi.yaml",
+    "https://supabase.com/docs/guides/auth/auth-mfa/totp",
+    "https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery?view=aspnetcore-10.0"
+  ],
+  "new_file_inventory_hash_basis": "Git index blob bytes; evidence self hash omitted",
+  "new_file_inventory_excluding_this_evidence": [
+    {
+      "path": ".github/workflows/m01-3-supabase-auth-ci.yml",
+      "bytes": 5296,
+      "lines": 119,
+      "sha256": "496ce5ac3cde61a2e0afff5dc5996ac263ec6909997dbe17236edecb239f2a6c"
+    },
+    {
+      "path": "build/auth/TradingAgent.Auth.slnx",
+      "bytes": 503,
+      "lines": 7,
+      "sha256": "006db4442ccf9ba51235689b39394e1a636c0d8932992e6d10541acc04e96dbb"
+    },
+    {
+      "path": "build/auth/check.ps1",
+      "bytes": 4017,
+      "lines": 50,
+      "sha256": "9af0773efa0085f0190d32bb4f4eee7ce87b1741b569fe9d9735bd78e73431ab"
+    },
+    {
+      "path": "build/auth/expected-tests.json",
+      "bytes": 6856,
+      "lines": 66,
+      "sha256": "acf7ab2bc4b9fc882e94f72b6ea1ee8e766a8cda2385e3ac73ca72d4e7970b5c"
+    },
+    {
+      "path": "build/auth/global.json",
+      "bytes": 79,
+      "lines": 1,
+      "sha256": "3f9b8063fdc946bf82db965d9a228d4ea581390f83680ee3b952fb0ec00b2cf3"
+    },
+    {
+      "path": "build/auth/local-test.ps1",
+      "bytes": 2735,
+      "lines": 37,
+      "sha256": "fb83c2cf115a3c9dd54adf5e862c81973beb6f031dff8fc303cef327fc444bca"
+    },
+    {
+      "path": "build/auth/preservation.ps1",
+      "bytes": 3934,
+      "lines": 41,
+      "sha256": "d16c1e314f3438ed79876e4057048e242552eec4a3f8bb04a191e387cf38ab8f"
+    },
+    {
+      "path": "docs/architecture/m01-3-development-pilot.md",
+      "bytes": 3855,
+      "lines": 55,
+      "sha256": "d371dbd9c80d54bd5a343f3d7c5c15a42f9c9b3edd1dcf7e8299256509dbb872"
+    },
+    {
+      "path": "docs/architecture/m01-3-external-review.md",
+      "bytes": 3490,
+      "lines": 54,
+      "sha256": "16bf366bef2a1fdfd8e14b262aa168773f421640706efa1336a356a8d2dd7c55"
+    },
+    {
+      "path": "docs/architecture/m01-3-session-adr.md",
+      "bytes": 3459,
+      "lines": 52,
+      "sha256": "45fb4cac537b0e6616c42a33812b01c1f82deb2e4f65c0b75ddd815435200e42"
+    },
+    {
+      "path": "docs/architecture/m01-3-supabase-auth.md",
+      "bytes": 15159,
+      "lines": 252,
+      "sha256": "2f8efc0732b67fd2afcf5c51810b1316450c6aaa17fc764c98a2de0e569bcd25"
+    },
+    {
+      "path": "src/TradingAgent.Identity.Supabase/AuthConfiguration.cs",
+      "bytes": 2225,
+      "lines": 37,
+      "sha256": "d88b1ab4cdc784b3abc5650a92488827a3ed50b5f56bd7fa6a1af6cc9b5723a4"
+    },
+    {
+      "path": "src/TradingAgent.Identity.Supabase/AuthTransport.cs",
+      "bytes": 4837,
+      "lines": 64,
+      "sha256": "2e6c3cbb3f287eacd9a09c7215a4fabfa0e3a218c3d5dc1d1e9c9dcd09d64548"
+    },
+    {
+      "path": "src/TradingAgent.Identity.Supabase/JwksCache.cs",
+      "bytes": 2590,
+      "lines": 45,
+      "sha256": "59625f988e520e1e997cf5ac689c9b90dc19df8eda64a5da2275a28252e8c070"
+    },
+    {
+      "path": "src/TradingAgent.Identity.Supabase/JwtVerifier.cs",
+      "bytes": 5130,
+      "lines": 62,
+      "sha256": "67e27308d05315f7b22ef2e8c8eaf208fb6d019520c10a3df38a4062307e7821"
+    },
+    {
+      "path": "src/TradingAgent.Identity.Supabase/SupabaseAuthClient.cs",
+      "bytes": 6321,
+      "lines": 87,
+      "sha256": "2e42da6cba9349b218702e707be4798152112cfacd3d1fd6e292cf6858dcc14d"
+    },
+    {
+      "path": "src/TradingAgent.Identity.Supabase/TradingAgent.Identity.Supabase.csproj",
+      "bytes": 396,
+      "lines": 5,
+      "sha256": "522bdc92de35f0ea2f21470598a79a990560021677cb7a665feb8e95b52b18db"
+    },
+    {
+      "path": "src/TradingAgent.Identity.Supabase/packages.lock.json",
+      "bytes": 1909,
+      "lines": 54,
+      "sha256": "5d5d878e443e6f50a352ed3ee4ef50450a568257b1cf43c9215d42385d77ddea"
+    },
+    {
+      "path": "src/TradingAgent.Web.Auth/BoundaryLog.cs",
+      "bytes": 453,
+      "lines": 10,
+      "sha256": "66a133a3f12e78d8c96db7a5715fb92fbaab4d0356d7694df2bb6d874a5b45b7"
+    },
+    {
+      "path": "src/TradingAgent.Web.Auth/HttpBoundary.cs",
+      "bytes": 2337,
+      "lines": 38,
+      "sha256": "116036238e0debb59e52b1e83450825bd415a403a6d68244aa883bd313088af2"
+    },
+    {
+      "path": "src/TradingAgent.Web.Auth/IntegratedHostFactory.cs",
+      "bytes": 7744,
+      "lines": 91,
+      "sha256": "8c1bd02edc4970e0ca500841950803878dbce4b4a6c139ec24eeb3584d01db7f"
+    },
+    {
+      "path": "src/TradingAgent.Web.Auth/PilotAuthentication.cs",
+      "bytes": 1920,
+      "lines": 32,
+      "sha256": "94d3c3cfb0dc23765081cd2520103763d0f38ddaf2e64884cc06bd4b8f538e8e"
+    },
+    {
+      "path": "src/TradingAgent.Web.Auth/PilotEndpoints.cs",
+      "bytes": 5281,
+      "lines": 62,
+      "sha256": "651f95b7fd3df9db1f8dcfaca291c9a257c6b3456588359bda7c93a4a1763751"
+    },
+    {
+      "path": "src/TradingAgent.Web.Auth/PilotRuntime.cs",
+      "bytes": 11078,
+      "lines": 148,
+      "sha256": "882ebc8176d31295a5d25439eb44bce15e73751c74972fb147640be04f7f487a"
+    },
+    {
+      "path": "src/TradingAgent.Web.Auth/TemporarySessions.cs",
+      "bytes": 5188,
+      "lines": 88,
+      "sha256": "1ec385cbedc31ff46727dace672042cf2ddd5102a796217841bb70e216b7504e"
+    },
+    {
+      "path": "src/TradingAgent.Web.Auth/TradingAgent.Web.Auth.csproj",
+      "bytes": 279,
+      "lines": 4,
+      "sha256": "ed1b05d8617aee141711073817ebd4c6ed9e6dd8dc8cb967ef155ddc2717a9c3"
+    },
+    {
+      "path": "src/TradingAgent.Web.Auth/packages.lock.json",
+      "bytes": 2116,
+      "lines": 60,
+      "sha256": "6964016a20e7f781ea51c9e46784935ae2c2968adc95f8b9921b132b4e6d1076"
+    },
+    {
+      "path": "tests/TradingAgent.Auth.Tests/AdversarialBffTests.cs",
+      "bytes": 10595,
+      "lines": 128,
+      "sha256": "317e33b27153e91952c90e943bbe08713957ae410d70d21996229768de932791"
+    },
+    {
+      "path": "tests/TradingAgent.Auth.Tests/BffTests.cs",
+      "bytes": 6785,
+      "lines": 84,
+      "sha256": "ff49946425815a175bedce8f04f79cd9ce902a603a1d64f76b7585d6650b4ac3"
+    },
+    {
+      "path": "tests/TradingAgent.Auth.Tests/BrowserHarness.cs",
+      "bytes": 6443,
+      "lines": 99,
+      "sha256": "a95d9eb40d831a80dc9dee930b4ca781dd80e1608eb3e458a9424694443c9c1d"
+    },
+    {
+      "path": "tests/TradingAgent.Auth.Tests/CollectedLogs.cs",
+      "bytes": 798,
+      "lines": 17,
+      "sha256": "c091e44aec3906633b4ac913717aab767fd7c18558c358f6eb064fc4e1e36069"
+    },
+    {
+      "path": "tests/TradingAgent.Auth.Tests/ConfigurationTests.cs",
+      "bytes": 939,
+      "lines": 21,
+      "sha256": "dfca63b5a03b1162e89db5e4898f0878a03ee0b8ef0814246f9b7605fd9c1b20"
+    },
+    {
+      "path": "tests/TradingAgent.Auth.Tests/IsolationTests.cs",
+      "bytes": 6087,
+      "lines": 85,
+      "sha256": "0db936b04f5a0e2b331d770dd14b6830d26735bdc16e5540a5b4131365df4ad4"
+    },
+    {
+      "path": "tests/TradingAgent.Auth.Tests/JwtTests.cs",
+      "bytes": 4059,
+      "lines": 59,
+      "sha256": "94750615a6cc29c31ab0feb098437b5c6868f3a6ccc7e15deb328035802d68fb"
+    },
+    {
+      "path": "tests/TradingAgent.Auth.Tests/ReviewRegressionTests.cs",
+      "bytes": 5289,
+      "lines": 70,
+      "sha256": "478d2a53a55e4e9b461d174a2896165b70f8711cccebb1fdeb7d8638ad0fb75e"
+    },
+    {
+      "path": "tests/TradingAgent.Auth.Tests/SimulatedAuth.cs",
+      "bytes": 11041,
+      "lines": 163,
+      "sha256": "0ae07b88350eec52fdad6724cdc80fcc9bbc71e97920b9b3440165463acb12b3"
+    },
+    {
+      "path": "tests/TradingAgent.Auth.Tests/TradingAgent.Auth.Tests.csproj",
+      "bytes": 972,
+      "lines": 13,
+      "sha256": "a75b5e2fec776a61b408a241b870417c00eaf0d966455ab0be25c1542fb6cb93"
+    },
+    {
+      "path": "tests/TradingAgent.Auth.Tests/TransportTests.cs",
+      "bytes": 2322,
+      "lines": 35,
+      "sha256": "4902e4b10355495ce58e24f44735cd64d6db751071ec1b6b9604348ccbb1a365"
+    },
+    {
+      "path": "tests/TradingAgent.Auth.Tests/packages.lock.json",
+      "bytes": 7076,
+      "lines": 186,
+      "sha256": "b00234dbe10f07b567e853e50a4c78cf50eba8ee115671e8d375959863235280"
+    }
+  ],
+  "executed_test_total": 146,
+  "negative_result_validation": "Zero/incomplete TRX rejected locally"
+}

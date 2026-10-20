@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.Logging;
 using TradingAgent.Identity.Persistence;
 using TradingAgent.Identity.Tests;
 using TradingAgent.Web.Auth;
@@ -13,6 +14,7 @@ namespace TradingAgent.Auth.Tests;
 public sealed class BrowserHarness : IAsyncDisposable
 {
     public SimulatedAuth Provider { get; } = new();
+    public CollectedLogs Logs { get; } = new();
     public WebApplication App { get; private set; } = null!;
     public Browser Browser { get; private set; } = null!;
     public string Email { get; } = Guid.NewGuid().ToString("N") + "@fixture.invalid";
@@ -30,7 +32,7 @@ public sealed class BrowserHarness : IAsyncDisposable
         if (role) Assert.Equal(StoreOutcome.Success, (await fixture.Administration().GrantRoleAsync(Admin, User, platformRole, DateTimeOffset.UtcNow.AddHours(1), CancellationToken.None)).Outcome);
         if (grant) Assert.Equal(StoreOutcome.Success, (await fixture.Administration().GrantResourceAsync(Admin, User, ResourceKind.Study, Resource, EnvironmentScope.Paper, Capability.Read, DateTimeOffset.UtcNow.AddHours(1), CancellationToken.None)).Outcome);
         App = IntegratedHostFactory.CreateSyntheticPilot(Provider.Configuration, fixture.Database(DatabasePurpose.Runtime), fixture.Database(DatabasePurpose.SessionIssuer), builder =>
-        { builder.WebHost.UseTestServer(); Provider.ConfigureTransport(builder.Services); });
+        { builder.WebHost.UseTestServer(); Provider.ConfigureTransport(builder.Services); builder.Logging.AddProvider(Logs); });
         await App.StartAsync(); Browser = NewBrowser();
     }
     public Browser NewBrowser() => new(App.GetTestClient());

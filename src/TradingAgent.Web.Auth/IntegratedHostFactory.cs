@@ -43,6 +43,7 @@ public static class IntegratedHostFactory
         });
         configureTestHost(builder);
         var app = builder.Build();
+        var boundaryLogger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("TradingAgent.Web.Auth.Boundary");
         app.Use(async (context, next) =>
         {
             context.Response.Headers.CacheControl = "no-store"; context.Response.Headers.Pragma = "no-cache";
@@ -68,6 +69,11 @@ public static class IntegratedHostFactory
             catch (Exception error) when (!context.Response.HasStarted && error is JsonException or ArgumentException or KeyNotFoundException or InvalidOperationException or FormatException) { await HttpBoundary.ErrorAsync(context, 400); }
             catch (OperationCanceledException) when (!context.Response.HasStarted) { context.Response.StatusCode = 503; }
             catch (Exception) when (!context.Response.HasStarted) { await HttpBoundary.ErrorAsync(context, 500); }
+            finally
+            {
+                var operation = context.Request.Path.StartsWithSegments("/bff/auth") ? "AUTH" : context.Request.Path.StartsWithSegments("/bff/session") ? "SESSION" : context.Request.Path.StartsWithSegments("/bff/probe") ? "SYNTHETIC_PROBE" : "OTHER";
+                BoundaryLog.Completed(boundaryLogger, operation, context.Response.StatusCode);
+            }
         });
         app.UseStatusCodePages(async status => await HttpBoundary.ErrorAsync(status.HttpContext, status.HttpContext.Response.StatusCode));
         app.UseRouting(); app.UseRateLimiter(); app.UseAuthentication(); app.UseAuthorization();

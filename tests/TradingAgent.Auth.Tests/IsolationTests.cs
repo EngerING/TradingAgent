@@ -23,6 +23,7 @@ public sealed class IsolationTests(DatabaseFixture fixture)
         await using var harness = new BrowserHarness(); await harness.StartAsync(fixture);
         Assert.IsType<EphemeralDataProtectionProvider>(harness.App.Services.GetRequiredService<IDataProtectionProvider>());
         var routes = harness.App.Services.GetServices<EndpointDataSource>().SelectMany(s => s.Endpoints).OfType<RouteEndpoint>().Select(e => e.RoutePattern.RawText).ToArray();
+        Assert.Equal(10, routes.Length); Assert.Contains("/bff/auth/login", routes);
         Assert.DoesNotContain(routes, r => r!.Contains("orders", StringComparison.OrdinalIgnoreCase) || r.Contains("dashboard", StringComparison.OrdinalIgnoreCase) || r.Contains("admin", StringComparison.OrdinalIgnoreCase) || r.Contains("proxy", StringComparison.OrdinalIgnoreCase));
         foreach (var assembly in new[] { typeof(JwtVerifier).Assembly, typeof(PilotRuntime).Assembly })
         {
@@ -70,5 +71,15 @@ public sealed class IsolationTests(DatabaseFixture fixture)
         finally { await using var owner = await fixture.OpenOwnerAsync(); await DatabaseFixture.ExecuteAsync(owner, $"ALTER ROLE {login} LOGIN"); }
         harness.Browser.Cookies["__Host-TradingAgent.Session"] = old;
         using var stale = await harness.Browser.GetAsync("/bff/session"); Assert.Equal(401, (int)stale.StatusCode);
+    }
+    [Fact]
+    public async Task StructuredBoundaryLogsContainNoCredentialsCookiesOtpOrTokens()
+    {
+        await using var harness = new BrowserHarness(); await harness.StartAsync(fixture); await harness.SignInAsync();
+        using var response = await harness.Browser.GetAsync($"/bff/probe/{harness.Resource}/Paper"); Assert.Equal(200, (int)response.StatusCode);
+        var logs = string.Join('\n', harness.Logs.Events);
+        Assert.Contains("BFF boundary SYNTHETIC_PROBE completed with 200", logs, StringComparison.Ordinal);
+        foreach (var secret in new[] { "fixture-password", "123456", "PUBLIC_FIXTURE_REFRESH_DISCARD", "PUBLICSYNTHETICTOTPONLY", "eyJ", harness.Browser.Cookies["__Host-TradingAgent.Session"] })
+            Assert.DoesNotContain(secret, logs, StringComparison.Ordinal);
     }
 }
