@@ -1,0 +1,310 @@
+{
+  "schema": "trading.m011.bff_foundations_evidence",
+  "schema_version": 1,
+  "inspection_date": "2026-10-20",
+  "timezone": "America/La_Paz",
+  "mode": "OFFLINE",
+  "decision": "NO_TRADE",
+  "branch": "codex/m01-1-bff-foundations",
+  "baseline_commit": "b7b3402989ec5e7ca2eeee9c26c32dc5a94c73f9",
+  "baseline_tree": "acb053b1c010ca0c2850e8532c49d25eade905de",
+  "verified_code_and_build_commit": "fa897463dfc8fe37ac649b4026e594392962c4a1",
+  "final_documentation_commit_self_reference_omitted": true,
+  "scope": "SEPARATE_NET10_HOST_CONTRACTS_UNAVAILABLE_SECURITY_PORTS_AND_ISOLATED_TESTS",
+  "sdk": {
+    "version": "10.0.402",
+    "runtime_and_aspnet": "10.0.13",
+    "rid": "win-x64",
+    "installation": "tmp/m011/dotnet (ignored; no global SDK installation)",
+    "url": "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.402/dotnet-sdk-10.0.402-win-x64.zip",
+    "archive_sha512": "ae4fd528cb7e9f6af6aaf7de36715a69f761f183744f1bb3025d19f5a92447090ec561410e46266c1d10a63781ed6f3de771760bc76c876d87daabc367b898cd",
+    "checksum_verified_before_extraction": true,
+    "global_sdk_after_checks": "9.0.316"
+  },
+  "build": {
+    "command": "./build/web/check.ps1 -Dotnet ./tmp/m011/dotnet/dotnet.exe",
+    "configuration": "Release",
+    "exit_code": 0,
+    "warnings": 0,
+    "errors": 0,
+    "historical_target": "net9.0",
+    "new_target": "net10.0",
+    "new_only_audit": "true/all/low",
+    "warnings_as_errors": true,
+    "lock_files": 2,
+    "root_build_files_edited": false
+  },
+  "nuget_audit": {
+    "projects": 2,
+    "framework": "net10.0",
+    "direct_and_transitive": true,
+    "source": "https://api.nuget.org/v3/index.json",
+    "vulnerable_packages_reported": 0,
+    "audit_suppression_count": 0,
+    "network": "Public registry during restore/audit only; no operational service.",
+    "limitation": "Known package advisories at inspection time; shared framework is not covered by the package report."
+  },
+  "new_tests": {
+    "total": 21,
+    "passed": 21,
+    "failed": 0,
+    "skipped": 0,
+    "contracts": 5,
+    "http_boundary": 12,
+    "isolation": 4,
+    "runner": "VSTest/xUnit v2; Microsoft.AspNetCore.TestHost 10.0.13 in memory",
+    "trx_sha256": "5091a8700992df7e7186ae61f7c7b6d458a7ce4bdacc53714d197abcbbc5c801"
+  },
+  "isolation": {
+    "outbound_socket_connect_start_events": 0,
+    "dns_resolution_start_events": 0,
+    "event_scope": "Single TestServer create/start/health/denied-request/security-ports/stop/dispose lifecycle; tests not parallelized.",
+    "ibkr_connections_in_tested_paths": 0,
+    "operational_writes_in_tested_paths": 0,
+    "operational_write_evidence": "No operational services or workers, DB connections, direct file-write/process/native/outbound-client calls in compiled host; unchanged protected source hashes. Not a process-wide write counter.",
+    "authentication_schemes": 0,
+    "data_protection_provider_registered": false,
+    "outbound_http_client_factory_registered": false,
+    "business_workers": 0,
+    "host_project_references": 0,
+    "host_external_package_references": 0,
+    "product_routes": [
+      "GET /health"
+    ],
+    "pe_checks": [
+      "No historical assembly reference",
+      "No referenced socket/HTTP outbound client, DB, file-write/process/SignalR/BackgroundService types from the checked denylist",
+      "No checked Assembly.Load/MethodBase.Invoke/Activator.CreateInstance member references",
+      "No PInvoke method definitions"
+    ],
+    "policies": "Default and fallback deny, including authenticated principal; mapped protected test route returns503.",
+    "limitation": "Structural and exercised-path evidence, not an OS sandbox, firewall or malicious-process proof. Test runner/tooling writes and IPC excluded."
+  },
+  "preservation": {
+    "tracked_base_files": 707,
+    "raw_sha256_differences": 0,
+    "baseline_sha256_manifest_digest": "0a02e6959eb1584c1579499b61ec9c4fc5fd335a18314e5539d2e9347bd24a30",
+    "protected_git_objects": {
+      "python/trading_agent/core_v3": {
+        "base_git_object": "0c6a3c211249151582556862d610ffe29ae221a0",
+        "current_git_object": "0c6a3c211249151582556862d610ffe29ae221a0",
+        "unchanged": true
+      },
+      "python/trading_agent/market_analyst": {
+        "base_git_object": "1cdcffba113842977a881b57912be1e101eae688",
+        "current_git_object": "1cdcffba113842977a881b57912be1e101eae688",
+        "unchanged": true
+      },
+      "src/TradingAgent.Infrastructure": {
+        "base_git_object": "c9322ebfb7e813c71ba6098eedabf5ba8b6970dd",
+        "current_git_object": "c9322ebfb7e813c71ba6098eedabf5ba8b6970dd",
+        "unchanged": true
+      },
+      "frontend": {
+        "base_git_object": "8b2101aeb2c3cd8661e95ee8ae13511e5dff09e2",
+        "current_git_object": "8b2101aeb2c3cd8661e95ee8ae13511e5dff09e2",
+        "unchanged": true
+      },
+      "Directory.Build.props": {
+        "base_git_object": "e8f7495b8834700231914c090846d2a2bece5c95",
+        "current_git_object": "e8f7495b8834700231914c090846d2a2bece5c95",
+        "unchanged": true
+      },
+      "TradingAgent.sln": {
+        "base_git_object": "85f076d47efc02709bc44708ac9b86e5bcc5f514",
+        "current_git_object": "85f076d47efc02709bc44708ac9b86e5bcc5f514",
+        "unchanged": true
+      }
+    },
+    "preexisting_untracked_files": {
+      "docs/architecture/core-v3-phase0-audit.md": "419d1e97b7f7017bddebd3074b1433d48702a59a274194f017129933e4314537",
+      "docs/manual/TradingAgent_Manual_Tecnico_Integral.pdf": "1f31321892f532b3d5de1bc3d574bd5f66c3af38ae634d7173b6b173c49b3944"
+    },
+    "preserved_branches": {
+      "main": "f67fa92086d10b9562df214f4e869344bf0753d8",
+      "codex/market-analyst-v1": "b1643b2ba31e1430ce3384b83bff471adb5de17a",
+      "codex/m01-auth-audit-supabase": "b7b3402989ec5e7ca2eeee9c26c32dc5a94c73f9"
+    }
+  },
+  "final_diff_expectation": {
+    "added_files": 20,
+    "modified_existing_files": 0,
+    "deleted_existing_files": 0,
+    "renamed_existing_files": 0,
+    "untracked_preexisting_documents": 2
+  },
+  "new_file_inventory_excluding_this_evidence": [
+    {
+      "path": "build/web/NuGet.Config",
+      "bytes": 458,
+      "lines": 15,
+      "sha256": "d2f4adb8d7950f5be213d49681c4a3a8dd099e69ff7773d68b878ff8fab6fa54"
+    },
+    {
+      "path": "build/web/TradingAgent.Web.slnx",
+      "bytes": 181,
+      "lines": 4,
+      "sha256": "763eac84aa2dfd9bc3c3cf502334240e54fe06abe3c74f4745c12dcb5b4ed5b1"
+    },
+    {
+      "path": "build/web/Web.props",
+      "bytes": 681,
+      "lines": 16,
+      "sha256": "940b348cd84b545ca8d6456b03f13dd43a574ddb7a58ddb0b3d1dc570b62ac52"
+    },
+    {
+      "path": "build/web/check.ps1",
+      "bytes": 3307,
+      "lines": 58,
+      "sha256": "dbbb3501ca7144913fad9cf46f26d9432f0c55c75a8bfb32f2f788f7c75e59fa"
+    },
+    {
+      "path": "build/web/global.json",
+      "bytes": 105,
+      "lines": 7,
+      "sha256": "81ae2087dbfb46027fd94748351fb4b1ab24145fbb52544a2822bf128e2e48f1"
+    },
+    {
+      "path": "docs/architecture/m01-1-bff-foundations.md",
+      "bytes": 10569,
+      "lines": 159,
+      "sha256": "eab487ab9a9d3fcb0025260f23ffad8d54090ea482702efc50ceefe6a88e34fb"
+    },
+    {
+      "path": "src/TradingAgent.Web/Program.cs",
+      "bytes": 94,
+      "lines": 4,
+      "sha256": "2ec1d5bca2c900f34c40ae10440f27ebb74d6230049cbaaf1fef307204e80cb1"
+    },
+    {
+      "path": "src/TradingAgent.Web/Security/ExternalIdentity.cs",
+      "bytes": 910,
+      "lines": 26,
+      "sha256": "4c420d0cedf28ba04f8f05c78638e0296c98a748707d42be123e6c5544ee2004"
+    },
+    {
+      "path": "src/TradingAgent.Web/Security/SecurityPorts.cs",
+      "bytes": 2252,
+      "lines": 56,
+      "sha256": "dd395659e852eda68734178f8ec2e0d733bae82ad3119b94c878708cba04d17d"
+    },
+    {
+      "path": "src/TradingAgent.Web/Security/SessionView.cs",
+      "bytes": 870,
+      "lines": 23,
+      "sha256": "e01fae8e4a8560fe2fe50711a2bf7c7bad59a7b9c07893773722f86f0490fe00"
+    },
+    {
+      "path": "src/TradingAgent.Web/Security/WebError.cs",
+      "bytes": 835,
+      "lines": 25,
+      "sha256": "5facb97d336f3e64a700a893e45ce583afd4221b71046dd8290c5083bd82bc90"
+    },
+    {
+      "path": "src/TradingAgent.Web/TradingAgent.Web.csproj",
+      "bytes": 98,
+      "lines": 3,
+      "sha256": "b441be9f9321ba4aeb8ee0405ba51a4f3afb0ec374aeff26cf83e902be64c71d"
+    },
+    {
+      "path": "src/TradingAgent.Web/WebHostFactory.cs",
+      "bytes": 4076,
+      "lines": 88,
+      "sha256": "0123326a9a73773d800e2faceae96bd7cd01356d023348cde4fd23be89653a2e"
+    },
+    {
+      "path": "src/TradingAgent.Web/packages.lock.json",
+      "bytes": 66,
+      "lines": 6,
+      "sha256": "a4364d81a6de2707d66fbced18fbbc926c882ab96e1d1aebbb17e871285b9d75"
+    },
+    {
+      "path": "tests/TradingAgent.Web.Tests/BoundaryTests.cs",
+      "bytes": 5517,
+      "lines": 102,
+      "sha256": "5cd4c715f63b24e6c4bf9ebf868400595049af8f981c21f80274536fc0c04c9d"
+    },
+    {
+      "path": "tests/TradingAgent.Web.Tests/ContractTests.cs",
+      "bytes": 4504,
+      "lines": 79,
+      "sha256": "7143ae41a00bc07dc0b9903f726ba1fb3401f384e06e4638fd51513dec98040e"
+    },
+    {
+      "path": "tests/TradingAgent.Web.Tests/IsolationTests.cs",
+      "bytes": 7989,
+      "lines": 140,
+      "sha256": "952096dfda8d70937f51df337511804250496cb1a579d88e80850f8c8f5ecb81"
+    },
+    {
+      "path": "tests/TradingAgent.Web.Tests/TradingAgent.Web.Tests.csproj",
+      "bytes": 634,
+      "lines": 14,
+      "sha256": "607a63269948f43ad06a9e570a5a2106de47ffd8c12a50d9a95b61b108a35c6c"
+    },
+    {
+      "path": "tests/TradingAgent.Web.Tests/packages.lock.json",
+      "bytes": 4096,
+      "lines": 107,
+      "sha256": "025594b8dec918c9599fc7e9f0ad10bcda0ad7a10e903d9eccbab8fb130ac29b"
+    }
+  ],
+  "secret_review": {
+    "known_private_key_token_account_jwt_patterns": "PASS",
+    "sensitive_new_path_scan": "PASS",
+    "manual_new_source_and_doc_review": "PASS",
+    "credentials_requested_or_stored": false,
+    "limitations": "Pattern scan and content review; no universal detection guarantee. No private directories inspected."
+  },
+  "review": {
+    "type": "Internal single-agent review; not independent audit",
+    "axes": [
+      "correctness",
+      "readability",
+      "architecture",
+      "security",
+      "resources"
+    ],
+    "regressions_reproduced": [
+      "Host absent before implementation",
+      "Wrong-method503 instead of405",
+      "DataProtectionHostedService registered by AddAuthentication",
+      "Default policy accepted authenticated principal",
+      "Verifier result needed typed identity field"
+    ],
+    "graphify": {
+      "query": "postgres token risk",
+      "budget": 900,
+      "historical_nodes": 424,
+      "historical_links": 1039,
+      "found": 168,
+      "shown": 26,
+      "truncated": 142,
+      "limitation": "Historical graph has no Web host; corroborated with current sources; no graph rebuild."
+    }
+  },
+  "development_tooling_notes": [
+    "Initial SDK first-run reported automatic creation of a development certificate; no trust command or TLS listener was executed. Wrapper disables generation on future first runs.",
+    "Intermediate AddAuthentication composition registered DataProtectionHostedService. Final AddAuthenticationCore composition has no DataProtection provider/worker. User key files were neither inspected nor removed."
+  ],
+  "not_executed": [
+    "Real Supabase identity/JWT/JWKS/MFA/cookie/session provider",
+    "SQL schemas/migrations/queries or operational DB connection",
+    "IBKR/TWS/Gateway or market capture",
+    "Python engines or AI providers",
+    "Kestrel TCP listener, historical API/service startup or frontend/React",
+    "Historical .NET and quantitative suites (previous468 result not rerun)",
+    "Push, merge, deployment"
+  ],
+  "next_stage_authorized": false,
+  "official_sources": [
+    "https://builds.dotnet.microsoft.com/dotnet/release-metadata/10.0/releases.json",
+    "https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core",
+    "https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/webapplication?view=aspnetcore-10.0",
+    "https://learn.microsoft.com/en-us/nuget/concepts/auditing-packages",
+    "https://learn.microsoft.com/en-us/aspnet/core/test/integration-tests?view=aspnetcore-10.0",
+    "https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.dependencyinjection.authenticationcoreservicecollectionextensions.addauthenticationcore?view=aspnetcore-10.0",
+    "https://github.com/dotnet/runtime/blob/v10.0.13/src/libraries/System.Net.Sockets/src/System/Net/Sockets/SocketsTelemetry.cs",
+    "https://github.com/dotnet/runtime/blob/v10.0.13/src/libraries/System.Net.NameResolution/src/System/Net/NameResolutionTelemetry.cs"
+  ]
+}
