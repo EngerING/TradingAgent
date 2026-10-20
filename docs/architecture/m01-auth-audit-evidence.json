@@ -1,0 +1,394 @@
+{
+  "schema": "trading.m01.auth_audit_evidence",
+  "schema_version": 1,
+  "inspection_date": "2026-10-20",
+  "timezone": "America/La_Paz",
+  "mode": "OFFLINE",
+  "decision": "NO_TRADE",
+  "scope": "DOCUMENTATION_ONLY_AUDIT_AND_DESIGN",
+  "inspected_commit": "b1643b2ba31e1430ce3384b83bff471adb5de17a",
+  "core_v39_reference": "f67fa92086d10b9562df214f4e869344bf0753d8",
+  "documentation_branch": "codex/m01-auth-audit-supabase",
+  "market_analyst_branch_preserved": true,
+  "market_analyst_branch_head": "b1643b2ba31e1430ce3384b83bff471adb5de17a",
+  "baseline_tree": "42b8d42ce1619e4cd934396a32ac206fc6fb7465",
+  "baseline_tracked_files": 703,
+  "difference_from_core_v39_at_start": {
+    "added_files": 12,
+    "insertions": 1568,
+    "modified_files": 0,
+    "deleted_files": 0,
+    "commits": 4
+  },
+  "preexisting_untracked_files_preserved": {
+    "docs/architecture/core-v3-phase0-audit.md": "419d1e97b7f7017bddebd3074b1433d48702a59a274194f017129933e4314537",
+    "docs/manual/TradingAgent_Manual_Tecnico_Integral.pdf": "1f31321892f532b3d5de1bc3d574bd5f66c3af38ae634d7173b6b173c49b3944"
+  },
+  "source_inventory": [
+    {
+      "path": "src/TradingAgent.Api/Program.cs",
+      "lines": 172,
+      "sha256": "8a73bae5d186b14454edb8d2a5a38a22ddd93fa970c19ee139e714c063296ed6"
+    },
+    {
+      "path": "src/TradingAgent.Api/DashboardEndpoints.cs",
+      "lines": 82,
+      "sha256": "b58709149da04fd24da90d1487ffd72494d947311456c6d02423cb1a78ca88be"
+    },
+    {
+      "path": "src/TradingAgent.Api/DashboardRealtime.cs",
+      "lines": 48,
+      "sha256": "84f4834f096dc88f28e0216e11b50df0a9a1cbc4abeb000575d1f614af75588b"
+    },
+    {
+      "path": "src/TradingAgent.Api/DashboardService.cs",
+      "lines": 112,
+      "sha256": "54f01e3c3a4df8413d0e9bdab11396518925d54172c77f38c5e449771e2235fe"
+    },
+    {
+      "path": "src/TradingAgent.Api/SolChat.cs",
+      "lines": 156,
+      "sha256": "5fba0299ebc952961e40f5c5b470978d3b1a5f8b7b9f641d527c1589777db46f"
+    },
+    {
+      "path": "src/TradingAgent.Api/PaperFeedService.cs",
+      "lines": 130,
+      "sha256": "b4534cf969e64da9da0c1d60064bd9e2244e4ea722952964a05aa762ff473e67"
+    },
+    {
+      "path": "src/TradingAgent.Api/LegacyOperationRetirement.cs",
+      "lines": 21,
+      "sha256": "2d313fac642e164afa55e3681178a84f192c3c2d2171bbb17f6aa432c57d4a2b"
+    },
+    {
+      "path": "src/TradingAgent.Infrastructure/PostgresStore.cs",
+      "lines": 230,
+      "sha256": "b6b468d4ce785150fb843f57ec97516b5da846d4162b66b9e96dd205c409d943"
+    },
+    {
+      "path": "src/TradingAgent.Infrastructure/DashboardStore.cs",
+      "lines": 90,
+      "sha256": "9c5f1f6dd694da10ddedd3fb97fb127000d735079ac09059b19d9283997e4baf"
+    },
+    {
+      "path": "src/TradingAgent.ConfigurationLab/Program.cs",
+      "lines": 130,
+      "sha256": "f7f8ccef3463e500e586677a9a750d84adb69650b130b779b0f5d3fcd77543ba"
+    },
+    {
+      "path": "src/TradingAgent.ResearchLab/Program.cs",
+      "lines": 41,
+      "sha256": "e82823347f66a2443e080f76559e9a28643e8c4a3af0c329cc19fed3bbec9db7"
+    },
+    {
+      "path": "src/TradingAgent.Core/PaperExecutionPreparation.cs",
+      "lines": 55,
+      "sha256": "600c2c72766ea2e0907f74c187c123f843553f743756abc6df12aaccd98ee670"
+    },
+    {
+      "path": "frontend/src/api.ts",
+      "lines": 25,
+      "sha256": "de6e4e575af7ddeb81afdfdf75fd7507706d5469fac9f50a8ce1e841e7bf8b64"
+    },
+    {
+      "path": "frontend/src/stores.ts",
+      "lines": 59,
+      "sha256": "2769396addffb9b7f1ff653f631c55e58fc9a3be1f8dc5bd7a9f8ad6251a5100"
+    },
+    {
+      "path": "frontend/src/App.vue",
+      "lines": 36,
+      "sha256": "be8fe201ab4ad517cf382c52047fe3c5874e280bbe63b81ddb1d10e8b37d3744"
+    },
+    {
+      "path": "frontend/src/realtime.ts",
+      "lines": 86,
+      "sha256": "59d51144b77bbfda4bf1f57f76b14747a191063865f21c1c13ca5a962609ae85"
+    },
+    {
+      "path": "frontend/src/main.ts",
+      "lines": 10,
+      "sha256": "09161c2bf7225f3420ae9498206e3604d0fed8177d03f19ddbbc659825e649bd"
+    },
+    {
+      "path": "frontend/src/app/routes.ts",
+      "lines": 15,
+      "sha256": "db6a69d240242359c879c3a75701d5c04deaffe34364b815c2f15ead0666d474"
+    },
+    {
+      "path": "frontend/src/stores/interface.ts",
+      "lines": 21,
+      "sha256": "d73c717ca25b1f121a005d14b563e96e943309f77abb18312b098daae6e4350f"
+    },
+    {
+      "path": "frontend/src/__tests__/dashboard.test.ts",
+      "lines": 50,
+      "sha256": "453001d027f709e0a653efb8d84f6817692688541da3800502cfc4c8f0c8828c"
+    },
+    {
+      "path": "frontend/src/__tests__/realtime-lifecycle.test.ts",
+      "lines": 43,
+      "sha256": "20ac3eee65b1e655a7e465d811dca98689394a69cfbc6e4615c2d28f5b918bb7"
+    },
+    {
+      "path": "frontend/src/r20-configuration.test.ts",
+      "lines": 33,
+      "sha256": "f7d5a7299964a891e253bac8c6b6df946c5fcb2b9524d9e2af48a86d3bce7f5a"
+    },
+    {
+      "path": "frontend/e2e/dashboard.spec.ts",
+      "lines": 202,
+      "sha256": "bb3b66e79eed4e5ebf6acc716d4a2e5a00b3fb0dd6ad8a12063e70c0bfa0f2aa"
+    },
+    {
+      "path": "frontend/e2e/r20-configuration.spec.ts",
+      "lines": 51,
+      "sha256": "0efe84b16892995965cd40c9d73b80ab42f7ca4c170e67ae0f3503cd2c4e6ece"
+    },
+    {
+      "path": "frontend/e2e/r20-phase2.spec.ts",
+      "lines": 81,
+      "sha256": "2d1c89735e7285b842b3370e4a1fd016b86c831e6a06c6f488c4202aa1a7a74b"
+    },
+    {
+      "path": "frontend/e2e/r20-phase3.spec.ts",
+      "lines": 54,
+      "sha256": "8d72dfd6ddaf97847a013e4a668eabd7f58e064ca564513a57dd1c4dc42cc25c"
+    },
+    {
+      "path": "frontend/e2e/r20-readiness.spec.ts",
+      "lines": 29,
+      "sha256": "34db8ee60a102d8fde59170d70a082e48f53e4093fdcbc641ce14cf5825c4632"
+    },
+    {
+      "path": "tests/TradingAgent.Tests/DashboardTests.cs",
+      "lines": 171,
+      "sha256": "9367354117906a5de1098c52ccbf6fb773e53947d22a88e9235fb8f4e49bc075"
+    },
+    {
+      "path": "tests/TradingAgent.Tests/DashboardHeadTests.cs",
+      "lines": 51,
+      "sha256": "c029cbfc095af9322a43bd6434b674ec589fa6148490f6926a815734b8ab28aa"
+    },
+    {
+      "path": "tests/TradingAgent.Tests/LegacyRetirementTests.cs",
+      "lines": 53,
+      "sha256": "44593891b4c3f7f2db48b1a99103b994eaed85540f44e35c2f248b5e54043853"
+    },
+    {
+      "path": "tests/TradingAgent.Tests/PostgresTests.cs",
+      "lines": 88,
+      "sha256": "df30b741dbb357d6552c65a491186bb1b2299a7feb2812ccb2c0167c08d74512"
+    },
+    {
+      "path": "Directory.Build.props",
+      "lines": 10,
+      "sha256": "dd65ee5b41e96c28f68e30130932b19f14b50acd65d2444fc1b14372cfa07851"
+    },
+    {
+      "path": "src/TradingAgent.Api/TradingAgent.Api.csproj",
+      "lines": 3,
+      "sha256": "7f7da48475ffd7c087f780540918cce268efc37f630e2c8dfa7a540ec125c6ac"
+    },
+    {
+      "path": "tests/TradingAgent.Tests/TradingAgent.Tests.csproj",
+      "lines": 13,
+      "sha256": "d01e704ade7b27502c3c5fb7afe100506e51044686e8cfbecf728714919cc282"
+    },
+    {
+      "path": "frontend/package.json",
+      "lines": 38,
+      "sha256": "6aac6352fde980e815b9cb56292ca9e9c65074b1d3fc13fbcb93a0fd421d3ffe"
+    },
+    {
+      "path": "frontend/AGENTS.md",
+      "lines": 18,
+      "sha256": "c1ce48a602ba57f7a7ba3767deeed3237f5888bd4ae1c189d3fcee107ad622b6"
+    },
+    {
+      "path": "python/trading_agent/r20_configuration.py",
+      "lines": 231,
+      "sha256": "d20d3ceabad2c5ecc43d9ac39cf0c90e0bab2b041fc958bb4958e9b4f97ce449"
+    },
+    {
+      "path": "src/TradingAgent.Infrastructure/Migrations/001_initial.sql",
+      "lines": 34,
+      "sha256": "68e4482d97be7486fffc5742003fd747369107e5926daddc81f2d486642c5786"
+    },
+    {
+      "path": "src/TradingAgent.Infrastructure/Migrations/002_retention.sql",
+      "lines": 26,
+      "sha256": "717a7cb43391a86503e7daad1a17eb3004f709f3384dce9362a06061bb648ade"
+    },
+    {
+      "path": "src/TradingAgent.Infrastructure/Migrations/003_paper_observations.sql",
+      "lines": 9,
+      "sha256": "23bd421bf499a1c31e62788a9a136edeb2e5be4a64a667fe20e8d963fc4f4618"
+    },
+    {
+      "path": "src/TradingAgent.Infrastructure/Migrations/004_paper_lab.sql",
+      "lines": 17,
+      "sha256": "02a1908795d4b01fa108d384ec0ded8a2cc37bbe0ddb42f88578b526a0db3a82"
+    },
+    {
+      "path": "src/TradingAgent.Infrastructure/Migrations/005_ford_diagnostic.sql",
+      "lines": 23,
+      "sha256": "d4246a0cdd07defa89b70d971421c63bf6dd0c54abfef8f1bed733673f91a189"
+    },
+    {
+      "path": "src/TradingAgent.Infrastructure/Migrations/006_eurusd_shadow.sql",
+      "lines": 21,
+      "sha256": "3b07d269b5f63f19744ffc6813abd1954b238104eccc18b79b4c81707ac3e183"
+    },
+    {
+      "path": "src/TradingAgent.Infrastructure/Migrations/007_dashboard_chat.sql",
+      "lines": 20,
+      "sha256": "8be0634a1cf952871d0080de0685d356b8dd6a39cb7de5fe45ad8a2a5804fd4e"
+    },
+    {
+      "path": "src/TradingAgent.Infrastructure/Migrations/008_eurusd_exploratory.sql",
+      "lines": 21,
+      "sha256": "1499b01c574d0ea5117ebf18dd420c3d7b4734d117c52e7d0f46b0606e2cfa38"
+    },
+    {
+      "path": "src/TradingAgent.Infrastructure/Migrations/009_kronos.sql",
+      "lines": 29,
+      "sha256": "0f33c41ca04201a06e5a0acb81e256e72a1393603dea35c71a417461036d933e"
+    },
+    {
+      "path": "src/TradingAgent.Infrastructure/Migrations/010_r10_price_risk.sql",
+      "lines": 21,
+      "sha256": "9895ea6574a804b7ed03272ff86a5f669b53551fcbf732ce9db78d11c781cc78"
+    },
+    {
+      "path": "src/TradingAgent.Infrastructure/Migrations/011_aggressive_growth.sql",
+      "lines": 21,
+      "sha256": "332b5a62e60e62f5f5925a5ce703085839e9d131f5b4789de9751f6386165343"
+    }
+  ],
+  "endpoint_matrix": {
+    "rows": 64,
+    "literal_route_coverage_missing": [],
+    "includes_dynamic_expansions_and_signalr_transports": true
+  },
+  "graphify": {
+    "nodes": 424,
+    "links": 1039,
+    "query": "postgres token risk",
+    "budget": 1600,
+    "found": 168,
+    "shown": 45,
+    "truncated": 123,
+    "scope_limit": "Historical graph lacks dashboard, React and Supabase; sources corroborated."
+  },
+  "executed_checks": [
+    {
+      "name": "Git branch, HEAD, complete diff and source preservation",
+      "result": "PASS"
+    },
+    {
+      "name": "64-row route matrix uniqueness and literal route coverage",
+      "result": "PASS"
+    },
+    {
+      "name": "10 Market Analyst Python SHA-256 and two preexisting untracked documents",
+      "result": "PASS"
+    },
+    {
+      "name": "Node empty HTTP200 Response.json reproduction",
+      "command": "node --input-type=module -e \"try { await new Response(null, { status: 200 }).json(); process.exitCode = 1; } catch (error) { if (!(error instanceof SyntaxError)) throw error; console.log('EMPTY_OK_JSON_REJECTED: SyntaxError; no HTTP request executed'); }\"",
+      "result": "PASS",
+      "limitation": "Standard Response parser only; not an HTTP integration or browser logout test."
+    },
+    {
+      "name": "Relative document links and paired Markdown fences",
+      "result": "PASS"
+    },
+    {
+      "name": "Known secret/account/private-key patterns in new documentation",
+      "result": "PASS",
+      "limitation": "Pattern scan and content review; not a universal secret-detection guarantee."
+    }
+  ],
+  "commands_and_tools_used": [
+    "git status --short --branch",
+    "git rev-parse HEAD",
+    "git diff --stat f67fa92086d10b9562df214f4e869344bf0753d8 HEAD",
+    "git switch -c codex/m01-auth-audit-supabase",
+    "graphify reflect --if-stale",
+    "graphify query \"postgres token risk\" --budget 1600",
+    "rg directed searches across src, migrations, tests and frontend/src/__tests__",
+    "Get-Content and .venv/Scripts/python.exe -B - for numbered source reads, SHA-256 and CSV checks",
+    "Supabase search_docs GraphQL: read-only public documentation searches",
+    "web open/search of official documentation",
+    "Invoke-WebRequest https://supabase.com/changelog.md (read-only; markdown fetch fallback)"
+  ],
+  "not_executed": [
+    "dotnet build/test or API/TestServer startup",
+    "npm build/test/Playwright or frontend startup",
+    "Core V3.9/Market Analyst quantitative test runners",
+    "SQL queries, migrations, DB connections or pg_roles/trigger inspection",
+    "Supabase project/user creation or authenticated project API",
+    "IBKR/TWS/Gateway, OpenAI/Kronos or model downloads",
+    "push, merge, deployment"
+  ],
+  "prior_test_results_not_rerun": {
+    "market_analyst_delivery_distinct_tests": 468,
+    "auth_tests_passed_by_m01": 0
+  },
+  "official_documentation_read": [
+    "https://supabase.com/changelog.md",
+    "https://supabase.com/changelog/cbc-tls-ciphers-deprecated",
+    "https://supabase.com/docs/guides/auth/signing-keys",
+    "https://supabase.com/docs/guides/auth/jwts",
+    "https://supabase.com/docs/guides/auth/sessions",
+    "https://supabase.com/docs/guides/auth/auth-mfa",
+    "https://supabase.com/docs/guides/auth/auth-mfa/totp",
+    "https://supabase.com/docs/guides/auth/server-side/advanced-guide",
+    "https://supabase.com/docs/guides/auth/passwords",
+    "https://supabase.com/docs/reference/javascript/auth-signout",
+    "https://supabase.com/docs/reference/javascript/auth-admin-inviteuserbyemail",
+    "https://supabase.com/docs/guides/auth/general-configuration",
+    "https://learn.microsoft.com/en-us/aspnet/core/security/authentication/configure-jwt-bearer-authentication?view=aspnetcore-9.0",
+    "https://learn.microsoft.com/en-us/aspnet/core/security/authentication/cookie?view=aspnetcore-9.0",
+    "https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery?view=aspnetcore-9.0",
+    "https://learn.microsoft.com/en-us/aspnet/core/signalr/security?view=aspnetcore-9.0",
+    "https://learn.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.authentication.cookies.iticketstore?view=aspnetcore-9.0",
+    "https://learn.microsoft.com/en-us/aspnet/core/security/data-protection/implementation/key-encryption-at-rest?view=aspnetcore-9.0",
+    "https://www.postgresql.org/docs/current/ddl-priv.html"
+  ],
+  "operational_actions_executed": 0,
+  "credentials_requested_or_stored": false,
+  "network_scope": "Public documentation only; no broker, DB or operational service connections.",
+  "documentation_files": [
+    {
+      "path": "docs/architecture/m01-auth-audit.md",
+      "bytes": 15158,
+      "lines": 167,
+      "sha256": "8f4e126dcfff4981f22820a79d7c3b6ce64377850ea7141567893db76767587e"
+    },
+    {
+      "path": "docs/architecture/m01-supabase-auth-design.md",
+      "bytes": 38662,
+      "lines": 523,
+      "sha256": "77639a2aab43f5738149d50d8b9fa58ae565dd283e62e7427c8c8b8a390b6a80"
+    },
+    {
+      "path": "docs/architecture/m01-auth-endpoints.csv",
+      "bytes": 21311,
+      "lines": 65,
+      "sha256": "ff20032181e100274f322118101ba09b20ce7b76b95425131a0d69577c8d8f46"
+    }
+  ],
+  "documentation_evidence_self_hash_omitted": true,
+  "final_git_expectation": {
+    "new_documentation_files": 4,
+    "modified_existing_files": 0,
+    "deleted_existing_files": 0,
+    "published": false,
+    "merged": false,
+    "preserved_branch": "codex/market-analyst-v1",
+    "preserved_head": "b1643b2ba31e1430ce3384b83bff471adb5de17a",
+    "preexisting_untracked_files": 2
+  }
+}
