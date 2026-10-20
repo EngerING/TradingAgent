@@ -35,9 +35,13 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Dependency report failed.' }
     $auditText | Set-Content -LiteralPath (Join-Path $results 'dependencies.json') -Encoding UTF8
     $audit = ($auditText -join "`n") | ConvertFrom-Json
+    if ($audit.version -ne 1) { throw 'Unsupported dependency report version.' }
     if ($audit.PSObject.Properties['problems'] -and @($audit.problems).Count -gt 0) { throw 'Incomplete dependency report.' }
     if (@($audit.projects).Count -ne 2) { throw 'Unexpected dependency audit scope.' }
     foreach ($project in $audit.projects) {
+        if (@($project.frameworks).Count -ne 1 -or $project.frameworks[0].framework -ne 'net10.0') {
+            throw 'Incomplete or unexpected framework audit scope.'
+        }
         foreach ($framework in $project.frameworks) {
             foreach ($property in @('topLevelPackages', 'transitivePackages')) {
                 if ($framework.PSObject.Properties[$property] -and @($framework.$property).Count -gt 0) {
