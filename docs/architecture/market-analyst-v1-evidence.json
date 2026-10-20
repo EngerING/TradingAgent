@@ -1,0 +1,158 @@
+{
+  "schema": "trading.market_analyst.delivery_evidence",
+  "schema_version": 1,
+  "base_commit": "f67fa92086d10b9562df214f4e869344bf0753d8",
+  "code_commit": "129309b67c1eec8a7d4dd916afedb2b330ca46ab",
+  "branch": "codex/market-analyst-v1",
+  "mode": "OFFLINE",
+  "decision": "NO_TRADE",
+  "new_python_files": [
+    {
+      "path": "python/tests/market_analyst_offline_check.py",
+      "status": "ADDED",
+      "bytes": 2414,
+      "lines": 53,
+      "sha256": "e6341b8196e67e6a58ef7b8215f49d8b51483137dfd0ccb403f781898ba6380a"
+    },
+    {
+      "path": "python/tests/test_market_analyst_adversarial.py",
+      "status": "ADDED",
+      "bytes": 10278,
+      "lines": 196,
+      "sha256": "f55f751917e6c285b934f3ce1c08a816083e22ee364920a8c349270d01e626fe"
+    },
+    {
+      "path": "python/tests/test_market_analyst_contracts.py",
+      "status": "ADDED",
+      "bytes": 2960,
+      "lines": 63,
+      "sha256": "1554d18f36e8df5faf700fe3befe8e198718c82968afb72fcc05e98326785239"
+    },
+    {
+      "path": "python/tests/test_market_analyst_evaluation.py",
+      "status": "ADDED",
+      "bytes": 6400,
+      "lines": 125,
+      "sha256": "a1e60729a088d82aa8bb5ea76ae88d13b442770f2e0390e2edd36e761ef01e85"
+    },
+    {
+      "path": "python/tests/test_market_analyst_isolation.py",
+      "status": "ADDED",
+      "bytes": 3930,
+      "lines": 70,
+      "sha256": "2cabe0e21c2b159a25a0f6b297d2fbb8ba092cec118e886af352eeabea8dd511"
+    },
+    {
+      "path": "python/trading_agent/market_analyst/__init__.py",
+      "status": "ADDED",
+      "bytes": 75,
+      "lines": 1,
+      "sha256": "61006e182487e8d3cb4c3b6667777d914fccfb88bd6126fb4c6acc73c2f544ad"
+    },
+    {
+      "path": "python/trading_agent/market_analyst/contracts.py",
+      "status": "ADDED",
+      "bytes": 10359,
+      "lines": 234,
+      "sha256": "84187f0e9798edbe83422c19835469004cfd4bb43b9b2187862d4fe1c90f8e18"
+    },
+    {
+      "path": "python/trading_agent/market_analyst/evaluator.py",
+      "status": "ADDED",
+      "bytes": 8136,
+      "lines": 159,
+      "sha256": "8bf740df307bba99e64cc692f3d6ed7e95d597d2efe167444863a15f3d8a78f4"
+    },
+    {
+      "path": "python/trading_agent/market_analyst/fixtures.py",
+      "status": "ADDED",
+      "bytes": 3875,
+      "lines": 96,
+      "sha256": "209d144c5e614f50c72f0dcf70dd8001b105236688c27cb131107f372c6c9618"
+    },
+    {
+      "path": "python/trading_agent/market_analyst/serialization.py",
+      "status": "ADDED",
+      "bytes": 6014,
+      "lines": 178,
+      "sha256": "db06f72aa6c611ed8ffd9eaf4cd94b21d5bbb5e496a9fac1401afd54437eb618"
+    }
+  ],
+  "preservation": {
+    "baseline_tracked_files": 691,
+    "baseline_manifest_sha256": "254bcce4a6cdb76e9274a4b68f1d3b0d822035401599a0df8df8bd0a3908da35",
+    "changed_baseline_files": [],
+    "preexisting_untracked_files": {
+      "docs/architecture/core-v3-phase0-audit.md": "419d1e97b7f7017bddebd3074b1433d48702a59a274194f017129933e4314537",
+      "docs/manual/TradingAgent_Manual_Tecnico_Integral.pdf": "1f31321892f532b3d5de1bc3d574bd5f66c3af38ae634d7173b6b173c49b3944"
+    },
+    "untracked_documents_unchanged": true,
+    "main_commit": "f67fa92086d10b9562df214f4e869344bf0753d8",
+    "origin_main_cached_commit": "f67fa92086d10b9562df214f4e869344bf0753d8"
+  },
+  "reference_files": [
+    {
+      "path": "python/trading_agent/market.py",
+      "sha256": "03e766bb13ac393628fa1cc69711609f33432f0687bfa50af2ea80a5b5736b7e"
+    },
+    {
+      "path": "python/trading_agent/research_indicators.py",
+      "sha256": "ceb9438b087089e122212402a5f21365f1d990cfbb11eb2ac19cd4d9ddf5109f"
+    },
+    {
+      "path": "python/tests/core_v39_offline_check.py",
+      "sha256": "0fd075348264b01127da7fb9c6919db74959cbc0f378bcd499a2dafc39a2c5d2"
+    },
+    {
+      "path": "python/tests/core_v38_offline_check.py",
+      "sha256": "404b414dd99fafc3f7ffbb5d4d7f63bca493e8aafcf9ef1192b13fe65f5d68fc"
+    },
+    {
+      "path": "python/tests/core_v34_offline_check.py",
+      "sha256": "3feb20ba4735fc4b3e70e9fd0fd17a32ce7c9e38d32ce7c1a918004513c05829"
+    }
+  ],
+  "executed_tests": [
+    {
+      "command": ".venv/Scripts/python.exe -B python/tests/market_analyst_offline_check.py",
+      "passed": 38,
+      "seconds": 1.051,
+      "exit_code": 0,
+      "offline_barrier_violations": 0,
+      "market_analyst_barrier_violations": 0,
+      "historical_barrier_violations": 0
+    },
+    {
+      "command": ".venv/Scripts/python.exe -B python/tests/core_v39_offline_check.py",
+      "passed": 394,
+      "seconds": 264.959,
+      "exit_code": 0,
+      "offline_barrier_violations": 0,
+      "v39_barrier_violations": 0
+    },
+    {
+      "command": ".venv/Scripts/python.exe -B python/tests/core_v39_offline_check.py test_quant.py test_research.py",
+      "passed": 36,
+      "seconds": 0.077,
+      "exit_code": 0,
+      "offline_barrier_violations": 0,
+      "v39_barrier_violations": 0
+    }
+  ],
+  "limitations": [
+    "Synthetic local recipes only; no external OHLC import.",
+    "Historical indicator math uses float; no cross-platform binary reproducibility claim.",
+    "No IBKR, real models, services, deployment, push or merge.",
+    "Internal review only; no independent operational certification."
+  ],
+  "total_distinct_tests_passed": 468,
+  "final_diff_summary": {
+    "added_paths": 12,
+    "new_modules": 5,
+    "new_tests_and_runner": 5,
+    "new_documents": 2,
+    "baseline_modified": 0,
+    "baseline_deleted": 0,
+    "baseline_renamed": 0
+  }
+}
