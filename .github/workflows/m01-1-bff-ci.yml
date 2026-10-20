@@ -20,8 +20,6 @@ jobs:
       DOTNET_GENERATE_ASPNET_CERTIFICATE: 'false'
       DOTNET_NOLOGO: '1'
       DOTNET_CLI_UI_LANGUAGE: en
-      NUGET_PACKAGES: ${{ runner.temp }}/m011-nuget-packages
-      NUGET_HTTP_CACHE_PATH: ${{ runner.temp }}/m011-nuget-http
       CI_RESULTS_DIRECTORY: ${{ github.workspace }}/tmp/m011/check
     steps:
       - name: Checkout exact push commit
@@ -98,6 +96,9 @@ jobs:
 
       - name: Run unchanged M01.1 check from repository root
         id: check
+        env:
+          NUGET_PACKAGES: ${{ runner.temp }}/m011-nuget-packages
+          NUGET_HTTP_CACHE_PATH: ${{ runner.temp }}/m011-nuget-http
         run: ./build/web/check.ps1 -Dotnet dotnet
 
       - name: Validate TRX, assembly, build and audit evidence

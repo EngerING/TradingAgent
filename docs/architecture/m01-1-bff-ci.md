@@ -90,6 +90,11 @@ se corrigió sin tocar check.ps1 y se repitieron todos los fixtures.
 Estas verificaciones locales del validador no son una ejecución remota ni otras
 pruebas xUnit del producto. No se atribuyen resultados de Actions antes de leerlos.
 
+El [primer arranque](https://github.com/EngerING/TradingAgent/actions/runs/39496733279)
+fue rechazado por el esquema de GitHub antes de crear jobs: runner.temp no está
+disponible en jobs.env. Las dos variables NuGet se movieron a steps.env, sin
+cambiar el script ni ampliar permisos. Ese intento no ejecutó pruebas ni build.
+
 | Componente preservado | Objeto Git de referencia |
 |---|---|
 | Core V3 completo, incluido V3.9 | `0c6a3c211249151582556862d610ffe29ae221a0` |
