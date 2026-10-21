@@ -223,7 +223,78 @@
     "retention_days": 14,
     "dependency_cache": false,
     "normal_ci": "Suite A only, no hosted credentials or connections",
-    "status": "Pending branch publication"
+    "status": "First CI SUCCESS, downloaded evidence verified; final documentation commit reruns identical workflow. Final identity in final artifact/delivery.",
+    "verified_execution": {
+      "commit": "9c059aaef2bc3e98a51f039430b4624769268f6e",
+      "tree": "a7e97919530e084b311def6712349a058eeb0a03",
+      "artifact_sha256": "8c265826912b5d90c78b405a51e90f0610c634973ee25dcb45fe71b5a1c3d909",
+      "tests": {
+        "b1": {
+          "assembly": "TradingAgent.Auth.Pilot.Tests.dll",
+          "passed": 42,
+          "failed": 0,
+          "skipped": 0,
+          "duration_seconds": 6.689393,
+          "trx_sha256": "3482aa0f73a4b92c0f16fefb9a6f3ac370431fd76501454f25782e834b12b0e6"
+        },
+        "m013": {
+          "assembly": "TradingAgent.Auth.Tests.dll",
+          "passed": 64,
+          "failed": 0,
+          "skipped": 0,
+          "duration_seconds": 9.619035,
+          "trx_sha256": "204dc53ea93bfa34d5727a58b717a845ffe73da1edcc3d9ee6a65a2c8ec2692f"
+        },
+        "m012": {
+          "assembly": "TradingAgent.Identity.Tests.dll",
+          "passed": 61,
+          "failed": 0,
+          "skipped": 0,
+          "duration_seconds": 11.460974,
+          "trx_sha256": "1629073b67f4c5c4bbbd69bd0011fb1256d653d02bcaa8d4cbbd52db554dbce8"
+        },
+        "m011": {
+          "assembly": "TradingAgent.Web.Tests.dll",
+          "passed": 21,
+          "failed": 0,
+          "skipped": 0,
+          "duration_seconds": 0.999633,
+          "trx_sha256": "54396db49257dd291c98495cb7fc0d3461dc96dadb82c904aacc6fdb8b76d4cf"
+        }
+      },
+      "b1_isolation": {
+        "mode": "OFFLINE",
+        "decision": "NO_TRADE",
+        "socket_connect_starts": 127,
+        "connections_outside_disposable_postgres": 0,
+        "scope": "SQL fixture lifecycle; tooling excluded",
+        "postgres_version": "17.11 (Debian 17.11-1.pgdg12+2)"
+      },
+      "m013_isolation": {
+        "mode": "OFFLINE",
+        "decision": "NO_TRADE",
+        "socket_connect_starts": 312,
+        "connections_outside_disposable_postgres": 0,
+        "scope": "SQL fixture lifecycle; tooling excluded",
+        "postgres_version": "17.11 (Debian 17.11-1.pgdg12+2)"
+      },
+      "m012_isolation": {
+        "mode": "OFFLINE",
+        "decision": "NO_TRADE",
+        "socket_connect_starts": 433,
+        "connections_outside_disposable_postgres": 0,
+        "scope": "SQL fixture lifecycle; tooling excluded",
+        "postgres_version": "17.11 (Debian 17.11-1.pgdg12+2)"
+      },
+      "total_passed": 188,
+      "build": "Release; 0 warnings; 0 errors; NuGet known vulnerable packages: 0",
+      "run_id": 39539401715,
+      "url": "https://github.com/EngerING/TradingAgent/actions/runs/39539401715",
+      "conclusion": "success",
+      "artifact_id": 12319400228,
+      "artifact_url": "https://github.com/EngerING/TradingAgent/actions/runs/39539401715/artifacts/12319400228",
+      "validation": "Four TRX exact names/counters/assemblies, SDK, commit/tree, Release logs, dependency reports and isolation inspected from downloaded archive"
+    }
   },
   "secret_review": {
     "new_and_modified_files_known_patterns": "PASS",
@@ -311,9 +382,9 @@
     {
       "path": "docs/architecture/m01-3b-preparation.md",
       "change": "A",
-      "bytes": 8535,
-      "lines": 137,
-      "sha256": "8520e28345e25106c4da948dae4408a17791c048eeeca943553e1e90406a1abe"
+      "bytes": 9795,
+      "lines": 156,
+      "sha256": "d3b6544bc00d2aae162dbec8af449e4847f9b4db9f5819569bf4ccf482db9082"
     },
     {
       "path": "docs/architecture/m01-3b-session-renewal-adr.md",

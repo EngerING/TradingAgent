@@ -135,3 +135,22 @@ Fuentes primarias contrastadas: [TOTP](https://supabase.com/docs/guides/auth/aut
 [rate limiting ASP.NET10](https://learn.microsoft.com/en-us/aspnet/core/performance/rate-limit?view=aspnetcore-10.0).
 Las instrucciones de B2 y la infraestructura de entrada segura de credenciales
 deben concretarse con el proyecto confirmado; M01.4 no se inicia.
+
+## CI verificada
+
+Primera ejecución [39539401715](https://github.com/EngerING/TradingAgent/actions/runs/39539401715)
+correcta sobre commit `9c059aaef2bc3e98a51f039430b4624769268f6e`, árbol
+`a7e97919530e084b311def6712349a058eeb0a03`.
+El [artefacto12319400228](https://github.com/EngerING/TradingAgent/actions/runs/39539401715/artifacts/12319400228)
+se descargó y verificó: SHA-256
+`8c265826912b5d90c78b405a51e90f0610c634973ee25dcb45fe71b5a1c3d909`.
+Los cuatro TRX contienen42/64/61/21 casos esperados aprobados, cero fallos y
+omitidas, ensamblados exactos y duraciones6.689393s/9.619035s/11.460974s/0.999633s.
+Builds Release sin advertencias/errores, auditorías sin vulnerabilidades conocidas
+reportadas, SDK10.0.402 y PostgreSQL17.11. Se observan cero conexiones fuera del
+PostgreSQL desechable durante los ciclos de pruebas, sin afirmar sandbox del runner.
+La entrega registra un commit posterior exclusivamente documental y vuelve a
+ejecutar la misma CI: su identidad/árbol exactos y artefacto constan en la respuesta
+final y en identity.json. No se introduce una autorreferencia de hash imposible
+en este documento. B2 continúa sin ejecutar y la auditoría independiente de B1
+sigue pendiente: un resultado verde no concede aprobación operacional.
