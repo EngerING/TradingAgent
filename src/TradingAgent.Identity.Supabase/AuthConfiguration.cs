@@ -31,7 +31,18 @@ public sealed class AuthConfiguration
 }
 
 public enum AuthFailure { Invalid, Unavailable, RateLimited, Conflict }
-public enum AuthDiagnostic { Unspecified, ResponseTooLarge, UnexpectedContentType, InvalidJson, DeadlineExceeded, TransportUnavailable, EnrollmentContractInvalid }
+// Closed internal categories only. Never attach claim values or library exception text.
+public enum AuthDiagnostic
+{
+    Unspecified, ResponseTooLarge, UnexpectedContentType, InvalidJson, DeadlineExceeded, TransportUnavailable, EnrollmentContractInvalid,
+    JwtStructureInvalid, JwtHeaderInvalid, JwtAlgorithmInvalid, JwtTypeInvalid, JwtRemoteKeyHintRejected, JwtKeyIdInvalid,
+    JwksProfileInvalid, JwksKeyNotFound, JwksUnavailable, JwksResponseRejected,
+    JwtValidationFailed, JwtSignatureInvalid, JwtIssuerInvalid, JwtAudienceInvalid,
+    JwtExpirationMissing, JwtExpired, JwtNotYetValid, JwtLifetimeInvalid,
+    JwtPayloadInvalid, JwtSubjectInvalid, JwtSessionInvalid, JwtIssuedAtInvalid, JwtExpirationInvalid,
+    JwtAalInvalid, JwtRoleInvalid, JwtAnonymousRejected, JwtRefRejected, JwtIssuedAtFuture, JwtLifetimeTooLong,
+    JwtAmrInvalid, JwtAmrTimestampInvalid, JwtAmrMethodInvalid
+}
 public sealed class AuthException(AuthFailure failure, AuthDiagnostic diagnostic = AuthDiagnostic.Unspecified) : Exception("AUTH_REQUEST_REJECTED")
 {
     public AuthFailure Failure { get; } = failure;

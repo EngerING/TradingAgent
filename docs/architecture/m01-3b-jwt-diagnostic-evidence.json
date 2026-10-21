@@ -1,0 +1,218 @@
+{
+  "schema": "trading.m013b.jwt_diagnostic_evidence",
+  "schema_version": 1,
+  "inspection_date": "2026-10-21",
+  "timezone": "America/La_Paz",
+  "mode": "OFFLINE",
+  "decision": "NO_TRADE",
+  "branch": "codex/m01-3b-hosted-supabase-pilot",
+  "input_commit": "5d97406661e8b8432378bb3c5644ad23cd46b512",
+  "input_tree": "78037d4b3d5ec17ca706cb3ae3b71bd9a84010ef",
+  "final_identity": "CI identity.json and final delivery; commit self-reference omitted",
+  "historical_hosted_result": {
+    "sha256": "b924a95c36510a8ae1a290fff65cc82cb86da40c702a5770574e90e8eae09107",
+    "status": "AUTH_Invalid",
+    "flow_stage": "PASSWORD_AND_JWT",
+    "http_PASSWORD": 200,
+    "http_JWKS": 200,
+    "attempted_USER": false,
+    "auth_diagnostic": "Unspecified",
+    "untrusted_iat_future": true,
+    "exact_rejection_proven": false,
+    "limitation": "Discarded JWT; no per-gate diagnostic. Untrusted shape does not validate signature/JWKS/claims at validation time."
+  },
+  "demonstrated_defect": "Signature and signed future-iat failures collapsed to Invalid/Unspecified. Closed diagnostics added without acceptance-policy change.",
+  "clock_hypothesis": "Not proven for historical token. Signed synthetic future iat rejected until exact boundary; no skew or system-clock change.",
+  "red_before_correction": {
+    "jwt-red-all.trx": {
+      "failed": 39,
+      "sha256": "cd92cb53ef284fda93b8682b6b67c0279b4a788069798b4ead7b5bf39cc57a77"
+    },
+    "jwt-http-red.trx": {
+      "failed": 5,
+      "sha256": "e6756d74ac0c8a5124c8504a64aa87981bf386375d170b6bd2b4bd950174fd82"
+    }
+  },
+  "new_cases": 44,
+  "preserved_previous_cases": 222,
+  "tests": {
+    "m013b": {
+      "assembly": "TradingAgent.Auth.Pilot.Tests.dll",
+      "total": 120,
+      "passed": 120,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 18.6862539,
+      "expected_test_manifest": "PASS",
+      "mode": "OFFLINE",
+      "decision": "NO_TRADE",
+      "trx_sha256": "c11fa6187d1e26841ba0d558eeb7c32cde0ad88cf8817ba375d5d667da210887"
+    },
+    "m013": {
+      "assembly": "TradingAgent.Auth.Tests.dll",
+      "total": 64,
+      "passed": 64,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 34.3659803,
+      "expected_test_manifest": "PASS",
+      "mode": "OFFLINE",
+      "decision": "NO_TRADE",
+      "trx_sha256": "2c931b663914b46c942e242696deca47f7670bd4ca57e1a3e1938a1b74487f96"
+    },
+    "m012": {
+      "assembly": "TradingAgent.Identity.Tests.dll",
+      "total": 61,
+      "passed": 61,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 30.5513212,
+      "expected_test_manifest": "PASS",
+      "mode": "OFFLINE",
+      "decision": "NO_TRADE",
+      "trx_sha256": "dabe21e33bb933130a2ea9c2e1d2f547dff4594af873a95ce7b82edd990befec"
+    },
+    "m011": {
+      "assembly": "TradingAgent.Web.Tests.dll",
+      "total": 21,
+      "passed": 21,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 1.0830326,
+      "expected_test_manifest": "PASS",
+      "mode": "OFFLINE",
+      "decision": "NO_TRADE",
+      "trx_sha256": "7313be0e1fcec148f369c6c0a6eebd05448a3c663345c7c9d374ad64c2b80342"
+    }
+  },
+  "total_passed": 266,
+  "failed": 0,
+  "skipped": 0,
+  "build": {
+    "sdk": "10.0.402",
+    "configuration": "Release",
+    "warnings": 0,
+    "errors": 0,
+    "locked_restore": true,
+    "known_nuget_vulnerabilities_reported": 0,
+    "limitation": "Known package advisories only, not runtime vulnerability certification."
+  },
+  "isolation": {
+    "m013b": {
+      "mode": "OFFLINE",
+      "decision": "NO_TRADE",
+      "socket_connect_starts": 141,
+      "connections_outside_disposable_postgres": 0,
+      "scope": "SQL fixture lifecycle; tooling excluded",
+      "postgres_version": "17.5"
+    },
+    "m013": {
+      "mode": "OFFLINE",
+      "decision": "NO_TRADE",
+      "socket_connect_starts": 312,
+      "connections_outside_disposable_postgres": 0,
+      "scope": "SQL fixture lifecycle; tooling excluded",
+      "postgres_version": "17.5"
+    },
+    "m012": {
+      "mode": "OFFLINE",
+      "decision": "NO_TRADE",
+      "socket_connect_starts": 369,
+      "connections_outside_disposable_postgres": 0,
+      "scope": "SQL fixture lifecycle; tooling excluded",
+      "postgres_version": "17.5"
+    }
+  },
+  "preservation": {
+    "baseline_files": 804,
+    "raw_sha256_preserved": 796,
+    "explicit_modified": [
+      "src/TradingAgent.Identity.Supabase/AuthConfiguration.cs",
+      "src/TradingAgent.Identity.Supabase/AuthTransport.cs",
+      "src/TradingAgent.Identity.Supabase/JwksCache.cs",
+      "src/TradingAgent.Identity.Supabase/JwtVerifier.cs",
+      "src/TradingAgent.Identity.Supabase/SupabaseAuthClient.cs",
+      "src/TradingAgent.Web.Auth/IntegratedHostFactory.cs",
+      "src/TradingAgent.Web.Auth/PilotEndpoints.cs",
+      "src/TradingAgent.Web.Auth/PilotRuntime.cs"
+    ],
+    "protected_git_objects": {
+      "python/trading_agent/core_v3": "0c6a3c211249151582556862d610ffe29ae221a0",
+      "python/trading_agent/market_analyst": "1cdcffba113842977a881b57912be1e101eae688",
+      "src/TradingAgent.Infrastructure": "c9322ebfb7e813c71ba6098eedabf5ba8b6970dd",
+      "src/TradingAgent.Core": "e7c3f7cfa0ed45a8e6f18100c14f639c8f8c37a6",
+      "src/TradingAgent.Api": "3cb11938debcbf3f1d21001a9d6b10611f86751b",
+      "src/TradingAgent.ConfigurationLab": "dce30b74b09fadc1d08636d67cf7b6057c10126c",
+      "src/TradingAgent.ResearchLab": "81c1937682094bfc1c87f962537600fce897f609",
+      "frontend": "8b2101aeb2c3cd8661e95ee8ae13511e5dff09e2",
+      "src/TradingAgent.Web": "220a78a53d2dbaaee7094b156dd283ab886c7aae",
+      "src/TradingAgent.Identity.Supabase/TradingAgent.Identity.Supabase.csproj": "5ba50ac09826a68b0cd005cbbe924c19c83e0a8f",
+      "src/TradingAgent.Identity.Supabase/packages.lock.json": "d627a23866c179330fe91cc8fff2c75b70e23a54",
+      "tests/TradingAgent.Auth.Tests": "981b4dba28b70f806154b3c44200fdd81c77ca8a",
+      "build/auth": "52011f38d3851a0a567c1f2775c03f31b5b68537",
+      "tests/TradingAgent.Web.Tests": "21fe88719c1f3816ebf800d5fb16f6b8dd608173",
+      "src/TradingAgent.Identity.Persistence": "6aa8d4dcaa734d44a511ac77a813709c8396781d",
+      "src/TradingAgent.Identity.Migrations": "e5b49b4be3d29bee1f3a361c2a36f4912ebb55d3",
+      "tests/TradingAgent.Identity.Tests": "ed1995de96a6072955ac3cba938524ea17e65e0e",
+      "build/web": "fa8dc4abf916dc7c50a5832103cf4f47fafac0ad",
+      "build/identity": "8bfc7a243f903165bfbf20071368087307c6c545",
+      "Directory.Build.props": "e8f7495b8834700231914c090846d2a2bece5c95",
+      "TradingAgent.sln": "85f076d47efc02709bc44708ac9b86e5bcc5f514",
+      ".github/workflows/m01-1-bff-ci.yml": "940a5213f9965872f1879d8f42c982b6aa9bccf8",
+      ".github/workflows/m01-2-postgres-security-ci.yml": "e12acf05ed5fcc80d73d3ca01f23bad3971604e4",
+      ".github/workflows/m01-3-supabase-auth-ci.yml": "2df2e342f6affe1c4db532917c160bc93a4bda0d"
+    },
+    "preexisting_untracked_sha256": {
+      "docs/architecture/core-v3-phase0-audit.md": "419d1e97b7f7017bddebd3074b1433d48702a59a274194f017129933e4314537",
+      "docs/manual/TradingAgent_Manual_Tecnico_Integral.pdf": "1f31321892f532b3d5de1bc3d574bd5f66c3af38ae634d7173b6b173c49b3944"
+    },
+    "main": "f67fa92086d10b9562df214f4e869344bf0753d8"
+  },
+  "review": {
+    "type": "Internal fresh-context adversarial review, not independent audit",
+    "cycles": 2,
+    "actionable_findings_resolved": 1,
+    "regression_cases_for_finding": 5,
+    "remaining_actionable_findings": 0,
+    "external_review": "Manual package retained per user preference; no external CLI or third-party transmission."
+  },
+  "independent_ci": {
+    "status_at_documentation_commit": "Pending push execution; final run and artifact reported in delivery",
+    "workflow": ".github/workflows/m01-3b-hosted-pilot-ci.yml",
+    "expected_total": 266,
+    "hosted_supabase_executed": false
+  },
+  "not_executed": [
+    "Hosted pilot rerun",
+    "Password change",
+    "Remote factor discovery/enrollment/challenge/verify/delete or recovery",
+    "Hosted JWT validation or remote logout",
+    "Operational PostgreSQL or migrations",
+    "IBKR/financial services/AI/frontend",
+    "Merge/main/deployment"
+  ],
+  "hosted_pending": [
+    "Initial real JWT acceptance with specific diagnostic",
+    "Real MFA AAL2",
+    "Hosted session and revocation measurements",
+    "HTTPS BFF certificate"
+  ],
+  "source_inventory": [
+    {
+      "path": "src/TradingAgent.Identity.Supabase/AuthConfiguration.cs",
+      "sha256": "98bf6198a8f15a3ce8d0df7850191f1a12963a3337d8850d3ff379f4699fd84f"
+    },
+    {
+      "path": "src/TradingAgent.Identity.Supabase/JwtVerifier.cs",
+      "sha256": "e54fa3f350f8f1448722e6dab3ce0a754c98c5283c4e7f8ab62ba353b850bcfc"
+    },
+    {
+      "path": "src/TradingAgent.Identity.Supabase/JwksCache.cs",
+      "sha256": "95980fc2069abfa37b92e61efee8bbb44964e0d43545d22ba1100e42e2cc1525"
+    },
+    {
+      "path": "tests/TradingAgent.Auth.Pilot.Tests/JwtDiagnosticTests.cs",
+      "sha256": "45a969d732b57fe2657322e8976a06e4b424680be408afda788d027406122430"
+    }
+  ]
+}
