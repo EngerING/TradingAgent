@@ -139,7 +139,7 @@ Al preparar B2 se reprodujo además un bypass de CSRF previo: routing acepta
 post/pOsT, mientras el guard comparaba POST literalmente. Dos regresiones fallaron
 antes de la corrección. El guard y las cuotas ahora usan HttpMethods.IsPost para
 aplicar el mismo control independientemente del casing del método. No se modificó
-ninguna prueba anterior y el total actual es190, incluyendo las dos nuevas.
+ninguna prueba anterior y el cierre B1 alcanzó190, incluyendo las dos nuevas.
 
 Fuentes primarias contrastadas: [TOTP](https://supabase.com/docs/guides/auth/auth-mfa/totp),
 [OpenAPI](https://github.com/supabase/auth/blob/master/openapi.yaml),
@@ -175,3 +175,9 @@ SHA-256 `3d05b8a83a8ab4fe8a72a0dca698450bc821780a4e25079a43bbac7c5f2b3f9a`,
 y se verificaron los cuatro TRX, identidad, SDK, builds, NuGet y aislamiento.
 El auxiliar interactivo Windows posterior se compila y verifica localmente;
 la CI Linux no lo ejecuta ni valida su integración real alojada.
+
+La corrección posterior de [enrollment TOTP](m01-3b-totp-diagnosis.md), solicitada
+tras confirmar POST factors200 y un factor no verificado, añade32 regresiones:
+el conjunto actual es76+64+61+21=222. Se autorizaron tres cambios acotados en
+Identity.Supabase para límites de respuesta, diagnóstico y parsing/recuperación;
+JWT/ES256/JWKS y permisos SQL siguen preservados. No se repitió el piloto real.

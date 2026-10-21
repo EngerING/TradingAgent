@@ -27,7 +27,7 @@ internal sealed class PilotForm : Form
             var identifier = email.Text; var secret = password.Text; email.Clear(); password.Clear();
             try { await HostedRun.ExecuteAsync(identifier, secret, this, cancellation.Token); ExitCode = 0; status.Text = "Mediciones terminadas con casos pendientes. No constituye aprobación B2. Evidencia redactada guardada."; }
             catch (OperationCanceledException) { HostedRun.Failure("CANCELLED"); status.Text = "Piloto cancelado o vencido. Sin reintento automático."; }
-            catch (TradingAgent.Identity.Supabase.AuthException error) { HostedRun.Failure("AUTH_" + error.Failure); status.Text = "El proveedor o su contrato rechazó el flujo: " + error.Failure + ". Detenido, sin debilitar validaciones."; }
+            catch (TradingAgent.Identity.Supabase.AuthException error) { HostedRun.Failure(error); status.Text = "Flujo detenido: " + error.Failure + " / " + error.Diagnostic + ". Sin reintento automático ni eliminación de factores."; }
             catch (PilotFailure error) { HostedRun.Failure(error.Code); status.Text = "Piloto detenido: " + error.Code + ". Revisa la evidencia redactada."; }
             catch (Exception) { HostedRun.Failure("DEPENDENCY_OR_CONFIGURATION_FAILURE"); status.Text = "Fallo de dependencia/configuración. Detenido; detalles sensibles no registrados."; }
             finally
@@ -58,6 +58,25 @@ internal sealed class PilotForm : Form
         var code = input.Text; input.Clear(); return code;
     }
     internal void Progress(string message) { status.Text = message; }
+    internal bool ConfirmRecovery(TotpRecoveryTarget target)
+    {
+        using var dialog = new Form { Text = "Confirmar recuperación TOTP de desarrollo", Width = 650, Height = 440, StartPosition = FormStartPosition.CenterParent, MaximizeBox = false, MinimizeBox = false };
+        var layout = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(20), FlowDirection = FlowDirection.TopDown, WrapContents = false };
+        layout.Controls.Add(new Label
+        {
+            Width = 590, Height = 220,
+            Text = $"La inscripción anterior no entregó un secreto utilizable. Para reiniciarla se eliminará SOLO el factor TOTP no verificado indicado abajo y se solicitará una inscripción nueva.\n\nUsuario autenticado: {target.Identity.Subject:D}\nFactor pendiente: {target.FactorId:D}\n\nComprueba que corresponden a tu cuenta ficticia de Auth Dev. Se volverá a verificar propiedad/estado y se abortará si cambió. El proveedor no ofrece un DELETE condicional: requiere uso exclusivo de esta cuenta durante la recuperación."
+        });
+        var cancel = new Button { Text = "Cancelar, conservar factor", AutoSize = true, DialogResult = DialogResult.Cancel };
+        var approve = new Button { Text = "Confirmo eliminar este factor no verificado y reinscribir", AutoSize = true, DialogResult = DialogResult.OK, Enabled = false };
+        var exclusive = new CheckBox { Text = "Cuenta de pruebas en uso exclusivo; ninguna otra verificación MFA está en curso.", Width = 590, Height = 45 };
+        exclusive.CheckedChanged += (_, _) => approve.Enabled = exclusive.Checked;
+        layout.Controls.Add(exclusive); layout.Controls.Add(cancel); layout.Controls.Add(approve); dialog.Controls.Add(layout); dialog.AcceptButton = cancel; dialog.CancelButton = cancel;
+        var deadline = DateTimeOffset.UtcNow.AddMinutes(2);
+        using var expiry = new System.Windows.Forms.Timer { Interval = 500 };
+        expiry.Tick += (_, _) => { if (cancellation.IsCancellationRequested || DateTimeOffset.UtcNow >= deadline) dialog.Close(); }; expiry.Start();
+        return dialog.ShowDialog(this) == DialogResult.OK && !cancellation.IsCancellationRequested && DateTimeOffset.UtcNow < deadline;
+    }
 }
 
 internal sealed class PilotFailure(string code) : Exception("HOSTED_PILOT_CHECK_FAILED")

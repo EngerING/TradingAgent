@@ -23,8 +23,10 @@ Contrato adversarial para revisión manual:
 
 Confirmar las146 regresiones intactas, nombres/ensamblados TRX y pruebas nuevas;
 SDK exacto, locked restore, NuGet, Release/advertencias estrictas y límites de
-aislamiento del observer. Revisar hashes de801 archivos base preservados y los
-tres únicos archivos modificados de Web.Auth; once SQL, Vue, Core y APIs intactos.
+aislamiento del observer. La entrega B1 preservaba801 archivos base y modificaba
+tres de Web.Auth. La corrección TOTP autorizada añade tres archivos modificados
+de Identity.Supabase: se exige ahora preservar798 de804 y verificar por separado
+JwtVerifier/JwksCache/locks. Once SQL, Vue, Core y APIs permanecen intactos.
 El observer no es sandbox de OS y tooling queda fuera del conteo de conexiones.
 
 Reproducir Suite A con ./build/auth-pilot/local-test.ps1: usa un cluster nuevo,
@@ -45,3 +47,11 @@ de un JWT decodificado son diagnóstico no confiable, nunca evidencia de firma.
 Mantener pendiente HTTPS del BFF hasta disponer del certificado compatible,
 según la elección del usuario. No solicitar passwords, TOTP, PFX o claves por chat.
 Los tests B2 no se ejecutan en CI ni reciben sus secretos.
+
+Revisión adicional del [diagnóstico TOTP](m01-3b-totp-diagnosis.md): contrastar
+la distinción entre frontera demostrada y causa histórica desconocida. Auditar
+el presupuesto256KiB solo para POST exacto de enrollment, estados estrictos,
+confirmación ligada a identidad/factor, deadline cubriendo GET+DELETE y
+prerrequisito de uso exclusivo. No confundir un fixture que rechaza una carrera
+con un DELETE condicional del proveedor. No volver a ejecutar el piloto ni
+modificar el factor remoto durante la revisión del código.

@@ -97,8 +97,8 @@ jobs:
           $m011 = Get-Content ./artifacts/m013b/m011-summary.json -Raw | ConvertFrom-Json
           $isolation = Get-Content ./artifacts/m013b/isolation.json -Raw | ConvertFrom-Json
           $identity = Get-Content ./artifacts/m013b/identity.json -Raw | ConvertFrom-Json
-          if ($current.passed -ne 44 -or $prior.passed -ne 64 -or $m012.passed -ne 61 -or $m011.passed -ne 21 -or $isolation.connections_outside_disposable_postgres -ne 0 -or $identity.preservation -ne 'PASS') { throw 'Incomplete checks.' }
-          "M01.3B B1:44; M01.3A:64; M01.2:61; M01.1:21 passed, no failures/skips. PostgreSQL:$($isolation.postgres_version). Auth uses in-process HTTP TestServer with ephemeral signing keys. No hosted Supabase validation. OFFLINE / NO_TRADE; independent audit pending." >> $env:GITHUB_STEP_SUMMARY
+          if ($current.passed -ne 76 -or $prior.passed -ne 64 -or $m012.passed -ne 61 -or $m011.passed -ne 21 -or $isolation.connections_outside_disposable_postgres -ne 0 -or $identity.preservation -ne 'PASS') { throw 'Incomplete checks.' }
+          "M01.3B:76 (44 original +32 TOTP regressions); M01.3A:64; M01.2:61; M01.1:21 passed, no failures/skips. PostgreSQL:$($isolation.postgres_version). Auth uses in-process HTTP TestServer with ephemeral signing keys. No hosted Supabase validation. OFFLINE / NO_TRADE; independent audit pending." >> $env:GITHUB_STEP_SUMMARY
 
       - name: Preserve allowlisted evidence even on failure
         if: always()

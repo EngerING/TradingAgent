@@ -1,11 +1,11 @@
 {
   "schema": "trading.m013b.preparation_evidence",
   "schema_version": 1,
-  "inspection_date": "2026-10-20",
+  "inspection_date": "2026-10-21",
   "timezone": "America/La_Paz",
   "mode": "OFFLINE",
   "decision": "NO_TRADE",
-  "scope": "B1_COMPLETE_B2_INTERACTIVE_PARTIAL_NOT_APPROVED",
+  "scope": "B1_COMPLETE_B2_PARTIAL_OFFLINE_TOTP_CORRECTION_TESTED_NO_HOSTED_RERUN",
   "branch": "codex/m01-3b-hosted-supabase-pilot",
   "baseline_commit": "c15c49ac07bf2eec2c72d8987c1db52b18a04795",
   "baseline_tree": "e21123607bf89ac98772646ea31b690a96eaa661",
@@ -21,11 +21,11 @@
   "local_tests": {
     "b1": {
       "assembly": "TradingAgent.Auth.Pilot.Tests.dll",
-      "total": 44,
-      "passed": 44,
+      "total": 76,
+      "passed": 76,
       "failed": 0,
       "skipped": 0,
-      "duration_seconds": 15.4690154,
+      "duration_seconds": 16.9915244,
       "expected_test_manifest": "PASS",
       "mode": "OFFLINE",
       "decision": "NO_TRADE"
@@ -36,7 +36,7 @@
       "passed": 64,
       "failed": 0,
       "skipped": 0,
-      "duration_seconds": 36.102703399999996,
+      "duration_seconds": 30.6582048,
       "expected_test_manifest": "PASS",
       "mode": "OFFLINE",
       "decision": "NO_TRADE"
@@ -47,7 +47,7 @@
       "passed": 61,
       "failed": 0,
       "skipped": 0,
-      "duration_seconds": 29.7869934,
+      "duration_seconds": 31.123928099999997,
       "expected_test_manifest": "PASS",
       "mode": "OFFLINE",
       "decision": "NO_TRADE"
@@ -58,13 +58,13 @@
       "passed": 21,
       "failed": 0,
       "skipped": 0,
-      "duration_seconds": 1.0059799,
+      "duration_seconds": 1.4233964,
       "expected_test_manifest": "PASS",
       "mode": "OFFLINE",
       "decision": "NO_TRADE"
     }
   },
-  "executed_total": 190,
+  "executed_total": 222,
   "build": {
     "sdk": "10.0.402",
     "runtime": "10.0.13",
@@ -97,7 +97,7 @@
     "m012": {
       "mode": "OFFLINE",
       "decision": "NO_TRADE",
-      "socket_connect_starts": 374,
+      "socket_connect_starts": 377,
       "connections_outside_disposable_postgres": 0,
       "scope": "SQL fixture lifecycle; tooling excluded",
       "postgres_version": "17.5"
@@ -111,11 +111,14 @@
   },
   "preservation": {
     "baseline_files": 804,
-    "unchanged_raw_sha256": 801,
+    "unchanged_raw_sha256": 798,
     "approved_modified": [
       "src/TradingAgent.Web.Auth/IntegratedHostFactory.cs",
       "src/TradingAgent.Web.Auth/PilotRuntime.cs",
-      "src/TradingAgent.Web.Auth/PilotEndpoints.cs"
+      "src/TradingAgent.Web.Auth/PilotEndpoints.cs",
+      "src/TradingAgent.Identity.Supabase/AuthConfiguration.cs",
+      "src/TradingAgent.Identity.Supabase/AuthTransport.cs",
+      "src/TradingAgent.Identity.Supabase/SupabaseAuthClient.cs"
     ],
     "manifest_sha256": "5ac9f91f2e2b469ecf5ce9e643c6d21afba98b59529d494f2da7dc8f784bc076",
     "protected_git_objects": {
@@ -128,7 +131,6 @@
       "src/TradingAgent.ResearchLab": "81c1937682094bfc1c87f962537600fce897f609",
       "frontend": "8b2101aeb2c3cd8661e95ee8ae13511e5dff09e2",
       "src/TradingAgent.Web": "220a78a53d2dbaaee7094b156dd283ab886c7aae",
-      "src/TradingAgent.Identity.Supabase": "802c04f1f8a2912e690435c44d29916f3cd1ca98",
       "tests/TradingAgent.Auth.Tests": "981b4dba28b70f806154b3c44200fdd81c77ca8a",
       "build/auth": "52011f38d3851a0a567c1f2775c03f31b5b68537",
       "tests/TradingAgent.Web.Tests": "21fe88719c1f3816ebf800d5fb16f6b8dd608173",
@@ -141,7 +143,11 @@
       "TradingAgent.sln": "85f076d47efc02709bc44708ac9b86e5bcc5f514",
       ".github/workflows/m01-1-bff-ci.yml": "940a5213f9965872f1879d8f42c982b6aa9bccf8",
       ".github/workflows/m01-2-postgres-security-ci.yml": "e12acf05ed5fcc80d73d3ca01f23bad3971604e4",
-      ".github/workflows/m01-3-supabase-auth-ci.yml": "2df2e342f6affe1c4db532917c160bc93a4bda0d"
+      ".github/workflows/m01-3-supabase-auth-ci.yml": "2df2e342f6affe1c4db532917c160bc93a4bda0d",
+      "src/TradingAgent.Identity.Supabase/JwtVerifier.cs": "5fc547835057f6e1643f2b5a9a0d2253762d0aa0",
+      "src/TradingAgent.Identity.Supabase/JwksCache.cs": "2cbe0057e4f02e1592065cd23465cef97b34511b",
+      "src/TradingAgent.Identity.Supabase/TradingAgent.Identity.Supabase.csproj": "5ba50ac09826a68b0cd005cbbe924c19c83e0a8f",
+      "src/TradingAgent.Identity.Supabase/packages.lock.json": "d627a23866c179330fe91cc8fff2c75b70e23a54"
     },
     "historical_sql_sha256": {
       "src/TradingAgent.Infrastructure/Migrations/001_initial.sql": "68e4482d97be7486fffc5742003fd747369107e5926daddc81f2d486642c5786",
@@ -162,7 +168,9 @@
     "preexisting_untracked": {
       "docs/architecture/core-v3-phase0-audit.md": "419d1e97b7f7017bddebd3074b1433d48702a59a274194f017129933e4314537",
       "docs/manual/TradingAgent_Manual_Tecnico_Integral.pdf": "1f31321892f532b3d5de1bc3d574bd5f66c3af38ae634d7173b6b173c49b3944"
-    }
+    },
+    "authorized_totp_correction": "User explicitly requested contract diagnosis/correction and safe recovery before a hosted rerun; three provider files except JWT/JWKS/config binding logic",
+    "prior_supabase_tree_before_totp_fix": "802c04f1f8a2912e690435c44d29916f3cd1ca98"
   },
   "hosted_pilot": {
     "executed": "PARTIAL_AUTH_ATTEMPTS_NOT_APPROVED",
@@ -175,7 +183,7 @@
     "login_mfa_result": "Password, signed AAL1 JWT and GET user PASS on attempt3. MFA stopped with AuthFailure.Unavailable before TOTP input. No AAL2 real-user SQL session or revocation validation.",
     "remote_revocation_measurements": "NOT_EXECUTED",
     "key_rotation_hosted": "NOT_EXECUTED",
-    "readiness": "Await user review of possible incomplete factor on fictitious development account. No automatic enrollment retry. HTTPS BFF deferred per user pending compatible external certificate.",
+    "readiness": "User confirmed incomplete TOTP. Offline contract correction and exact-target recovery prepared/tested. No hosted rerun or deletion in this correction; explicit local confirmation and exclusive account use required.",
     "requirements_document": "docs/architecture/m01-3b-hosted-validation.md",
     "normal_ci_contains_hosted_tests": false,
     "silently_skipped_tests": 0,
@@ -223,7 +231,9 @@
       "xunit_test_count_increase": 0,
       "hosted_auth_in_ci": false
     },
-    "harness_contract_diagnostics": "Observer now separates MFA enroll/challenge/verify/logout; bounded header/type diagnostics only, no provider bodies. Previous shared status was overwritten by cleanup so the exact failure cause is unknown. Product timeout, response cap and claims unchanged."
+    "harness_contract_diagnostics": "Per-stage flow breadcrumbs and closed AuthDiagnostic enum distinguish response cap/type/JSON/deadline/transport/enrollment parser rejection without bodies or secrets.",
+    "requests_to_development_auth_during_this_correction": 0,
+    "live_factor_modified_during_this_correction": false
   },
   "security_limits": {
     "login_source_per_minute": 20,
@@ -275,6 +285,15 @@
       ],
       "latest_high_critical_findings": 0,
       "limitations": "Not an independent security certification or live integration test"
+    },
+    "totp_fix": {
+      "type": "Internal fresh-context adversarial review; not independent audit",
+      "cycles": 3,
+      "addressed": [
+        "Exclusive-use confirmation and explicit non-atomic provider limit",
+        "Final GET+DELETE must fit approval deadline; reproduced regression and linked cancellation"
+      ],
+      "final_high_critical_findings": 0
     }
   },
   "ci": {
@@ -286,7 +305,7 @@
     "retention_days": 14,
     "dependency_cache": false,
     "normal_ci": "Suite A only, no hosted credentials or connections",
-    "status": "190 tests verified on 467013d. Current helper-only diagnostic refinement built and self-tested locally; exact final identity belongs to subsequent CI artifact.",
+    "status": "Prior190-case CI success on0a8337a; correction222 cases passed locally; final branch CI pending publication.",
     "verified_execution": {
       "commit": "467013d45a3b5b210bd2adbf68febf13b2467077",
       "tree": "daacb3d1c4a92814c988030fc715d82e0c723bec",
@@ -406,9 +425,9 @@
     {
       "path": ".github/workflows/m01-3b-hosted-pilot-ci.yml",
       "change": "A",
-      "bytes": 6223,
+      "bytes": 6255,
       "lines": 136,
-      "sha256": "ef7af064266ae1deee2fa1c63c198c7471c45553b6d67923c12bf76988d90337"
+      "sha256": "614118777fa2533facd9754bac17352671ce44a9b82a11d9274e5b6ae9ef3e6e"
     },
     {
       "path": "build/auth-pilot/HostedRunner/HostedDatabase.cs",
@@ -420,9 +439,9 @@
     {
       "path": "build/auth-pilot/HostedRunner/HostedRun.cs",
       "change": "A",
-      "bytes": 10564,
-      "lines": 118,
-      "sha256": "aa4e7f1576793c31bb05ce68603fb457abe8c02f6e95fab510eadec5c8d86d9f"
+      "bytes": 11654,
+      "lines": 134,
+      "sha256": "e3941e0b386130360483273d3928c62af4be3f5daba9ad40ff28ef1824dc3854"
     },
     {
       "path": "build/auth-pilot/HostedRunner/HostedRunner.csproj",
@@ -430,6 +449,13 @@
       "bytes": 567,
       "lines": 13,
       "sha256": "23a8171800b1b0f9a7ebde0381247b0628147d4746c7fcf1268e2ac8fec513fe"
+    },
+    {
+      "path": "build/auth-pilot/HostedRunner/IncompleteTotpRecovery.cs",
+      "change": "A",
+      "bytes": 2664,
+      "lines": 46,
+      "sha256": "4786ce2a3d53c7f574cdc65a706207228660d554bf7ce47266140a3c36e57d25"
     },
     {
       "path": "build/auth-pilot/HostedRunner/ObserverSelfTest.cs",
@@ -441,9 +467,9 @@
     {
       "path": "build/auth-pilot/HostedRunner/PilotForm.cs",
       "change": "A",
-      "bytes": 6089,
-      "lines": 66,
-      "sha256": "bf6f36dff7ba69f4aef01383730eaed8b027353f1893cff793ec1e50f1eae434"
+      "bytes": 8310,
+      "lines": 85,
+      "sha256": "e6ec127eb027ff7369d01b28e6fd17bb0d8d02236137c2bb6b4d5924883f3887"
     },
     {
       "path": "build/auth-pilot/HostedRunner/Program.cs",
@@ -483,9 +509,9 @@
     {
       "path": "build/auth-pilot/expected-tests.json",
       "change": "A",
-      "bytes": 5390,
-      "lines": 46,
-      "sha256": "a4d49e0ace705634bcbf7bfe5602f8492778c873bdeb8075ad4f9ffa06f4052a"
+      "bytes": 9602,
+      "lines": 78,
+      "sha256": "f8e32f2f97df6f0c71ef49d552533f9d24e4a0bc5a8edf2d4bcd627710d9a484"
     },
     {
       "path": "build/auth-pilot/global.json",
@@ -504,9 +530,9 @@
     {
       "path": "build/auth-pilot/preservation.ps1",
       "change": "A",
-      "bytes": 4561,
+      "bytes": 4932,
       "lines": 44,
-      "sha256": "4ac81f6744eb2ceaaef4413e4885405251ec8d86a89f54809073e90f022db2dc"
+      "sha256": "c8c0f0b3ed90a7032dafab36b7a9020bccb793caece5b96dc3637e96de554802"
     },
     {
       "path": "build/auth-pilot/run-hosted.ps1",
@@ -518,9 +544,9 @@
     {
       "path": "docs/architecture/m01-3b-external-review.md",
       "change": "A",
-      "bytes": 3030,
-      "lines": 47,
-      "sha256": "11bb55fad88c3264f0182c86da2055a46748d837972b191175f8e98465bfc78b"
+      "bytes": 3718,
+      "lines": 57,
+      "sha256": "b4ec248f94391c25df95059d711b1620afd248bf9165c82dc41c94054ae04b6e"
     },
     {
       "path": "docs/architecture/m01-3b-hosted-preflight.json",
@@ -532,16 +558,16 @@
     {
       "path": "docs/architecture/m01-3b-hosted-validation.md",
       "change": "A",
-      "bytes": 9841,
-      "lines": 147,
-      "sha256": "6a8871fc5967bd455fa1464a112fb9f50bc0a194023edbd1125f10068c5600b1"
+      "bytes": 10097,
+      "lines": 150,
+      "sha256": "3a5dbd37b3355b990d2a8eb5024d5445dd443d71e166c6bdd7fc27b0fba96b66"
     },
     {
       "path": "docs/architecture/m01-3b-preparation.md",
       "change": "A",
-      "bytes": 11299,
-      "lines": 177,
-      "sha256": "b6a6a490a3579500d436cbcbe9b98be4c3048232e09f3aff3c8997b115cee32d"
+      "bytes": 11710,
+      "lines": 183,
+      "sha256": "06247bf50ce36ea9a68e8015d2d736853de95ae5ee91a7af02f953455b7048ee"
     },
     {
       "path": "docs/architecture/m01-3b-session-renewal-adr.md",
@@ -549,6 +575,34 @@
       "bytes": 1676,
       "lines": 26,
       "sha256": "e629b758968b918f769bbaabc0551692a2359381e23a6c61a6a226d493cc8b26"
+    },
+    {
+      "path": "docs/architecture/m01-3b-totp-diagnosis.md",
+      "change": "A",
+      "bytes": 7827,
+      "lines": 119,
+      "sha256": "24d158e0a1feedecbe095496b48a38bc23f4e755c17cc34344ab0f0186d3fd39"
+    },
+    {
+      "path": "src/TradingAgent.Identity.Supabase/AuthConfiguration.cs",
+      "change": "M",
+      "bytes": 2505,
+      "lines": 39,
+      "sha256": "2bc4bac6655ef480ff1afe3c4edc6854f70d3c22f8dfe83ce449561b864631f3"
+    },
+    {
+      "path": "src/TradingAgent.Identity.Supabase/AuthTransport.cs",
+      "change": "M",
+      "bytes": 5404,
+      "lines": 68,
+      "sha256": "58ec35852250b9fbd2e11447e1c9386de454f731c9e8e5c17b5c00d2b245fbf5"
+    },
+    {
+      "path": "src/TradingAgent.Identity.Supabase/SupabaseAuthClient.cs",
+      "change": "M",
+      "bytes": 7550,
+      "lines": 109,
+      "sha256": "6157463f308fe5c2a84ea5d53338c48045bfde9f4c2b246de33e235b5886a90c"
     },
     {
       "path": "src/TradingAgent.Web.Auth/HostedPilotSettings.cs",
@@ -628,11 +682,25 @@
       "sha256": "85b2052b0e86aea94e1359f95a722949c2a768edea927885b2c30876ba1b470f"
     },
     {
+      "path": "tests/TradingAgent.Auth.Pilot.Tests/TotpEnrollmentRegressionTests.cs",
+      "change": "A",
+      "bytes": 7584,
+      "lines": 120,
+      "sha256": "e12a9592b4e410fb3eaf71e8037316eb17ca17dd494899a5e1afac41165e72e3"
+    },
+    {
+      "path": "tests/TradingAgent.Auth.Pilot.Tests/TotpRecoveryRegressionTests.cs",
+      "change": "A",
+      "bytes": 9559,
+      "lines": 162,
+      "sha256": "9d6e542f8cf1099d66eadc21ebf7fe5d7c7981e1c5bb96f5b6e3434c9864bec0"
+    },
+    {
       "path": "tests/TradingAgent.Auth.Pilot.Tests/TradingAgent.Auth.Pilot.Tests.csproj",
       "change": "A",
-      "bytes": 1283,
-      "lines": 16,
-      "sha256": "cb593d9b7037198ebfda2ba79d34518cce89cded421f02f4a8b4dadaa701d936"
+      "bytes": 1411,
+      "lines": 17,
+      "sha256": "96281b2cfdb2a9b3956c7dfbcaba88ea8c01c42e1c6792f4b50768283a25b5db"
     },
     {
       "path": "tests/TradingAgent.Auth.Pilot.Tests/packages.lock.json",
@@ -642,12 +710,58 @@
       "sha256": "b00234dbe10f07b567e853e50a4c78cf50eba8ee115671e8d375959863235280"
     }
   ],
-  "next_stage": "Await local incomplete-factor review before another authorized B2 attempt; preserve HTTPS BFF pending compatible certificate. No M01.4.",
+  "next_stage": "Review correction and diagnosis before any hosted pilot. No live factor mutation without concrete local confirmation and exclusive account use. No M01.4.",
   "sources": [
     "https://supabase.com/docs/guides/auth/sessions",
     "https://supabase.com/docs/guides/auth/server-side/advanced-guide",
     "https://supabase.com/docs/guides/auth/auth-mfa/totp",
     "https://github.com/supabase/auth/blob/master/openapi.yaml",
     "https://learn.microsoft.com/en-us/aspnet/core/performance/rate-limit?view=aspnetcore-10.0"
-  ]
+  ],
+  "offline_totp_correction": {
+    "input_commit": "0a8337aaa4990725d1b7d00e9e837fd5740ce9dd",
+    "exact_provable_stop": "EnrollAsync transport/parser after provider enrollment creation, before it returned and before Challenge/Verify",
+    "actual_historical_rejection_branch_known": false,
+    "reason_unknown": "Original response discarded; old shared status overwritten by cleanup; current hosted result is unchanged",
+    "reproduced_defects": [
+      "Valid large enrollment SVG rejected by general64KiB cap (declared and unknown length)",
+      "Unknown factor status/empty or duplicate ID accepted by discovery",
+      "Confirmation could expire during final ownership GET before DELETE"
+    ],
+    "response_bytes_max": {
+      "exact_POST_auth_v1_factors": 262144,
+      "all_other_JSON_responses": 65536
+    },
+    "preserved_controls": [
+      "deadline3s",
+      "JSON maxdepth16",
+      "duplicate detection",
+      "issuer/audience/signature/ES256/JWKS/MFA freshness",
+      "SQL least privileges and AAL2 issuance requirement"
+    ],
+    "regressions_new": 32,
+    "regressions_green": 32,
+    "red_evidence": {
+      "body_limit": {
+        "failed": 2,
+        "passed": 12
+      },
+      "factor_discovery": {
+        "failed": 3,
+        "passed": 1
+      },
+      "final_read_expiry": {
+        "failed": 1,
+        "passed": 1
+      },
+      "initial_recovery_api": "compile failed because source absent before implementation"
+    },
+    "recovery": "Fresh validated AAL1/identity/session; sole exact own unverified candidate; explicit local confirmation/exclusive use;2min expiry; fresh status checks; deadline covers final GET+DELETE; absence postcondition; no retries/fallback target",
+    "concurrency_limit": "No remote conditional DELETE; preflight reads not an atomic lock. Cancel if exclusive use of fictitious account cannot be assured. Race fixture demonstrates provider-side rejection only.",
+    "automatic_failed_enrollment_cleanup": "Disabled; factor preserved for explicit local confirmation",
+    "hosted_rerun": false,
+    "real_account_mutations": 0,
+    "document": "docs/architecture/m01-3b-totp-diagnosis.md",
+    "tooling_note": "One whole-script redirected local wrapper run was stopped after pg_ctl startup blocked under redirected I/O. It is not counted as validation. Rerun without outer redirection completed222 tests and stopped its disposable cluster."
+  }
 }

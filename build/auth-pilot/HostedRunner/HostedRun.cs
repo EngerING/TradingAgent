@@ -13,6 +13,8 @@ internal static class HostedRun
     private static string ResultPath { get; set; } = "tmp/m013b/hosted-interactive-result.json";
     internal static void UseDiagnosticSelfTestOutput() => ResultPath = "tmp/m013b/hosted-observer-self-test.json";
     internal static void Failure(string code) { evidence["status"] = code; Save(); }
+    internal static void Failure(AuthException error) { evidence["auth_diagnostic"] = error.Diagnostic.ToString(); Failure("AUTH_" + error.Failure); }
+    private static void Stage(string stage) => Observe("flow_stage", stage);
     private static void Save() => File.WriteAllText(ResultPath, JsonSerializer.Serialize(evidence, JsonOptions));
     private static void Pass(string check) { evidence[check] = "PASS"; evidence["status"] = "RUNNING"; Save(); }
     private static void Require(bool allowed, string code) { if (!allowed) throw new PilotFailure(code); }
@@ -39,8 +41,20 @@ internal static class HostedRun
         Guid? createdFactor = null;
         try
         {
+            Stage("PASSWORD_AND_JWT");
             first = await auth.PasswordAsync(email, password, token); Require(first.Identity.Aal == 1, "PASSWORD_NOT_AAL1");
-            var factors = await auth.CheckUserAsync(first, token); Pass("password_user_and_signed_aal1_jwt");
+            Stage("USER"); var factors = await auth.CheckUserAsync(first, token); Pass("password_user_and_signed_aal1_jwt");
+            if (factors.Any(f => !f.Verified) && !factors.Any(f => f.Verified))
+            {
+                Require(factors.Count == 1, "AMBIGUOUS_INCOMPLETE_FACTORS_REQUIRE_MANUAL_REVIEW");
+                Stage("INCOMPLETE_ENROLLMENT_CONFIRMATION");
+                var target = new TotpRecoveryTarget(first.Identity.Identity, factors[0].Id);
+                await IncompleteTotpRecovery.RecoverAsync(auth, verifier, first, target, ui.ConfirmRecovery, TimeProvider.System, token);
+                factors = await auth.CheckUserAsync(first, token);
+                Require(factors.Count == 0, "FACTORS_CHANGED_AFTER_CONFIRMED_RECOVERY");
+                Pass("confirmed_exact_own_incomplete_factor_removed");
+            }
+            Stage("DISPOSABLE_SQL_AAL1_DENIAL");
             await using var database = new HostedDatabase(); await database.InitializeAsync(token); await database.SeedAsync(first.Identity.Identity, token);
             var issuer = new SessionIssuer(database.Database(DatabasePurpose.SessionIssuer), verifier);
             var denied = await issuer.CreateAsync(first.Token.AsMemory(), token); Require(denied.Reference is null && denied.Outcome == StoreOutcome.Denied, "AAL1_SQL_NOT_DENIED"); Pass("aal1_cannot_create_sql_session");
@@ -52,15 +66,19 @@ internal static class HostedRun
             else
             {
                 Require(factors.Count == 0, "UNVERIFIED_FACTOR_REQUIRES_EXPLICIT_RECOVERY");
+                Stage("ENROLLMENT");
                 var enrollment = await auth.EnrollAsync(first, token); factor = enrollment.FactorId; createdFactor = factor; enrollmentSecret = enrollment.Secret; Pass("real_totp_enrollment");
             }
+            Stage("CHALLENGE");
             var challengeAt = DateTimeOffset.UtcNow; var challenge = await auth.ChallengeAsync(first, factor, token);
+            Pass("real_totp_challenge"); Stage("LOCAL_TOTP_INPUT");
             var code = ui.Otp(enrollmentSecret is null ? "Introduce un código actual del autenticador de esta cuenta ficticia." : "Añade manualmente este secreto al autenticador (TOTP), guarda la entrada y escribe su código actual. El secreto solo aparece aquí.", enrollmentSecret);
             enrollmentSecret = null;
-            first = await auth.VerifyAsync(first, factor, challenge.Id, code, token); code = "";
+            Stage("VERIFY_AND_AAL2_JWT"); first = await auth.VerifyAsync(first, factor, challenge.Id, code, token); code = "";
             createdFactor = null; // Provider verification succeeded: never delete this verified factor.
             Require(first.Identity.Aal == 2 && first.Identity.MfaAt >= challengeAt.AddSeconds(-1) && first.Identity.MfaAt <= DateTimeOffset.UtcNow, "MFA_SIGNED_FRESHNESS_INCOMPATIBLE");
             Pass("real_mfa_aal2_signed_and_fresh");
+            Stage("DISPOSABLE_SQL_AAL2_SESSION");
             var creation = await issuer.CreateAsync(first.Token.AsMemory(), token); Require(creation.Outcome == StoreOutcome.Success && creation.Reference is not null, "AAL2_SQL_SESSION_FAILED");
             var sessions = new SessionRepository(database.Database(DatabasePurpose.Runtime)); var reference = creation.Reference!;
             Require(await sessions.FindSelfAsync(reference, token) is not null, "SQL_SELF_FAILED");
@@ -69,6 +87,7 @@ internal static class HostedRun
             Require((await sessions.RevokeAsync(reference, token)).Outcome == StoreOutcome.Success && await sessions.FindSelfAsync(reference, token) is null, "LOCAL_SQL_REVOCATION_FAILED"); Pass("real_identity_sql_roles_grants_local_revocation");
             // Provider auth only; fixed documented scopes, never an admin/Data API call.
             AccessCredential? other = null;
+            Stage("REMOTE_LOGOUT_MEASUREMENTS");
             try
             {
                 other = await auth.PasswordAsync(email, password, token);
@@ -84,6 +103,7 @@ internal static class HostedRun
             finally { if (other is not null) await SafeLogoutAsync(auth, other); }
             await SafeLogoutAsync(auth, first); first = null;
             // HTTPS BFF remains pending an externally provisioned compatible certificate.
+            Stage("DISPOSABLE_SENTINEL");
             Require(await database.SentinelAsync(token), "FINANCIAL_SENTINEL_CHANGED");
             token.ThrowIfCancellationRequested(); Pass("disposable_financial_sentinel_unchanged");
             evidence["status"] = "DIRECT_HOSTED_AUTH_SQL_EXECUTED; HTTPS_BFF_PENDING_COMPATIBLE_CERTIFICATE";
@@ -94,12 +114,8 @@ internal static class HostedRun
         {
             if (first is not null)
             {
-                if (createdFactor is { } factor)
-                {
-                    using var cleanup = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-                    try { await auth.RemoveUnverifiedFactorAsync(first, factor, cleanup.Token); evidence["unverified_factor_cleanup"] = "REMOVED_OWN_UNVERIFIED_FACTOR"; }
-                    catch (Exception) { evidence["unverified_factor_cleanup"] = "UNCONFIRMED_OR_ALREADY_VERIFIED; no verified factor removed"; }
-                }
+                if (createdFactor is not null)
+                    evidence["unverified_factor_cleanup"] = "PRESERVED_PENDING_EXPLICIT_LOCAL_CONFIRMATION; no DELETE attempted; verification state must be checked afresh";
                 await SafeLogoutAsync(auth, first);
             }
             Save();

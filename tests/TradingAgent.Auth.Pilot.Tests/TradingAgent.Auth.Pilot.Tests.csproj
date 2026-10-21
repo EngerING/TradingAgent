@@ -12,5 +12,6 @@
     <Compile Include="../TradingAgent.Auth.Tests/BrowserHarness.cs" Link="Fixtures/BrowserHarness.cs" />
     <Compile Include="../TradingAgent.Auth.Tests/SimulatedAuth.cs" Link="Fixtures/SimulatedAuth.cs" />
     <Compile Include="../TradingAgent.Auth.Tests/CollectedLogs.cs" Link="Fixtures/CollectedLogs.cs" />
+    <Compile Include="../../build/auth-pilot/HostedRunner/IncompleteTotpRecovery.cs" Link="Hosted/IncompleteTotpRecovery.cs" />
   </ItemGroup>
 </Project>

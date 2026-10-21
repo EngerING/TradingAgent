@@ -32,9 +32,11 @@ sobrescribió el diagnóstico necesario. No se infiere la causa del fallo ni se
 declara incompatibilidad del proveedor. El auxiliar ahora separa enroll,
 challenge, verify y logout, y registra intentos, tipo de contenido y booleanos
 del tamaño declarado sin conservar cuerpos. Su prueba sin red confirma esas
-fronteras. No se cambia el timeout ni el límite64KiB del transporte protegido.
-Se solicitó revisar localmente la cuenta ficticia por si quedó un factor no
-verificado; no se repite enrollment ni se elimina un factor verificado.
+fronteras. El timeout permanece3s; la corrección posterior conserva64KiB excepto
+el presupuesto de256KiB para la respuesta exacta de enrollment.
+El usuario confirmó después un factor no verificado y POST factors200. La
+[corrección y recuperación confirmada](m01-3b-totp-diagnosis.md) añade regresiones
+y concreta el límite específico de enrollment; el factor real permanece intacto.
 
 El auxiliar Windows bajo `build/auth-pilot/HostedRunner/` recibe email/password
 y TOTP mediante un formulario local, borra los campos y no exporta valores ni
@@ -70,8 +72,9 @@ existente o enrollment si no existe, TOTP local, JWT AAL2/frescura, sesión SQL,
 grants exactos y revocación local. Mide scopes Auth local/others/global de la
 cuenta ficticia. Un error de dependencia o rate limit queda inconcluso; GET user
 aceptado no se presenta como garantía universal de sesión remota activa.
-Conserva factores verificados y solo intenta retirar el factor no verificado
-creado por esa misma ejecución. Logout remoto de limpieza es best effort y
+La recuperación de un factor anterior exige confirmación local concreta y uso
+exclusivo de la cuenta ficticia. No se eliminan factores en el finally de un
+fallo de inscripción; quedan para inspección humana. Logout de limpieza es best effort y
 acotado; una caída o rechazo del contrato tras emitir un token puede requerir
 revisión manual de las sesiones de desarrollo. Exit0 del auxiliar significa
 mediciones seleccionadas terminadas con casos pendientes, nunca aprobación B2.
@@ -143,5 +146,5 @@ requieren acciones de prueba explícitas fuera del BFF; no se habilitan endpoint
 administrativos de conveniencia. No se promete que GET user detecte cada caso.
 
 Suite A automatizada y Suite B manual/alojada son estados separados. Los casos
-B2 pendientes no son skips silenciosos ni se cuentan entre las190 pruebas de
+B2 pendientes no son skips silenciosos ni se cuentan entre las222 pruebas de
 Suite A. CI no recibe credenciales alojadas ni ejecuta este auxiliar interactivo.

@@ -12,6 +12,9 @@ public sealed class AuthTransport(HttpClient client, AuthConfiguration configura
     {
         // Paths are internal fixed grammar. Never accept a URI or discovery hint from a JWT/browser.
         if (!path.StartsWith("/auth/v1/", StringComparison.Ordinal) || path.Contains("..", StringComparison.Ordinal) || path.Contains('#', StringComparison.Ordinal)) throw new InvalidOperationException("Closed Auth path required.");
+        // Enrollment includes a provider-generated SVG that is never rendered or returned.
+        // Only this exact response gets a larger bounded envelope; JWT/user/JWKS stay 64KiB.
+        var maximumBytes = method == HttpMethod.Post && path == "/auth/v1/factors" ? 262144 : 65536;
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken); deadline.CancelAfter(TimeSpan.FromSeconds(3));
         using var request = new HttpRequestMessage(method, new Uri(configuration.Project, path));
         request.Headers.Add("apikey", configuration.PublicKey);
@@ -24,22 +27,23 @@ public sealed class AuthTransport(HttpClient client, AuthConfiguration configura
             if (response.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden or HttpStatusCode.UnprocessableEntity) throw new AuthException(AuthFailure.Invalid);
             if (!response.IsSuccessStatusCode || response.RequestMessage?.RequestUri?.GetLeftPart(UriPartial.Authority) != configuration.Project.GetLeftPart(UriPartial.Authority)) throw new AuthException(AuthFailure.Unavailable);
             if (path.StartsWith("/auth/v1/logout", StringComparison.Ordinal)) return JsonDocument.Parse("{}");
-            if (response.Content.Headers.ContentLength > 65536 || response.Content.Headers.ContentType?.MediaType != "application/json") throw new AuthException(AuthFailure.Unavailable);
+            if (response.Content.Headers.ContentLength > maximumBytes) throw new AuthException(AuthFailure.Unavailable, AuthDiagnostic.ResponseTooLarge);
+            if (response.Content.Headers.ContentType?.MediaType != "application/json") throw new AuthException(AuthFailure.Unavailable, AuthDiagnostic.UnexpectedContentType);
             await using var stream = await response.Content.ReadAsStreamAsync(deadline.Token).ConfigureAwait(false);
             using var memory = new MemoryStream(); var buffer = new byte[4096];
             while (true)
             {
                 var count = await stream.ReadAsync(buffer, deadline.Token).ConfigureAwait(false); if (count == 0) break;
-                if (memory.Length + count > 65536) throw new AuthException(AuthFailure.Unavailable);
+                if (memory.Length + count > maximumBytes) throw new AuthException(AuthFailure.Unavailable, AuthDiagnostic.ResponseTooLarge);
                 memory.Write(buffer, 0, count);
             }
             var document = JsonDocument.Parse(memory.ToArray(), new JsonDocumentOptions { MaxDepth = 16 });
             try { EnsureUnique(document.RootElement); return document; }
             catch { document.Dispose(); throw; }
         }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested) { throw new AuthException(AuthFailure.Unavailable); }
-        catch (HttpRequestException) { throw new AuthException(AuthFailure.Unavailable); }
-        catch (JsonException) { throw new AuthException(AuthFailure.Unavailable); }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested) { throw new AuthException(AuthFailure.Unavailable, AuthDiagnostic.DeadlineExceeded); }
+        catch (HttpRequestException) { throw new AuthException(AuthFailure.Unavailable, AuthDiagnostic.TransportUnavailable); }
+        catch (JsonException) { throw new AuthException(AuthFailure.Unavailable, AuthDiagnostic.InvalidJson); }
     }
     internal static void EnsureUnique(JsonElement element)
     {

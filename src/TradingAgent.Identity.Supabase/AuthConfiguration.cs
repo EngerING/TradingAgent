@@ -31,7 +31,9 @@ public sealed class AuthConfiguration
 }
 
 public enum AuthFailure { Invalid, Unavailable, RateLimited, Conflict }
-public sealed class AuthException(AuthFailure failure) : Exception("AUTH_REQUEST_REJECTED")
+public enum AuthDiagnostic { Unspecified, ResponseTooLarge, UnexpectedContentType, InvalidJson, DeadlineExceeded, TransportUnavailable, EnrollmentContractInvalid }
+public sealed class AuthException(AuthFailure failure, AuthDiagnostic diagnostic = AuthDiagnostic.Unspecified) : Exception("AUTH_REQUEST_REJECTED")
 {
     public AuthFailure Failure { get; } = failure;
+    public AuthDiagnostic Diagnostic { get; } = diagnostic;
 }

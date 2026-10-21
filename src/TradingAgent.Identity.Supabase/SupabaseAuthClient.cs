@@ -45,8 +45,19 @@ public sealed class SupabaseAuthClient(AuthTransport transport, JwtVerifier veri
             if (root.GetProperty("id").GetGuid() != credential.Identity.Identity.Subject || root.GetProperty("is_anonymous").GetBoolean()) throw new AuthException(AuthFailure.Invalid);
             if (!root.TryGetProperty("factors", out var factors)) return [];
             if (factors.ValueKind != JsonValueKind.Array || factors.GetArrayLength() > 10) throw new AuthException(AuthFailure.Unavailable);
-            return factors.EnumerateArray().Where(f => f.GetProperty("factor_type").GetString() == "totp")
-                .Select(f => new TotpFactor(f.GetProperty("id").GetGuid(), f.GetProperty("status").GetString() == "verified")).ToArray();
+            var result = new List<TotpFactor>(); var seen = new HashSet<Guid>();
+            foreach (var factor in factors.EnumerateArray())
+            {
+                var id = factor.GetProperty("id").GetGuid();
+                if (id == Guid.Empty || !seen.Add(id)) throw new AuthException(AuthFailure.Unavailable);
+                if (factor.GetProperty("factor_type").GetString() != "totp") continue;
+                var verified = factor.GetProperty("status").GetString() switch
+                {
+                    "verified" => true, "unverified" => false, _ => throw new AuthException(AuthFailure.Unavailable)
+                };
+                result.Add(new(id, verified));
+            }
+            return result;
         }
         catch (Exception error) when (error is KeyNotFoundException or InvalidOperationException or FormatException) { throw new AuthException(AuthFailure.Unavailable); }
     }
@@ -57,11 +68,11 @@ public sealed class SupabaseAuthClient(AuthTransport transport, JwtVerifier veri
         {
             var root = document.RootElement; var totp = root.GetProperty("totp"); var id = root.GetProperty("id").GetGuid();
             var secret = totp.GetProperty("secret").GetString()!; var uri = totp.GetProperty("uri").GetString()!;
-            if (id == Guid.Empty || root.GetProperty("type").GetString() != "totp" || secret.Length is < 16 or > 128 || uri.Length > 2048 || !uri.StartsWith("otpauth://totp/", StringComparison.Ordinal)) throw new AuthException(AuthFailure.Unavailable);
+            if (id == Guid.Empty || root.GetProperty("type").GetString() != "totp" || secret.Length is < 16 or > 128 || uri.Length > 2048 || !uri.StartsWith("otpauth://totp/", StringComparison.Ordinal)) throw new AuthException(AuthFailure.Unavailable, AuthDiagnostic.EnrollmentContractInvalid);
             // No raw provider SVG/HTML is reflected. Only text fields for a future trusted UI.
             return new(id, secret, uri);
         }
-        catch (Exception error) when (error is KeyNotFoundException or InvalidOperationException or FormatException or NullReferenceException) { throw new AuthException(AuthFailure.Unavailable); }
+        catch (Exception error) when (error is KeyNotFoundException or InvalidOperationException or FormatException or NullReferenceException) { throw new AuthException(AuthFailure.Unavailable, AuthDiagnostic.EnrollmentContractInvalid); }
     }
     public async Task<TotpChallenge> ChallengeAsync(AccessCredential credential, Guid factor, CancellationToken cancellationToken)
     {
@@ -78,10 +89,21 @@ public sealed class SupabaseAuthClient(AuthTransport transport, JwtVerifier veri
     {
         using var document = await transport.SendAsync(HttpMethod.Post, "/auth/v1/logout?scope=local", null, credential.Token, cancellationToken).ConfigureAwait(false);
     }
-    public async Task RemoveUnverifiedFactorAsync(AccessCredential credential, Guid factor, CancellationToken cancellationToken)
+    public async Task RemoveUnverifiedFactorAsync(AccessCredential credential, Guid factor, CancellationToken cancellationToken,
+        DateTimeOffset? notAfter = null, TimeProvider? clock = null)
     {
-        var factors = await CheckUserAsync(credential, cancellationToken).ConfigureAwait(false);
+        var time = clock ?? TimeProvider.System;
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        if (notAfter is { } end)
+        {
+            var remaining = end - time.GetUtcNow();
+            if (remaining <= TimeSpan.Zero || remaining > TimeSpan.FromMinutes(2)) throw new AuthException(AuthFailure.Conflict);
+            deadline.CancelAfter(remaining);
+        }
+        var factors = await CheckUserAsync(credential, deadline.Token).ConfigureAwait(false);
         if (!factors.Any(f => f.Id == factor && !f.Verified)) throw new AuthException(AuthFailure.Invalid);
-        using var document = await transport.SendAsync(HttpMethod.Delete, $"/auth/v1/factors/{factor:D}", null, credential.Token, cancellationToken).ConfigureAwait(false);
+        deadline.Token.ThrowIfCancellationRequested();
+        if (notAfter.HasValue && time.GetUtcNow() >= notAfter.Value) throw new AuthException(AuthFailure.Conflict);
+        using var document = await transport.SendAsync(HttpMethod.Delete, $"/auth/v1/factors/{factor:D}", null, credential.Token, deadline.Token).ConfigureAwait(false);
     }
 }
