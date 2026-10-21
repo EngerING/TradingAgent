@@ -1,0 +1,39 @@
+{
+  "unit": [
+    "authentication surface &gt; renders reference copy and truthfully disables unsupported capabilities",
+    "authentication surface &gt; reports invalid input without reflecting passwords",
+    "authentication surface &gt; toggles password visibility with an accessible button",
+    "authentication surface &gt; shows loading and completes only the explicitly simulated MFA flow",
+    "authentication surface &gt; register explains invitation-only access",
+    "authentication surface &gt; navigates to recovery and keeps it explicitly simulated",
+    "authentication surface &gt; clears password and disables the submit control while waiting",
+    "explicit in-memory development authentication &gt; requires MFA and never returns a real authenticated identity",
+    "explicit in-memory development authentication &gt; does not retain credentials, contact a provider or write browser storage",
+    "explicit in-memory development authentication &gt; guards MFA and password continuation without a pending flow",
+    "explicit in-memory development authentication &gt; allows recovery only as a labelled fixture and consumes its continuation",
+    "explicit in-memory development authentication &gt; cancellation prevents a delayed login from granting a pending fixture",
+    "explicit in-memory development authentication &gt; keeps errors closed and distinguishes denied and unavailable fixtures"
+  ],
+  "e2e": [
+    "simulated login, loading, MFA, invalid code, completion and logout",
+    "recovery and single-use password continuation are explicit fixtures",
+    "invitation demonstration never enables public registration",
+    "keyboard, password visibility, errors and disabled actions",
+    "callback values are discarded, never reflected or persisted",
+    "session state expired has a recovery path and no execution control",
+    "session state denied has a recovery path and no execution control",
+    "session state unavailable has a recovery path and no execution control",
+    "session state progress has a recovery path and no execution control",
+    "reference composition 1536x1024",
+    "reference composition 1440x900",
+    "reference composition 1366x768",
+    "reference composition 1024x768",
+    "reference composition 768x1024",
+    "reference composition 390x844",
+    "reference composition 360x800",
+    "reduced motion stops animations; console remains clean",
+    "MFA routes cannot restore a pending session after reload",
+    "complementary screen evidence",
+    "production build fails closed and never uses fixture login"
+  ]
+}

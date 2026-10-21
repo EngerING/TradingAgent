@@ -1,0 +1,33 @@
+:root {
+  color-scheme: light;
+  --ink: #0b142a;
+  --muted: #56647e;
+  --faint: #7e899e;
+  --blue: #245780;
+  --blue-dark: #174365;
+  --link: #064da8;
+  --blue-soft: #edf2f6;
+  --ground: #faf9f6;
+  --surface: #ffffff;
+  --warm-surface: #faf8f5;
+  --border: #d4d8df;
+  --gold: #c5a16d;
+  --gold-soft: #f5f0e8;
+  --positive-decoration: #00876d;
+  --error: #a32e35;
+  --radius: 12px;
+  --card-radius: 20px;
+  --card-shadow: 0 22px 65px rgb(49 45 36 / 8%);
+  --font-body: 'Inter', sans-serif;
+  --font-heading: 'Libre Baskerville', Georgia, serif;
+  --ease-out: cubic-bezier(.23, 1, .32, 1);
+  --motion-fast: 180ms;
+  --motion-enter: 240ms;
+  font-family: var(--font-body);
+  font-weight: 400;
+  color: var(--ink);
+  background: var(--ground);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
