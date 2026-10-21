@@ -8,12 +8,27 @@ internal sealed class RedactedAuthObserver(string expectedIssuer) : DelegatingHa
 {
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        var response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
-        var phase = request.RequestUri!.AbsolutePath switch
+        var path = request.RequestUri!.AbsolutePath;
+        var phase = path switch
         {
-            "/auth/v1/token" => "PASSWORD", "/auth/v1/user" => "USER", "/auth/v1/.well-known/jwks.json" => "JWKS", "/auth/v1/settings" => "SETTINGS", _ => "MFA_OR_LOGOUT"
+            "/auth/v1/token" => "PASSWORD", "/auth/v1/user" => "USER", "/auth/v1/.well-known/jwks.json" => "JWKS", "/auth/v1/settings" => "SETTINGS",
+            "/auth/v1/factors" => "MFA_ENROLL", "/auth/v1/logout" => "LOGOUT",
+            _ when path.StartsWith("/auth/v1/factors/", StringComparison.Ordinal) && path.EndsWith("/challenge", StringComparison.Ordinal) => "MFA_CHALLENGE",
+            _ when path.StartsWith("/auth/v1/factors/", StringComparison.Ordinal) && path.EndsWith("/verify", StringComparison.Ordinal) => "MFA_VERIFY",
+            _ => "OTHER_AUTH"
         };
+        HostedRun.Observe("attempted_" + phase, true);
+        HttpResponseMessage response;
+        try { response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false); }
+        catch (OperationCanceledException) { HostedRun.Observe("transport_" + phase, "CANCELLED_OR_DEADLINE"); throw; }
+        catch (HttpRequestException) { HostedRun.Observe("transport_" + phase, "UNAVAILABLE"); throw; }
         HostedRun.Observe("http_" + phase, (int)response.StatusCode);
+        HostedRun.Observe("response_profile_" + phase, new
+        {
+            json_content_type = response.Content.Headers.ContentType?.MediaType == "application/json",
+            content_length_known = response.Content.Headers.ContentLength.HasValue,
+            declared_body_exceeds_64k = response.Content.Headers.ContentLength > 65536
+        });
         if (phase != "PASSWORD" || !response.IsSuccessStatusCode) return response;
         try
         {

@@ -172,10 +172,10 @@
       "profile": "Confirmed development project; exact HTTPS host/issuer/JWKS/ES256 settings",
       "settings_checked_against_hosted_project": "disable_signup=true,email=true,google=false; no other enabled external provider"
     },
-    "login_mfa_result": "Two password attempts stopped before JWT/MFA: first AuthFailure.Invalid without HTTP capture; second HTTP400",
+    "login_mfa_result": "Password, signed AAL1 JWT and GET user PASS on attempt3. MFA stopped with AuthFailure.Unavailable before TOTP input. No AAL2 real-user SQL session or revocation validation.",
     "remote_revocation_measurements": "NOT_EXECUTED",
     "key_rotation_hosted": "NOT_EXECUTED",
-    "readiness": "Signup disable verified; TOTP and account prepared per user. User corrected credentials and authorized third local attempt, currently waiting for local input. HTTPS BFF deferred per user pending compatible external certificate.",
+    "readiness": "Await user review of possible incomplete factor on fictitious development account. No automatic enrollment retry. HTTPS BFF deferred per user pending compatible external certificate.",
     "requirements_document": "docs/architecture/m01-3b-hosted-validation.md",
     "normal_ci_contains_hosted_tests": false,
     "silently_skipped_tests": 0,
@@ -197,10 +197,19 @@
       },
       {
         "attempt": 3,
-        "status": "WAITING_LOCAL_USER_INPUT"
+        "status": "AUTH_Unavailable",
+        "http_password": 200,
+        "http_jwks": 200,
+        "http_user": 200,
+        "password_signed_aal1_jwt_and_user": "PASS",
+        "real_aal1_sql_session_denied": "PASS",
+        "mfa": "STOPPED_BEFORE_TOTP_INPUT; precise cause unobserved",
+        "local_logout_cleanup_http": 204,
+        "jwt_immediate_invalidation_proved": false,
+        "disposable_cluster": "STOPPED; test database and fixture logins dropped"
       }
     ],
-    "disposable_clusters_for_completed_attempts": "Stopped in wrapper finally; application security schema/session not reached",
+    "disposable_clusters_for_completed_attempts": "All three stopped in wrapper finally; attempt3 initialized disposable app_security fixtures and denied real AAL1 session issuance",
     "local_tls_limitation": "Windows Schannel ephemeral-key handshake rejected; no TLS bypass, persistent key or trust-store install",
     "harness_validation": {
       "sdk": "10.0.402",
@@ -209,11 +218,12 @@
       "release_build_warnings": 0,
       "release_build_errors": 0,
       "known_vulnerable_packages": 0,
-      "redactor_self_test": "PASS: unsigned fixture, no token/private marker/issuer disclosed, no authority granted",
+      "redactor_self_test": "PASS: no private marker/token/issuer; unsigned shape never authorizes; MFA phases and bounded header profile preserved; no network",
       "redactor_network_requests": 0,
       "xunit_test_count_increase": 0,
       "hosted_auth_in_ci": false
-    }
+    },
+    "harness_contract_diagnostics": "Observer now separates MFA enroll/challenge/verify/logout; bounded header/type diagnostics only, no provider bodies. Previous shared status was overwritten by cleanup so the exact failure cause is unknown. Product timeout, response cap and claims unchanged."
   },
   "security_limits": {
     "login_source_per_minute": 20,
@@ -276,11 +286,11 @@
     "retention_days": 14,
     "dependency_cache": false,
     "normal_ci": "Suite A only, no hosted credentials or connections",
-    "status": "44+146 cases verified on 245c456. Later Windows interactive helper is built locally only, excluded from Linux CI and hosted approval.",
+    "status": "190 tests verified on 467013d. Current helper-only diagnostic refinement built and self-tested locally; exact final identity belongs to subsequent CI artifact.",
     "verified_execution": {
-      "commit": "245c456b0449ce4412ca555aafaf603d79f1d7f7",
-      "tree": "0b685463e1cf4ee0e435705e01f5390da13cb28c",
-      "artifact_sha256": "3d05b8a83a8ab4fe8a72a0dca698450bc821780a4e25079a43bbac7c5f2b3f9a",
+      "commit": "467013d45a3b5b210bd2adbf68febf13b2467077",
+      "tree": "daacb3d1c4a92814c988030fc715d82e0c723bec",
+      "artifact_sha256": "1f326322eb4cf4492c0068942ec260212b8989320fb982ab98ab5968b55bb773",
       "tests": {
         "b1": {
           "assembly": "TradingAgent.Auth.Pilot.Tests.dll",
@@ -288,11 +298,11 @@
           "passed": 44,
           "failed": 0,
           "skipped": 0,
-          "duration_seconds": 5.2435489,
+          "duration_seconds": 4.0919796,
           "expected_test_manifest": "PASS",
           "mode": "OFFLINE",
           "decision": "NO_TRADE",
-          "trx_sha256": "5612834f017459102a6eb76857dcbcdef643f68edd1f722408d6cbe9e00385d4"
+          "trx_sha256": "e90924ff7f1066982ffa67a585f788fac25f8ff6cff1f050d41d45a2ae7af7a9"
         },
         "m013": {
           "assembly": "TradingAgent.Auth.Tests.dll",
@@ -300,11 +310,11 @@
           "passed": 64,
           "failed": 0,
           "skipped": 0,
-          "duration_seconds": 9.4753319,
+          "duration_seconds": 8.1029053,
           "expected_test_manifest": "PASS",
           "mode": "OFFLINE",
           "decision": "NO_TRADE",
-          "trx_sha256": "3a02db9bc1b40433e351bcdeaf2bae0ea2b91bd5b68e88fecb7d178a6c2cf0b1"
+          "trx_sha256": "254c498ae2003ec4e7a30b08296f96624285b97e376830d4a29e01a9b278d2aa"
         },
         "m012": {
           "assembly": "TradingAgent.Identity.Tests.dll",
@@ -312,11 +322,11 @@
           "passed": 61,
           "failed": 0,
           "skipped": 0,
-          "duration_seconds": 11.3738495,
+          "duration_seconds": 10.2154505,
           "expected_test_manifest": "PASS",
           "mode": "OFFLINE",
           "decision": "NO_TRADE",
-          "trx_sha256": "d0f50539c37d2cd6ba64b2afed714889a3497dc90e93a1bda3def32959fd6f97"
+          "trx_sha256": "e0131c6abb262dd6b8c7ef47016dedfa682724607531d7cc7540c00ea87ffbc4"
         },
         "m011": {
           "assembly": "TradingAgent.Web.Tests.dll",
@@ -324,11 +334,11 @@
           "passed": 21,
           "failed": 0,
           "skipped": 0,
-          "duration_seconds": 1.0087763,
+          "duration_seconds": 0.6753155,
           "expected_test_manifest": "PASS",
           "mode": "OFFLINE",
           "decision": "NO_TRADE",
-          "trx_sha256": "43a1fa1e3c9990b5c5653b679476a01f2c7b5aac0d926c4db31e7f858fb23285"
+          "trx_sha256": "ad342ba1cecae5933d4dd7bf507bbc2271b62368f3465a9e7a33c61ee21121f1"
         }
       },
       "b1_isolation": {
@@ -350,19 +360,19 @@
       "m012_isolation": {
         "mode": "OFFLINE",
         "decision": "NO_TRADE",
-        "socket_connect_starts": 433,
+        "socket_connect_starts": 436,
         "connections_outside_disposable_postgres": 0,
         "scope": "SQL fixture lifecycle; tooling excluded",
         "postgres_version": "17.11 (Debian 17.11-1.pgdg12+2)"
       },
       "total_passed": 190,
       "build": "Release; 0 warnings; 0 errors; NuGet known vulnerable packages: 0",
-      "run_id": 39540990956,
-      "url": "https://github.com/EngerING/TradingAgent/actions/runs/39540990956",
+      "run_id": 39543834359,
+      "url": "https://github.com/EngerING/TradingAgent/actions/runs/39543834359",
       "conclusion": "success",
-      "artifact_id": 12319698153,
-      "artifact_url": "https://github.com/EngerING/TradingAgent/actions/runs/39540990956/artifacts/12319698153",
-      "validation": "Downloaded archive; four TRX names/assemblies/counters, SDK/commit/tree, build/dependency/isolation verified"
+      "artifact_id": 12320403527,
+      "artifact_url": "https://github.com/EngerING/TradingAgent/actions/runs/39543834359/artifacts/12320403527",
+      "validation": "Downloaded archive; four TRX exact names/assemblies/counters, SDK/commit/tree, build/dependency/isolation verified"
     }
   },
   "secret_review": {
@@ -410,9 +420,9 @@
     {
       "path": "build/auth-pilot/HostedRunner/HostedRun.cs",
       "change": "A",
-      "bytes": 10431,
-      "lines": 116,
-      "sha256": "dcb51b8dfc8991a21b92aaada3b576f728c24914f1cb122fc0ad09dbaa7b842a"
+      "bytes": 10564,
+      "lines": 118,
+      "sha256": "aa4e7f1576793c31bb05ce68603fb457abe8c02f6e95fab510eadec5c8d86d9f"
     },
     {
       "path": "build/auth-pilot/HostedRunner/HostedRunner.csproj",
@@ -424,9 +434,9 @@
     {
       "path": "build/auth-pilot/HostedRunner/ObserverSelfTest.cs",
       "change": "A",
-      "bytes": 3098,
-      "lines": 37,
-      "sha256": "2cd1350a49c17a7ba60a1c948eb609e924c4f155e6f1c4c508a90fc792adbd2e"
+      "bytes": 3818,
+      "lines": 46,
+      "sha256": "926e6a4b0b17645a828447c0b0fa1c70c997d556897bd7de743f31f63f9a44b2"
     },
     {
       "path": "build/auth-pilot/HostedRunner/PilotForm.cs",
@@ -445,9 +455,9 @@
     {
       "path": "build/auth-pilot/HostedRunner/RedactedAuthObserver.cs",
       "change": "A",
-      "bytes": 3790,
-      "lines": 47,
-      "sha256": "a76e6a26b0674fafe04ee0667d90c1cc341b321b1d0b4b021418b3d6b1ed32b8"
+      "bytes": 4891,
+      "lines": 62,
+      "sha256": "8c3e40dd7a6c366914b8aa59d7b69eb24715d3621b0be1293f93d4e7054c516f"
     },
     {
       "path": "build/auth-pilot/HostedRunner/packages.lock.json",
@@ -522,9 +532,9 @@
     {
       "path": "docs/architecture/m01-3b-hosted-validation.md",
       "change": "A",
-      "bytes": 8653,
-      "lines": 130,
-      "sha256": "8c74683b5294c7a1a7e54b318da6065d77ed06ec1119a58e25ac16c37fd86d2f"
+      "bytes": 9841,
+      "lines": 147,
+      "sha256": "6a8871fc5967bd455fa1464a112fb9f50bc0a194023edbd1125f10068c5600b1"
     },
     {
       "path": "docs/architecture/m01-3b-preparation.md",
@@ -632,7 +642,7 @@
       "sha256": "b00234dbe10f07b567e853e50a4c78cf50eba8ee115671e8d375959863235280"
     }
   ],
-  "next_stage": "Resume authorized B2 local credential/TOTP input; keep HTTPS BFF pending compatible certificate. No M01.4.",
+  "next_stage": "Await local incomplete-factor review before another authorized B2 attempt; preserve HTTPS BFF pending compatible certificate. No M01.4.",
   "sources": [
     "https://supabase.com/docs/guides/auth/sessions",
     "https://supabase.com/docs/guides/auth/server-side/advanced-guide",

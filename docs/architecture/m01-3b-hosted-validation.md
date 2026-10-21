@@ -19,6 +19,23 @@ conservó el cuerpo para inferir su causa. El usuario confirmó haber corregido
 la cuenta y autorizó otro intento local. No hay reintentos automáticos ni se
 relajan los controles JWT/MFA. El estado vigente consta en el JSON de evidencia.
 
+El tercer intento validó password, firma/claims del JWT AAL1 y GET user con el
+código de producto sin cambios. Se creó únicamente una base desechable y sus
+fixtures de seguridad; la emisión de sesión para la identidad real AAL1 fue
+denegada. Después se detuvo con `AuthFailure.Unavailable` antes de mostrar TOTP.
+No hay AAL2 ni revocación real validados. El logout de limpieza recibió204,
+se eliminó la base de prueba y se detuvo su cluster. Ese204 no prueba por sí
+solo que un JWT previamente emitido sea rechazado inmediatamente.
+
+El observador anterior agrupaba MFA/logout en una clave HTTP: la limpieza
+sobrescribió el diagnóstico necesario. No se infiere la causa del fallo ni se
+declara incompatibilidad del proveedor. El auxiliar ahora separa enroll,
+challenge, verify y logout, y registra intentos, tipo de contenido y booleanos
+del tamaño declarado sin conservar cuerpos. Su prueba sin red confirma esas
+fronteras. No se cambia el timeout ni el límite64KiB del transporte protegido.
+Se solicitó revisar localmente la cuenta ficticia por si quedó un factor no
+verificado; no se repite enrollment ni se elimina un factor verificado.
+
 El auxiliar Windows bajo `build/auth-pilot/HostedRunner/` recibe email/password
 y TOTP mediante un formulario local, borra los campos y no exporta valores ni
 capturas. No instala React ni modifica la UI del producto. Las credenciales
@@ -106,7 +123,7 @@ Matriz de medición que debe completarse después de confirmar infraestructura:
 | Caso | Evidencia mínima redactada | Estado |
 |---|---|---|
 | TLS y JWKS | HTTPS200, ES256/P-256, parser/transporte del producto | PASS parcial B2 |
-| Password, user, JWT | firma/issuer/aud/sub/session_id/iat/exp/nbf/role/is_anonymous | Pendiente B2 |
+| Password, user, JWT | firma/issuer/aud/sub/session_id/iat/exp/nbf/role/is_anonymous | PASS real AAL1 en intento3; AAL2 pendiente |
 | Enroll/challenge/verify | AAL1 denegada, factor propio, amr firmado fresco, AAL2 y cookie opaca | Pendiente B2 |
 | Código erróneo/replay/factor ajeno | HTTP genérico y ausencia de sesión SQL concedida | Pendiente B2 |
 | Admin/Alice/Bob | issuer+subject, roles/grants exactos, Paper/Live sintéticos y separación usuarios | Pendiente B2 |

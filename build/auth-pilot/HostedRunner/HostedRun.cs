@@ -45,7 +45,9 @@ internal static class HostedRun
             var issuer = new SessionIssuer(database.Database(DatabasePurpose.SessionIssuer), verifier);
             var denied = await issuer.CreateAsync(first.Token.AsMemory(), token); Require(denied.Reference is null && denied.Outcome == StoreOutcome.Denied, "AAL1_SQL_NOT_DENIED"); Pass("aal1_cannot_create_sql_session");
             Guid factor; string? enrollmentSecret = null;
-            var verified = factors.Where(f => f.Verified).ToArray(); Require(verified.Length <= 1, "MULTIPLE_FACTORS_REQUIRE_MANUAL_SELECTION");
+            var verified = factors.Where(f => f.Verified).ToArray();
+            Observe("factor_profile", new { verified = verified.Length, unverified = factors.Count - verified.Length });
+            Require(verified.Length <= 1, "MULTIPLE_FACTORS_REQUIRE_MANUAL_SELECTION");
             if (verified.Length == 1) { factor = verified[0].Id; evidence["enrollment"] = "EXISTING_VERIFIED_FACTOR; no new enrollment performed"; }
             else
             {
