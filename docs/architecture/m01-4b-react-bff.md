@@ -179,8 +179,11 @@ El primer arranque de CI rechazó runner.temp en el entorno del job; se corrigi�
 de caída SQL intentaba ALTER DATABASE desde la propia base y PostgreSQL lo rechazó;
 ahora usa la conexión postgres del mismo cluster desechable, revalidando el marcador.
 La otra comprobación comparaba el vencimiento ajustado por Chromium con Date.now.
-Se verifica ahora el límite exacto300s contra Date del BFF y la correspondencia
-Expires/DTO por segundo RFC6265, sin introducir tolerancia JWT ni ampliar la sesión.
+Date de Kestrel también tiene caché y resolución por segundo: otra ejecución mostró
+301s aparentes con ese reloj. El límite exacto300s se verifica contra el iat del JWT
+que acuñó el propio fixture, expuesto solo al runner como metadato sintético sin
+token/identidad/sesión, y se comprueba Expires/DTO por segundo RFC6265. No se introduce
+tolerancia JWT ni se amplía la sesión. Este oráculo es exclusivo del ejecutable test.
 El smoke local también comprueba rechazo503 durante la caída y recuperación SQL.
 
 Se consultaron Graphify (grafo histórico424nodossinReact/BFF; corroboración en fuentes),

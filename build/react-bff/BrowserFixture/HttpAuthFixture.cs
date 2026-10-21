@@ -40,6 +40,7 @@ public sealed class HttpAuthFixture(int port) : IAsyncDisposable
     public bool StaleMfa { get; set; }
     public TaskCompletionSource? VerifyEntered { get; set; }
     public TaskCompletionSource? ReleaseVerify { get; set; }
+    private long lastPasswordIssuedAt;
     private int userRequests;
     private int enrollmentRequests;
     private int deleteRequests;
@@ -104,6 +105,8 @@ public sealed class HttpAuthFixture(int port) : IAsyncDisposable
             return Tokens(ChangeVerifySubject ? Guid.NewGuid() : user, ChangeVerifySession ? Guid.NewGuid() : session, 2);
         });
         app.MapPost("/auth/v1/logout", (HttpContext context) => { var (_, session) = ReadIdentity(context); if (!IgnoreRemoteLogout) sessions.TryRemove(session, out _); return Results.NoContent(); });
+        app.MapGet("/fixture/password-issued-at", (HttpContext context) => context.Request.Headers["X-Fixture-Control"] == "public-synthetic-only"
+            ? Results.Json(new { passwordIssuedAtUnixMs = Interlocked.Read(ref lastPasswordIssuedAt) }) : Results.StatusCode(403));
         app.MapPost("/fixture/control/{command}", async (string command, HttpContext context) =>
         {
             if (context.Request.Headers["X-Fixture-Control"] != "public-synthetic-only") return Results.Forbid();
@@ -121,7 +124,13 @@ public sealed class HttpAuthFixture(int port) : IAsyncDisposable
         await app.StartAsync();
     }
     public Func<string, Task>? Control { get; set; }
-    private IResult Tokens(Guid user, Guid session, int aal) => Results.Json(new { token_type = "bearer", access_token = Token(user, session, aal, TokenVariant), refresh_token = "PUBLIC_FIXTURE_REFRESH_DISCARD", expires_in = 300 });
+    private IResult Tokens(Guid user, Guid session, int aal)
+    {
+        var token = Token(user, session, aal, TokenVariant);
+        // Test oracle only: timestamp from this fixture's own minted JWT. No token/subject/session retained here.
+        if (aal == 1) Interlocked.Exchange(ref lastPasswordIssuedAt, new DateTimeOffset(new JsonWebTokenHandler().ReadJsonWebToken(token).IssuedAt).ToUnixTimeMilliseconds());
+        return Results.Json(new { token_type = "bearer", access_token = token, refresh_token = "PUBLIC_FIXTURE_REFRESH_DISCARD", expires_in = 300 });
+    }
     private static (Guid User, Guid Session) ReadIdentity(HttpContext context)
     {
         var token = new JsonWebTokenHandler().ReadJsonWebToken(context.Request.Headers.Authorization.ToString()[7..]);
