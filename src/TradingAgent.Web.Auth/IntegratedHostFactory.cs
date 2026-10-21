@@ -1,5 +1,6 @@
 using System.Text.Json;
-using System.Threading.RateLimiting;
+using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -22,10 +23,23 @@ public static class IntegratedHostFactory
     {
         ArgumentNullException.ThrowIfNull(configuration); ArgumentNullException.ThrowIfNull(configureTestHost);
         if (!configuration.Simulation || runtime.Purpose != DatabasePurpose.Runtime || issuer.Purpose != DatabasePurpose.SessionIssuer) throw new InvalidOperationException("M01.3A supports only explicit synthetic composition.");
-        var builder = WebApplication.CreateEmptyBuilder(new WebApplicationOptions { ApplicationName = typeof(IntegratedHostFactory).Assembly.GetName().Name });
+        return Create(configuration, runtime, issuer, new Uri("https://tradingagent.test"), configureTestHost);
+    }
+    public static WebApplication CreateHostedDevelopmentPilot(HostedPilotSettings settings, SecurityDatabase runtime, SecurityDatabase issuer, X509Certificate2 certificate)
+    {
+        ArgumentNullException.ThrowIfNull(settings); ArgumentNullException.ThrowIfNull(certificate);
+        if (!certificate.HasPrivateKey || certificate.NotBefore.ToUniversalTime() > DateTime.UtcNow || certificate.NotAfter.ToUniversalTime() <= DateTime.UtcNow) throw new ArgumentException("Valid externally supplied development TLS certificate required.", nameof(certificate));
+        return Create(settings.Authentication, runtime, issuer, settings.BrowserOrigin, builder =>
+            builder.WebHost.UseKestrel(options => options.Listen(IPAddress.Loopback, settings.BrowserOrigin.Port, listener => listener.UseHttps(certificate))));
+    }
+    private static WebApplication Create(AuthConfiguration configuration, SecurityDatabase runtime, SecurityDatabase issuer, Uri browserOrigin, Action<WebApplicationBuilder> configureHost)
+    {
+        if (runtime.Purpose != DatabasePurpose.Runtime || issuer.Purpose != DatabasePurpose.SessionIssuer) throw new ArgumentException("Separate disposable runtime and issuer credentials required.");
+        var builder = WebApplication.CreateEmptyBuilder(new WebApplicationOptions { ApplicationName = typeof(IntegratedHostFactory).Assembly.GetName().Name, EnvironmentName = "Development" });
         builder.Logging.ClearProviders(); builder.Services.AddRouting();
         builder.Services.AddSupabaseAuth(configuration);
         builder.Services.AddSingleton<TemporarySessions>();
+        builder.Services.AddSingleton<PilotRequestBudgets>();
         builder.Services.AddSingleton(sp => new PilotRuntime(runtime, issuer, sp.GetRequiredService<JwtVerifier>(), sp.GetRequiredService<SupabaseAuthClient>(), sp.GetRequiredService<TemporarySessions>(), sp.GetRequiredService<TimeProvider>()));
         builder.Services.AddAuthenticationCore(o => { o.DefaultAuthenticateScheme = "PilotSession"; o.DefaultChallengeScheme = "PilotSession"; o.DefaultForbidScheme = "PilotSession"; });
         builder.Services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, PilotAuthentication>("PilotSession", _ => { });
@@ -34,14 +48,8 @@ public static class IntegratedHostFactory
         builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, RoutingAuthorizationResultHandler>();
         builder.Services.AddAntiforgery(o => { o.HeaderName = "X-CSRF-TOKEN"; o.Cookie.Name = "__Host-TradingAgent.Csrf"; o.Cookie.SecurePolicy = CookieSecurePolicy.Always; o.Cookie.HttpOnly = true; o.Cookie.SameSite = SameSiteMode.Strict; o.Cookie.Path = "/"; });
         builder.Services.AddSingleton<IDataProtectionProvider>(new EphemeralDataProtectionProvider());
-        builder.Services.AddRateLimiter(o =>
-        {
-            o.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context => context.Request.Method == "POST"
-                ? RateLimitPartition.GetFixedWindowLimiter("mutations", _ => new FixedWindowRateLimiterOptions { PermitLimit = 20, Window = TimeSpan.FromMinutes(1), QueueLimit = 0, AutoReplenishment = true })
-                : RateLimitPartition.GetNoLimiter("reads"));
-            o.OnRejected = (context, _) => new ValueTask(HttpBoundary.ErrorAsync(context.HttpContext, 429));
-        });
-        configureTestHost(builder);
+        configureHost(builder);
+        if (builder.Environment.EnvironmentName != "Development") throw new InvalidOperationException("Pilot environment must remain Development.");
         var app = builder.Build();
         var boundaryLogger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("TradingAgent.Web.Auth.Boundary");
         app.Use(async (context, next) =>
@@ -53,11 +61,11 @@ public static class IntegratedHostFactory
             context.RequestAborted = timeout.Token;
             try
             {
-                if (!context.Request.IsHttps || context.Request.Host.Value != "tradingagent.test" || context.Request.Headers["Sec-Fetch-Site"] is var site && site.Count != 0 && site != "same-origin" && site != "none") { await HttpBoundary.ErrorAsync(context, 403); return; }
+                if (!context.Request.IsHttps || context.Request.Host.Value != browserOrigin.Authority || context.Request.Headers["Sec-Fetch-Site"] is var site && site.Count != 0 && site != "same-origin" && site != "none") { await HttpBoundary.ErrorAsync(context, 403); return; }
                 if (context.Request.Method == "POST")
                 {
                     if (context.Request.ContentLength > 4096) { await HttpBoundary.ErrorAsync(context, 413); return; }
-                    if (context.Request.Headers.Origin != "https://tradingagent.test") { await HttpBoundary.ErrorAsync(context, 403); return; }
+                    if (context.Request.Headers.Origin != browserOrigin.GetLeftPart(UriPartial.Authority)) { await HttpBoundary.ErrorAsync(context, 403); return; }
                     await context.RequestServices.GetRequiredService<IAntiforgery>().ValidateRequestAsync(context);
                 }
                 await next(context);
@@ -76,7 +84,14 @@ public static class IntegratedHostFactory
             }
         });
         app.UseStatusCodePages(async status => await HttpBoundary.ErrorAsync(status.HttpContext, status.HttpContext.Response.StatusCode));
-        app.UseRouting(); app.UseRateLimiter(); app.UseAuthentication(); app.UseAuthorization();
+        app.UseRouting();
+        app.Use(async (context, next) =>
+        {
+            var operation = context.GetEndpoint()?.Metadata.GetMetadata<PilotOperationMetadata>()?.Operation ?? PilotOperation.Session;
+            if (context.Request.Method == "POST" && operation != PilotOperation.Login && !context.RequestServices.GetRequiredService<PilotRequestBudgets>().TryAdmit(operation, context.Connection.RemoteIpAddress)) throw new AuthException(AuthFailure.RateLimited);
+            await next(context);
+        });
+        app.UseAuthentication(); app.UseAuthorization();
         app.MapGet("/health", () => Results.Json(new { status = "ok" })).AllowAnonymous();
         app.MapGet("/bff/csrf", (HttpContext context, IAntiforgery antiforgery) => Results.Json(new { token = antiforgery.GetAndStoreTokens(context).RequestToken })).AllowAnonymous();
         PilotEndpoints.Map(app);

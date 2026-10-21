@@ -3,10 +3,16 @@ using TradingAgent.Identity.Supabase;
 
 namespace TradingAgent.Web.Auth;
 
-/// <summary>Explicit synthetic-only composition. No endpoint may consume this as operational authority.</summary>
+/// <summary>Explicit pilot composition. No endpoint may consume this as operational authority.</summary>
 public sealed class PilotRuntime(SecurityDatabase runtime, SecurityDatabase issuer, JwtVerifier verifier, SupabaseAuthClient provider, TemporarySessions state, TimeProvider clock)
 {
     private readonly SessionRepository repository = new(runtime);
+    public async Task<bool> IsActiveForLoginAsync(SessionReference reference, CancellationToken cancellationToken)
+    {
+        if (state.Find(reference) is null) return false;
+        try { await AuthenticateAsync(reference, cancellationToken).ConfigureAwait(false); return true; }
+        catch (AuthException error) when (error.Failure == AuthFailure.Invalid) { state.Remove(reference); return false; }
+    }
     public async Task<(SessionReference Reference, DateTimeOffset Expires, IReadOnlyList<TotpFactor> Factors)> LoginAsync(string email, string password, CancellationToken cancellationToken)
     {
         var credential = await provider.PasswordAsync(email, password, cancellationToken).ConfigureAwait(false);
@@ -86,11 +92,18 @@ public sealed class PilotRuntime(SecurityDatabase runtime, SecurityDatabase issu
         var identity = await verifier.ValidateAsync(entry.Credential.Token, cancellationToken).ConfigureAwait(false);
         if (identity != entry.Credential.Identity || identity.Aal != 2 || entry.Expires <= clock.GetUtcNow()) throw new AuthException(AuthFailure.Invalid);
         await provider.CheckUserAsync(entry.Credential, cancellationToken).ConfigureAwait(false);
-        // Preflight distinguishes unavailable storage from an absent/invalid session without changing M01.2's reader contract.
-        try { await using var connection = await runtime.OpenAsync(cancellationToken).ConfigureAwait(false); }
+        // One connection and status-bearing read; the M01.2 nullable reader deliberately collapses outages.
+        try
+        {
+            await using var connection = await runtime.OpenAsync(cancellationToken).ConfigureAwait(false);
+            await using var command = new Npgsql.NpgsqlCommand("SELECT * FROM app_security.self_user($1)", connection);
+            command.Parameters.AddWithValue(reference.LookupHash());
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false) || reader.GetGuid(0) != entry.User ||
+                reader.GetString(1) != identity.Identity.Issuer || reader.GetGuid(2) != identity.Identity.Subject ||
+                !string.Equals(reader.GetString(3), "Active", StringComparison.OrdinalIgnoreCase) || state.Find(reference) != entry) throw new AuthException(AuthFailure.Invalid);
+        }
         catch (Exception error) when (error is Npgsql.NpgsqlException or InvalidOperationException or TimeoutException) { throw new AuthException(AuthFailure.Unavailable); }
-        var user = await repository.FindSelfAsync(reference, cancellationToken).ConfigureAwait(false);
-        if (user is null || user.Id != entry.User || user.Identity != identity.Identity || state.Find(reference) != entry) throw new AuthException(AuthFailure.Invalid);
         return entry;
     }
     public async Task<object> SessionAsync(SessionReference reference, CancellationToken cancellationToken)

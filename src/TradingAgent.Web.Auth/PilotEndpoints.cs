@@ -9,24 +9,26 @@ internal static class PilotEndpoints
 {
     internal static void Map(WebApplication app)
     {
-        app.MapPost("/bff/auth/login", async (HttpContext context, PilotRuntime runtime) =>
+        app.MapPost("/bff/auth/login", async (HttpContext context, PilotRuntime runtime, PilotRequestBudgets budgets) =>
         {
-            if (HttpBoundary.Cookie(context.Request, HttpBoundary.SessionCookie) is not null) throw new AuthException(AuthFailure.Conflict);
             using var body = await HttpBoundary.BodyAsync(context); var p = body.RootElement;
             var email = p.GetProperty("email").GetString(); var password = p.GetProperty("password").GetString();
             if (email is null || email.Length is < 3 or > 320 || !email.Contains('@', StringComparison.Ordinal) || password is null || password.Length is < 1 or > 1024) return Results.StatusCode(400);
+            if (!budgets.TryAdmit(PilotOperation.Login, context.Connection.RemoteIpAddress, email)) throw new AuthException(AuthFailure.RateLimited);
+            if (HttpBoundary.Cookie(context.Request, HttpBoundary.SessionCookie) is { } previous && await runtime.IsActiveForLoginAsync(previous, context.RequestAborted)) throw new AuthException(AuthFailure.Conflict);
+            if (context.Request.Cookies.ContainsKey(HttpBoundary.SessionCookie)) context.Response.Cookies.Delete(HttpBoundary.SessionCookie, HttpBoundary.CookieOptions(DateTimeOffset.UnixEpoch));
             if (HttpBoundary.Cookie(context.Request, HttpBoundary.PreauthCookie) is { } old) await runtime.LogoutAsync(null, old, context.RequestAborted);
             var pending = await runtime.LoginAsync(email, password, context.RequestAborted);
             context.Response.Cookies.Append(HttpBoundary.PreauthCookie, pending.Reference.ExportForCookie(), HttpBoundary.CookieOptions(pending.Expires));
             return Results.Json(new { status = "MFA_REQUIRED", factors = pending.Factors, executionAuthorized = false });
-        }).AllowAnonymous();
+        }).WithMetadata(new PilotOperationMetadata(PilotOperation.Login)).AllowAnonymous();
         app.MapPost("/bff/auth/mfa/enroll", async (HttpContext context, PilotRuntime runtime) =>
-            Results.Json(await runtime.EnrollAsync(Preauth(context), context.RequestAborted))).AllowAnonymous();
+            Results.Json(await runtime.EnrollAsync(Preauth(context), context.RequestAborted))).WithMetadata(new PilotOperationMetadata(PilotOperation.Mfa)).AllowAnonymous();
         app.MapPost("/bff/auth/mfa/challenge", async (HttpContext context, PilotRuntime runtime) =>
         {
             using var body = await HttpBoundary.BodyAsync(context);
             return Results.Json(await runtime.ChallengeAsync(Preauth(context), body.RootElement.GetProperty("factorId").GetGuid(), context.RequestAborted));
-        }).AllowAnonymous();
+        }).WithMetadata(new PilotOperationMetadata(PilotOperation.Mfa)).AllowAnonymous();
         app.MapPost("/bff/auth/mfa/verify", async (HttpContext context, PilotRuntime runtime) =>
         {
             using var body = await HttpBoundary.BodyAsync(context); var p = body.RootElement;
@@ -36,7 +38,7 @@ internal static class PilotEndpoints
             context.Response.Cookies.Delete(HttpBoundary.PreauthCookie, HttpBoundary.CookieOptions(DateTimeOffset.UnixEpoch));
             context.Response.Cookies.Append(HttpBoundary.SessionCookie, session.Reference.ExportForCookie(), HttpBoundary.CookieOptions(session.Expires));
             return Results.Json(new { status = "SIGNED_IN", expiresAt = session.Expires, renewable = false, executionAuthorized = false });
-        }).AllowAnonymous();
+        }).WithMetadata(new PilotOperationMetadata(PilotOperation.Mfa)).AllowAnonymous();
         app.MapGet("/bff/session", async (HttpContext context, PilotRuntime runtime) => Results.Json(await runtime.SessionAsync(Session(context), context.RequestAborted))).RequireAuthorization("PilotSession");
         app.MapGet("/bff/probe/{resource:guid}/{environment}", async (HttpContext context, PilotRuntime runtime, Guid resource, string environment) =>
         {
@@ -55,7 +57,7 @@ internal static class PilotEndpoints
             context.Response.Cookies.Delete(HttpBoundary.SessionCookie, HttpBoundary.CookieOptions(DateTimeOffset.UnixEpoch));
             context.Response.Cookies.Delete(HttpBoundary.PreauthCookie, HttpBoundary.CookieOptions(DateTimeOffset.UnixEpoch));
             return Results.StatusCode(success ? 204 : 503);
-        }).AllowAnonymous();
+        }).WithMetadata(new PilotOperationMetadata(PilotOperation.Logout)).AllowAnonymous();
     }
     private static SessionReference Preauth(HttpContext context) => HttpBoundary.Cookie(context.Request, HttpBoundary.PreauthCookie) ?? throw new AuthException(AuthFailure.Invalid);
     private static SessionReference Session(HttpContext context) => HttpBoundary.Cookie(context.Request, HttpBoundary.SessionCookie) ?? throw new AuthException(AuthFailure.Invalid);
