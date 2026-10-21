@@ -20,6 +20,8 @@
   "TradingAgent.Auth.Pilot.Tests.HostedWireTests.HostedRateLimitIs429EquivalentAndNoRetryOccurs",
   "TradingAgent.Auth.Pilot.Tests.HttpBudgetTests.ClientForwardedHeaderCannotResetLoginQuota",
   "TradingAgent.Auth.Pilot.Tests.HttpBudgetTests.LoginExhaustionStillAllowsAuthenticatedLogout",
+  "TradingAgent.Auth.Pilot.Tests.HttpBudgetTests.MethodCasingCannotBypassCsrf(method: \"pOsT\")",
+  "TradingAgent.Auth.Pilot.Tests.HttpBudgetTests.MethodCasingCannotBypassCsrf(method: \"post\")",
   "TradingAgent.Auth.Pilot.Tests.HttpBudgetTests.RoutingAliasesCannotEscapeLogoutBudget(alias: \"/BFF/AUTH/LOGOUT\")",
   "TradingAgent.Auth.Pilot.Tests.HttpBudgetTests.RoutingAliasesCannotEscapeLogoutBudget(alias: \"/bff/auth/logout/\")",
   "TradingAgent.Auth.Pilot.Tests.RequestBudgetTests.AccountQuotaSurvivesChangingDirectAddressesAndEmailCase",

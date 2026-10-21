@@ -62,7 +62,7 @@ public static class IntegratedHostFactory
             try
             {
                 if (!context.Request.IsHttps || context.Request.Host.Value != browserOrigin.Authority || context.Request.Headers["Sec-Fetch-Site"] is var site && site.Count != 0 && site != "same-origin" && site != "none") { await HttpBoundary.ErrorAsync(context, 403); return; }
-                if (context.Request.Method == "POST")
+                if (HttpMethods.IsPost(context.Request.Method))
                 {
                     if (context.Request.ContentLength > 4096) { await HttpBoundary.ErrorAsync(context, 413); return; }
                     if (context.Request.Headers.Origin != browserOrigin.GetLeftPart(UriPartial.Authority)) { await HttpBoundary.ErrorAsync(context, 403); return; }
@@ -88,7 +88,7 @@ public static class IntegratedHostFactory
         app.Use(async (context, next) =>
         {
             var operation = context.GetEndpoint()?.Metadata.GetMetadata<PilotOperationMetadata>()?.Operation ?? PilotOperation.Session;
-            if (context.Request.Method == "POST" && operation != PilotOperation.Login && !context.RequestServices.GetRequiredService<PilotRequestBudgets>().TryAdmit(operation, context.Connection.RemoteIpAddress)) throw new AuthException(AuthFailure.RateLimited);
+            if (HttpMethods.IsPost(context.Request.Method) && operation != PilotOperation.Login && !context.RequestServices.GetRequiredService<PilotRequestBudgets>().TryAdmit(operation, context.Connection.RemoteIpAddress)) throw new AuthException(AuthFailure.RateLimited);
             await next(context);
         });
         app.UseAuthentication(); app.UseAuthorization();

@@ -1,13 +1,19 @@
 # M01.3B — Suite B alojada pendiente
 
-**B2 NO EJECUTADA. El usuario confirmó un proyecto de desarrollo durante el cierre de B1.**
+**B2 iniciada parcialmente: solo preflight público de lectura. Login/MFA aún no ejecutados.**
+El usuario confirmó un proyecto exclusivamente de desarrollo y autorizó B2.
 No se seleccionaron proyectos automáticamente ni se creó proyecto, usuario,
 factor o sesión real. Ninguna evidencia sintética constituye validación alojada.
 Referencia, URL, región y publishable key se conservan en configuración local
-ignorada, fuera de Git y artefactos. Solo se comprobó su formato localmente;
-no se consultaron endpoints alojados, ajustes, claves JWKS ni usuarios reales.
-Esta entrega cierra B1. B2 requiere concretar el canal local de autenticación y
-su ejecución; B1/CI continúan sin credenciales o conexiones alojadas.
+ignorada, fuera de Git y artefactos. Se validó el formato y se consultaron por
+HTTPS los endpoints públicos Auth settings/JWKS. El transporte/cache reales del
+producto también obtuvieron y analizaron la clave: ES256/P-256, un key. Email
+habilitado, Google deshabilitado. No se consultaron usuarios ni sesiones.
+El registro público sigue habilitado: se solicitó al usuario desactivarlo desde
+el panel, porque no hay panel conectado ni se dispone de autoridad administrativa.
+No se piden claves secret/service_role para resolverlo. Login/MFA se mantienen
+pendientes de ese ajuste, TOTP/cuenta ficticia y canal local seguro. CI normal
+continúa sin configuración ni conexiones alojadas. [Preflight redactado](m01-3b-hosted-preflight.json).
 
 Datos públicos necesarios: referencia exacta20 caracteres, URL HTTPS
 `https://<ref>.supabase.co`, issuer derivado `/auth/v1`, audiencia fija
@@ -45,7 +51,8 @@ Matriz de medición que debe completarse después de confirmar infraestructura:
 
 | Caso | Evidencia mínima redactada | Estado |
 |---|---|---|
-| Password, user, JWKS | TLS/endpoint esperado, firma/issuer/aud/sub/session_id/iat/exp/nbf/role/is_anonymous | Pendiente B2 |
+| TLS y JWKS | HTTPS200, ES256/P-256, parser/transporte del producto | PASS parcial B2 |
+| Password, user, JWT | firma/issuer/aud/sub/session_id/iat/exp/nbf/role/is_anonymous | Pendiente B2 |
 | Enroll/challenge/verify | AAL1 denegada, factor propio, amr firmado fresco, AAL2 y cookie opaca | Pendiente B2 |
 | Código erróneo/replay/factor ajeno | HTTP genérico y ausencia de sesión SQL concedida | Pendiente B2 |
 | Admin/Alice/Bob | issuer+subject, roles/grants exactos, Paper/Live sintéticos y separación usuarios | Pendiente B2 |
@@ -64,7 +71,7 @@ una comprobación soportada. Logout global/password change para esta medición
 requieren acciones de prueba explícitas fuera del BFF; no se habilitan endpoints
 administrativos de conveniencia. No se promete que GET user detecte cada caso.
 
-Suite A automatizada y Suite B manual/alojada son estados separados: cero pruebas
-alojadas ejecutadas; ninguna se marca skip para ocultarlo dentro de CI. Con el
+Suite A automatizada y Suite B manual/alojada son estados separados: preflight
+público ejecutado, cero pruebas alojadas de login/MFA; ninguna se marca skip dentro de CI. Con el
 proyecto ya confirmado, el mecanismo local de entrada de credenciales, certificado,
 ajustes Auth y el plan de medición deben concretarse antes de B2.

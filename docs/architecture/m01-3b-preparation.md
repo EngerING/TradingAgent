@@ -6,7 +6,8 @@ Base obligatoria: `c15c49ac07bf2eec2c72d8987c1db52b18a04795`, árbol
 El usuario declara auditoría independiente superada y aporta los hallazgos A–D;
 no se recibió un informe independiente adicional. Se implementó B1 sin proyecto
 confirmado inicialmente. El usuario lo identificó durante el cierre; su configuración
-pública permanece local e ignorada y solo se validó su formato. No se inició B2.
+pública permanece local e ignorada. Después autorizó B2: solo se ejecutó el
+preflight público de lectura descrito aparte, sin login/MFA ni operaciones de usuario.
 
 Diseño previo: presupuestos acotados y atómicos por operación, dirección remota
 del socket y cuenta de login normalizada/hash HMAC efímero. No se confía en
@@ -101,7 +102,7 @@ CSRF, Origin, cookies Secure/HttpOnly/Strict y validaciones de identidad permane
 
 ## Pruebas ejecutadas y pendientes
 
-Local:42 pruebas nuevas y146 regresiones aprobadas, cero fallos/omitidas. Los TRX
+Local:44 pruebas nuevas y146 regresiones aprobadas, cero fallos/omitidas. Los TRX
 se validan por nombre, ensamblado, total y duración. Build Release con SDK10.0.402,
 cero advertencias/errores, restore locked y NuGet true/all/low sin vulnerabilidades
 conocidas reportadas. PostgreSQL local17.5 en cluster nuevo, detenido al terminar.
@@ -129,7 +130,15 @@ y [paquete manual](m01-3b-external-review.md). No se ejecutaron suites financier
 cuantitativas, frontend o proyectos .NET históricos ajenos a los wrappers citados.
 La conexión observada de tests se limita a PostgreSQL desechable; no es sandbox
 de OS ni conteo de todo el tooling. No hubo IBKR, órdenes, PaperFeed, migraciones
-financieras, Supabase real, OpenAI/Kronos, merge, despliegue o cambio de main.
+financieras, login/MFA alojado, OpenAI/Kronos, merge, despliegue o cambio de main.
+El preflight público B2 separado usa cuatro GET Auth alojados; no forma parte
+del conteo de sockets de la Suite A ni se presenta como autenticación validada.
+
+Al preparar B2 se reprodujo además un bypass de CSRF previo: routing acepta
+post/pOsT, mientras el guard comparaba POST literalmente. Dos regresiones fallaron
+antes de la corrección. El guard y las cuotas ahora usan HttpMethods.IsPost para
+aplicar el mismo control independientemente del casing del método. No se modificó
+ninguna prueba anterior y el total actual es190, incluyendo las dos nuevas.
 
 Fuentes primarias contrastadas: [TOTP](https://supabase.com/docs/guides/auth/auth-mfa/totp),
 [OpenAPI](https://github.com/supabase/auth/blob/master/openapi.yaml),

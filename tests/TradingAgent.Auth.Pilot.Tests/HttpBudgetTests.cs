@@ -8,6 +8,18 @@ namespace TradingAgent.Auth.Pilot.Tests;
 [Collection("PostgreSQL")]
 public sealed class HttpBudgetTests(DatabaseFixture fixture)
 {
+    [Theory]
+    [InlineData("post")]
+    [InlineData("pOsT")]
+    public async Task MethodCasingCannotBypassCsrf(string method)
+    {
+        await using var h = new BrowserHarness(); await h.StartAsync(fixture);
+        using var request = new HttpRequestMessage(new HttpMethod(method), "/bff/auth/login") { Content = JsonContent.Create(new { email = h.Email, password = "fixture-password" }) };
+        request.Headers.Add("Origin", "https://tradingagent.test");
+        using var response = await h.Browser.SendAsync(request);
+        Assert.True(response.StatusCode is System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.MethodNotAllowed);
+        Assert.Equal(0, h.Provider.PasswordRequests);
+    }
     [Fact]
     public async Task ClientForwardedHeaderCannotResetLoginQuota()
     {

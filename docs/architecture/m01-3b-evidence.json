@@ -5,7 +5,7 @@
   "timezone": "America/La_Paz",
   "mode": "OFFLINE",
   "decision": "NO_TRADE",
-  "scope": "B1_COMPLETE_B2_NOT_EXECUTED_DEVELOPMENT_PROJECT_CONFIRMED",
+  "scope": "B1_COMPLETE_B2_PUBLIC_READ_ONLY_PREFLIGHT_EXECUTED_LOGIN_MFA_PENDING",
   "branch": "codex/m01-3b-hosted-supabase-pilot",
   "baseline_commit": "c15c49ac07bf2eec2c72d8987c1db52b18a04795",
   "baseline_tree": "e21123607bf89ac98772646ea31b690a96eaa661",
@@ -21,11 +21,11 @@
   "local_tests": {
     "b1": {
       "assembly": "TradingAgent.Auth.Pilot.Tests.dll",
-      "total": 42,
-      "passed": 42,
+      "total": 44,
+      "passed": 44,
       "failed": 0,
       "skipped": 0,
-      "duration_seconds": 10.7269027,
+      "duration_seconds": 15.4690154,
       "expected_test_manifest": "PASS",
       "mode": "OFFLINE",
       "decision": "NO_TRADE"
@@ -36,7 +36,7 @@
       "passed": 64,
       "failed": 0,
       "skipped": 0,
-      "duration_seconds": 28.3832621,
+      "duration_seconds": 36.102703399999996,
       "expected_test_manifest": "PASS",
       "mode": "OFFLINE",
       "decision": "NO_TRADE"
@@ -47,7 +47,7 @@
       "passed": 61,
       "failed": 0,
       "skipped": 0,
-      "duration_seconds": 26.177092299999998,
+      "duration_seconds": 29.7869934,
       "expected_test_manifest": "PASS",
       "mode": "OFFLINE",
       "decision": "NO_TRADE"
@@ -58,13 +58,13 @@
       "passed": 21,
       "failed": 0,
       "skipped": 0,
-      "duration_seconds": 0.8098023,
+      "duration_seconds": 1.0059799,
       "expected_test_manifest": "PASS",
       "mode": "OFFLINE",
       "decision": "NO_TRADE"
     }
   },
-  "executed_total": 188,
+  "executed_total": 190,
   "build": {
     "sdk": "10.0.402",
     "runtime": "10.0.13",
@@ -81,7 +81,7 @@
     "b1": {
       "mode": "OFFLINE",
       "decision": "NO_TRADE",
-      "socket_connect_starts": 127,
+      "socket_connect_starts": 141,
       "connections_outside_disposable_postgres": 0,
       "scope": "SQL fixture lifecycle; tooling excluded",
       "postgres_version": "17.5"
@@ -97,14 +97,14 @@
     "m012": {
       "mode": "OFFLINE",
       "decision": "NO_TRADE",
-      "socket_connect_starts": 373,
+      "socket_connect_starts": 374,
       "connections_outside_disposable_postgres": 0,
       "scope": "SQL fixture lifecycle; tooling excluded",
       "postgres_version": "17.5"
     },
     "hosted_composition_build_connections": 0,
     "hosted_listener_started": false,
-    "supabase_hosted_connections": 0,
+    "supabase_hosted_connections": "Four authorized HTTPS public Auth GETs in separate B2 preflight, outside Suite A observer",
     "financial_operations": 0,
     "operational_database_connections": 0,
     "limitation": "Fixture lifecycle socket events and exercised paths, not an OS sandbox; tooling/registries excluded"
@@ -165,21 +165,24 @@
     }
   },
   "hosted_pilot": {
-    "executed": false,
+    "executed": "PARTIAL_PUBLIC_METADATA_ONLY",
     "project_confirmed": true,
     "public_configuration_used": {
       "location": "Local ignored configuration only; no project values or key published in Git/artifacts",
       "local_format_validation": "PASS",
-      "provider_requests": 0,
-      "settings_checked_against_hosted_project": false
+      "provider_requests": 4,
+      "settings_checked_against_hosted_project": "Email=true, Google=false, disable_signup=false; remaining settings not certified"
     },
     "login_mfa_result": "NOT_EXECUTED",
     "remote_revocation_measurements": "NOT_EXECUTED",
     "key_rotation_hosted": "NOT_EXECUTED",
-    "readiness": "Project confirmed by user. Hosted settings, local HTTPS certificate and safe local password/TOTP input/measurement setup still pending. B1 only.",
+    "readiness": "Public signup still enabled. Await dashboard signup disable/TOTP/fictional account setup and secure local password/authenticator interaction.",
     "requirements_document": "docs/architecture/m01-3b-hosted-validation.md",
     "normal_ci_contains_hosted_tests": false,
-    "silently_skipped_tests": 0
+    "silently_skipped_tests": 0,
+    "public_preflight": "docs/architecture/m01-3b-hosted-preflight.json",
+    "public_get_requests": 4,
+    "actual_product_transport_and_jwks_cache": "PASS"
   },
   "security_limits": {
     "login_source_per_minute": 20,
@@ -217,7 +220,8 @@
     "test_fixture_corrections": [
       "Unknown reference differs from prior legitimate cookie",
       "Simulated provider clock advance does not advance SQL; expired recovery tests AAL1 without weakening SQL MFA time"
-    ]
+    ],
+    "additional_tdd_regression": "After B2 authorization, two failing tests reproduced lowercase/mixed-case POST CSRF bypass. Both POST guards now use HttpMethods.IsPost;44 new/190 total passed. This was a test-driven fix, not a fourth reviewer cycle."
   },
   "ci": {
     "workflow": ".github/workflows/m01-3b-hosted-pilot-ci.yml",
@@ -228,7 +232,7 @@
     "retention_days": 14,
     "dependency_cache": false,
     "normal_ci": "Suite A only, no hosted credentials or connections",
-    "status": "Verified SUCCESS on documentation close; this subsequent documentation-only project-confirmation commit reruns identical Suite A. Final identity in final artifact and delivery.",
+    "status": "Prior42+146 CI verified. Current44+146 cases and POST casing correction require final CI; exact final identity in its artifact and delivery.",
     "verified_execution": {
       "commit": "3d1bfac32b33ba8be16994a0686f74b3cba3f001",
       "tree": "47ab772c7f65c2713b1b23b5f4d91fbe42dd1104",
@@ -334,7 +338,7 @@
       "change": "A",
       "bytes": 6223,
       "lines": 136,
-      "sha256": "53729bcb1681ca431184c2dc6d6a931999329d7a9c4f9fd98f1de3cabae19d8c"
+      "sha256": "ef7af064266ae1deee2fa1c63c198c7471c45553b6d67923c12bf76988d90337"
     },
     {
       "path": "build/auth-pilot/TradingAgent.Auth.slnx",
@@ -353,9 +357,9 @@
     {
       "path": "build/auth-pilot/expected-tests.json",
       "change": "A",
-      "bytes": 5194,
-      "lines": 44,
-      "sha256": "ca14b0cee4d5aa39eee4c27d0eff41808dda30237ae0d895232fdd0287671baf"
+      "bytes": 5390,
+      "lines": 46,
+      "sha256": "a4d49e0ace705634bcbf7bfe5602f8492778c873bdeb8075ad4f9ffa06f4052a"
     },
     {
       "path": "build/auth-pilot/global.json",
@@ -386,18 +390,25 @@
       "sha256": "2633ea3d49ef8b2259714c4c67b474bd38aca1f788a87b843053d8c8569c1ba4"
     },
     {
+      "path": "docs/architecture/m01-3b-hosted-preflight.json",
+      "change": "A",
+      "bytes": 1686,
+      "lines": 32,
+      "sha256": "de05cc4568adbcc1830b24973939a26e24c54ff00c5a39511e21aad5b21cd6b5"
+    },
+    {
       "path": "docs/architecture/m01-3b-hosted-validation.md",
       "change": "A",
-      "bytes": 5087,
-      "lines": 70,
-      "sha256": "43d48a68045acef74c718b1a960004ca0f9fdcd7ca8d67e3930842ff8d795766"
+      "bytes": 5683,
+      "lines": 77,
+      "sha256": "3fcc1aaea9b5b7efb969366b6e215d529abde700fa65adf79b69e9efee8d7ec9"
     },
     {
       "path": "docs/architecture/m01-3b-preparation.md",
       "change": "A",
-      "bytes": 9895,
-      "lines": 157,
-      "sha256": "9f2895831b888d7bf7656662225384e847500379e00f8f9815c2a37b8a58e518"
+      "bytes": 10546,
+      "lines": 166,
+      "sha256": "5ff4bf31882d91d98972f73654b8783a8cb4c73d4deaec87f43a4a82d30bd21a"
     },
     {
       "path": "docs/architecture/m01-3b-session-renewal-adr.md",
@@ -416,9 +427,9 @@
     {
       "path": "src/TradingAgent.Web.Auth/IntegratedHostFactory.cs",
       "change": "M",
-      "bytes": 9290,
+      "bytes": 9310,
       "lines": 106,
-      "sha256": "59f97ea850ca088ff5aae2de8ed936104ed990d7bcf7c34ce18c06e11d0364e2"
+      "sha256": "99871531b392d5024b4ef0c1ea90ee514dbf6b74d944fdad4b0840719443ed42"
     },
     {
       "path": "src/TradingAgent.Web.Auth/PilotEndpoints.cs",
@@ -465,9 +476,9 @@
     {
       "path": "tests/TradingAgent.Auth.Pilot.Tests/HttpBudgetTests.cs",
       "change": "A",
-      "bytes": 2513,
-      "lines": 47,
-      "sha256": "a5aee49b6e7da440793a5a81aa1a3a8b899d49225620d9d5e424049a57810be8"
+      "bytes": 3231,
+      "lines": 59,
+      "sha256": "40fcbae9f80534e24e9693812354e64a8b921102684fd0b66bb9cf65fff7b2ac"
     },
     {
       "path": "tests/TradingAgent.Auth.Pilot.Tests/RequestBudgetTests.cs",
@@ -498,7 +509,7 @@
       "sha256": "b00234dbe10f07b567e853e50a4c78cf50eba8ee115671e8d375959863235280"
     }
   ],
-  "next_stage": "B2 only after its execution and safe local inputs are concretized; M01.4 not started",
+  "next_stage": "Complete B2 after required dashboard settings and local human credential/authenticator setup. No M01.4.",
   "sources": [
     "https://supabase.com/docs/guides/auth/sessions",
     "https://supabase.com/docs/guides/auth/server-side/advanced-guide",
