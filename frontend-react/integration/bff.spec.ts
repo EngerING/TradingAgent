@@ -24,7 +24,7 @@ test.beforeEach(async ({ context }) => {
 test('HTTPS login keeps approved design and no operational routes', async ({ page }) => {
   await page.goto('/'); await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible(); await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Live Trading Real money' })).toBeDisabled();
-  expect((await page.request.get('/orders')).status()).toBe(404); mkdirSync('../artifacts/m014b/screenshots', { recursive: true }); await page.screenshot({ path: '../artifacts/m014b/screenshots/login.png' });
+  expect((await page.request.get('/orders')).status()).toBe(404); mkdirSync('../artifacts/m014b/screenshots', { recursive: true }); await page.evaluate(() => document.fonts.ready); await page.screenshot({ animations: 'disabled', path: '../artifacts/m014b/screenshots/login.png' });
 });
 test('incorrect password never creates an authenticated UI', async ({ page }) => { await login(page, 'viewer', 'incorrect'); await expect(page.getByRole('alert')).toContainText('Check your credentials'); expect((await page.request.get('/bff/session')).status()).toBe(401); });
 test('AAL1 cannot access session or synthetic resource', async ({ page }) => { await login(page); await expect(page.getByRole('button', { name: 'Continue securely' })).toBeVisible(); expect((await page.request.get('/bff/session')).status()).toBe(401); expect((await page.request.get(`/bff/probe/${ready.resource}/Paper`)).status()).toBe(401); });
@@ -40,11 +40,11 @@ test('existing verified MFA AAL2 authorizes SQL resource and logout revokes stal
   expect((await page.request.get(`/bff/probe/${ready.resource}/Paper`)).status()).toBe(200);
   const cookie = (await context.cookies()).find(c => c.name === '__Host-TradingAgent.Session')!; expect({ secure: cookie.secure, httpOnly: cookie.httpOnly, sameSite: cookie.sameSite, path: cookie.path }).toEqual({ secure: true, httpOnly: true, sameSite: 'Strict', path: '/' }); expect(cookie.expires).toBeGreaterThan(0); // Browser adjusts expiry against server Date; Fixture JWT issuance/Expires/DTO checked above; no clock tolerance added.
   expect(await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length, cookie: document.cookie }))).toEqual({ local: 0, session: 0, cookie: '' });
-  await page.screenshot({ path: '../artifacts/m014b/screenshots/session.png' }); await page.getByRole('button', { name: 'Sign out', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+  await page.evaluate(() => document.fonts.ready); await page.screenshot({ animations: 'disabled', path: '../artifacts/m014b/screenshots/session.png' }); await page.getByRole('button', { name: 'Sign out', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
   await context.addCookies([cookie]); expect((await page.request.get('/bff/session')).status()).toBe(401);
 });
 test('safe fresh enrollment QR clears before verification and wrong code gets a new challenge', async ({ page }) => {
-  await mfa(page, 'enroll'); await expect(page.getByText(/enrollment key private/)).toHaveCount(0); await page.screenshot({ path: '../artifacts/m014b/screenshots/mfa.png' });
+  await mfa(page, 'enroll'); await expect(page.getByText(/enrollment key private/)).toHaveCount(0); await page.evaluate(() => document.fonts.ready); await page.screenshot({ animations: 'disabled', path: '../artifacts/m014b/screenshots/mfa.png' });
   await page.getByLabel('Verification code').fill('000000'); await page.getByRole('button', { name: 'Verify code' }).click(); await expect(page.getByRole('alert')).toContainText('Code rejected'); await expect(page.getByLabel('Verification code')).toBeEmpty();
   await page.getByLabel('Verification code').fill('123456'); await page.getByRole('button', { name: 'Verify code' }).click(); await expect(page.getByRole('heading', { name: 'Identity authenticated' })).toBeVisible();
 });
