@@ -31,7 +31,7 @@ test('AAL1 cannot access session or synthetic resource', async ({ page }) => { a
 test('existing verified MFA AAL2 authorizes SQL resource and logout revokes stale cookie', async ({ page, context }) => {
   await signedIn(page); const session = await page.request.get('/bff/session'); expect(await session.json()).toMatchObject({ aal: 'aal2', renewable: false, executionAuthorized: false, providerSessionConfirmedActive: false });
   expect((await page.request.get(`/bff/probe/${ready.resource}/Paper`)).status()).toBe(200);
-  const cookie = (await context.cookies()).find(c => c.name === '__Host-TradingAgent.Session')!; expect(cookie).toMatchObject({ secure: true, httpOnly: true, sameSite: 'Strict', path: '/' }); expect(cookie.expires * 1000 - Date.now()).toBeLessThanOrEqual(300000);
+  const cookie = (await context.cookies()).find(c => c.name === '__Host-TradingAgent.Session')!; expect({ secure: cookie.secure, httpOnly: cookie.httpOnly, sameSite: cookie.sameSite, path: cookie.path }).toEqual({ secure: true, httpOnly: true, sameSite: 'Strict', path: '/' }); expect(cookie.expires * 1000 - Date.now()).toBeLessThanOrEqual(300000);
   expect(await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length, cookie: document.cookie }))).toEqual({ local: 0, session: 0, cookie: '' });
   await page.screenshot({ path: '../artifacts/m014b/screenshots/session.png' }); await page.getByRole('button', { name: 'Sign out', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
   await context.addCookies([cookie]); expect((await page.request.get('/bff/session')).status()).toBe(401);
