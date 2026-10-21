@@ -5,7 +5,7 @@
   "timezone": "America/La_Paz",
   "mode": "OFFLINE",
   "decision": "NO_TRADE",
-  "scope": "B1_COMPLETE_B2_NOT_EXECUTED_PENDING_CONFIRMED_DEVELOPMENT_PROJECT",
+  "scope": "B1_COMPLETE_B2_NOT_EXECUTED_DEVELOPMENT_PROJECT_CONFIRMED",
   "branch": "codex/m01-3b-hosted-supabase-pilot",
   "baseline_commit": "c15c49ac07bf2eec2c72d8987c1db52b18a04795",
   "baseline_tree": "e21123607bf89ac98772646ea31b690a96eaa661",
@@ -166,12 +166,17 @@
   },
   "hosted_pilot": {
     "executed": false,
-    "project_confirmed": false,
-    "public_configuration_used": null,
+    "project_confirmed": true,
+    "public_configuration_used": {
+      "location": "Local ignored configuration only; no project values or key published in Git/artifacts",
+      "local_format_validation": "PASS",
+      "provider_requests": 0,
+      "settings_checked_against_hosted_project": false
+    },
     "login_mfa_result": "NOT_EXECUTED",
     "remote_revocation_measurements": "NOT_EXECUTED",
     "key_rotation_hosted": "NOT_EXECUTED",
-    "readiness": "Configuration/composition and protocol tests prepared; safe local credential input and measurement harness must be concretized with confirmed project before B2",
+    "readiness": "Project confirmed by user. Hosted settings, local HTTPS certificate and safe local password/TOTP input/measurement setup still pending. B1 only.",
     "requirements_document": "docs/architecture/m01-3b-hosted-validation.md",
     "normal_ci_contains_hosted_tests": false,
     "silently_skipped_tests": 0
@@ -223,43 +228,43 @@
     "retention_days": 14,
     "dependency_cache": false,
     "normal_ci": "Suite A only, no hosted credentials or connections",
-    "status": "First CI SUCCESS, downloaded evidence verified; final documentation commit reruns identical workflow. Final identity in final artifact/delivery.",
+    "status": "Verified SUCCESS on documentation close; this subsequent documentation-only project-confirmation commit reruns identical Suite A. Final identity in final artifact and delivery.",
     "verified_execution": {
-      "commit": "9c059aaef2bc3e98a51f039430b4624769268f6e",
-      "tree": "a7e97919530e084b311def6712349a058eeb0a03",
-      "artifact_sha256": "8c265826912b5d90c78b405a51e90f0610c634973ee25dcb45fe71b5a1c3d909",
+      "commit": "3d1bfac32b33ba8be16994a0686f74b3cba3f001",
+      "tree": "47ab772c7f65c2713b1b23b5f4d91fbe42dd1104",
+      "artifact_sha256": "a034e9ae9d92c7e7ac5c9a94ab70a873879a9eee221174da81528dadd59250e8",
       "tests": {
         "b1": {
           "assembly": "TradingAgent.Auth.Pilot.Tests.dll",
           "passed": 42,
           "failed": 0,
           "skipped": 0,
-          "duration_seconds": 6.689393,
-          "trx_sha256": "3482aa0f73a4b92c0f16fefb9a6f3ac370431fd76501454f25782e834b12b0e6"
+          "duration_seconds": 4.635378,
+          "trx_sha256": "bf0c180d2765c9c4f132cfbf2ac9fda90caafd4f066eb8703988589fa2d89985"
         },
         "m013": {
           "assembly": "TradingAgent.Auth.Tests.dll",
           "passed": 64,
           "failed": 0,
           "skipped": 0,
-          "duration_seconds": 9.619035,
-          "trx_sha256": "204dc53ea93bfa34d5727a58b717a845ffe73da1edcc3d9ee6a65a2c8ec2692f"
+          "duration_seconds": 6.785278,
+          "trx_sha256": "25c667c8200e5f09b4c91a78b00b7aad23bfdee3f0a63fad899790443709a265"
         },
         "m012": {
           "assembly": "TradingAgent.Identity.Tests.dll",
           "passed": 61,
           "failed": 0,
           "skipped": 0,
-          "duration_seconds": 11.460974,
-          "trx_sha256": "1629073b67f4c5c4bbbd69bd0011fb1256d653d02bcaa8d4cbbd52db554dbce8"
+          "duration_seconds": 9.679885,
+          "trx_sha256": "2e550766ba7336887b5793d90cd733201a740fb50989f14a1fc8cb5e89789b32"
         },
         "m011": {
           "assembly": "TradingAgent.Web.Tests.dll",
           "passed": 21,
           "failed": 0,
           "skipped": 0,
-          "duration_seconds": 0.999633,
-          "trx_sha256": "54396db49257dd291c98495cb7fc0d3461dc96dadb82c904aacc6fdb8b76d4cf"
+          "duration_seconds": 0.629851,
+          "trx_sha256": "a41bb939a2ae743446e3098c9115113ae49dd6a2578df14f30f3913d5a132183"
         }
       },
       "b1_isolation": {
@@ -281,27 +286,28 @@
       "m012_isolation": {
         "mode": "OFFLINE",
         "decision": "NO_TRADE",
-        "socket_connect_starts": 433,
+        "socket_connect_starts": 437,
         "connections_outside_disposable_postgres": 0,
         "scope": "SQL fixture lifecycle; tooling excluded",
         "postgres_version": "17.11 (Debian 17.11-1.pgdg12+2)"
       },
       "total_passed": 188,
       "build": "Release; 0 warnings; 0 errors; NuGet known vulnerable packages: 0",
-      "run_id": 39539401715,
-      "url": "https://github.com/EngerING/TradingAgent/actions/runs/39539401715",
+      "run_id": 39539723992,
+      "url": "https://github.com/EngerING/TradingAgent/actions/runs/39539723992",
       "conclusion": "success",
-      "artifact_id": 12319400228,
-      "artifact_url": "https://github.com/EngerING/TradingAgent/actions/runs/39539401715/artifacts/12319400228",
-      "validation": "Four TRX exact names/counters/assemblies, SDK, commit/tree, Release logs, dependency reports and isolation inspected from downloaded archive"
+      "artifact_id": 12319725411,
+      "artifact_url": "https://github.com/EngerING/TradingAgent/actions/runs/39539723992/artifacts/12319725411",
+      "validation": "Downloaded archive, four TRX exact cases/assemblies/counters, SDK/commit/tree, build logs/dependency reports/isolation verified"
     }
   },
   "secret_review": {
     "new_and_modified_files_known_patterns": "PASS",
     "sensitive_paths": "PASS",
-    "real_credentials_requested_or_stored": false,
     "fixture_values": "Public dummy passwords/OTP and ephemeral per-run keys only",
-    "limitation": "Pattern/content review is not universal detection; no private directories inspected"
+    "limitation": "Pattern/content review is not universal detection; no private directories inspected",
+    "private_password_jwt_otp_or_secret_keys_requested_or_stored": false,
+    "supabase_publishable_key": "User-provided public key kept in ignored local configuration, never Git/artifacts/logs"
   },
   "graphify": {
     "nodes": 424,
@@ -312,7 +318,14 @@
     "truncated": 157,
     "budget": 900,
     "reflect": "no-op",
-    "limitation": "Historical graph excludes new Auth modules; corroborated current sources"
+    "limitation": "Historical graph excludes new Auth modules; corroborated current sources",
+    "followup_query": {
+      "query": "postgres token security risk",
+      "budget": 500,
+      "found": 184,
+      "shown": 15,
+      "truncated": 169
+    }
   },
   "inventory_hash_basis": "Git index canonical bytes, evidence self hash omitted",
   "new_and_modified_inventory": [
@@ -375,16 +388,16 @@
     {
       "path": "docs/architecture/m01-3b-hosted-validation.md",
       "change": "A",
-      "bytes": 4849,
-      "lines": 67,
-      "sha256": "48afe31febb1688fb3a6c92fa29ab6f35c3b595bd2972236b72c3bb1302d9f3c"
+      "bytes": 5087,
+      "lines": 70,
+      "sha256": "43d48a68045acef74c718b1a960004ca0f9fdcd7ca8d67e3930842ff8d795766"
     },
     {
       "path": "docs/architecture/m01-3b-preparation.md",
       "change": "A",
-      "bytes": 9795,
-      "lines": 156,
-      "sha256": "d3b6544bc00d2aae162dbec8af449e4847f9b4db9f5819569bf4ccf482db9082"
+      "bytes": 9895,
+      "lines": 157,
+      "sha256": "9f2895831b888d7bf7656662225384e847500379e00f8f9815c2a37b8a58e518"
     },
     {
       "path": "docs/architecture/m01-3b-session-renewal-adr.md",
@@ -485,7 +498,7 @@
       "sha256": "b00234dbe10f07b567e853e50a4c78cf50eba8ee115671e8d375959863235280"
     }
   ],
-  "next_stage": "B2 only after development project confirmation and concrete local input/measurement setup; M01.4 not started",
+  "next_stage": "B2 only after its execution and safe local inputs are concretized; M01.4 not started",
   "sources": [
     "https://supabase.com/docs/guides/auth/sessions",
     "https://supabase.com/docs/guides/auth/server-side/advanced-guide",

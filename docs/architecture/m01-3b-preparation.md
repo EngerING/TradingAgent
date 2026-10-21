@@ -4,8 +4,9 @@ Base obligatoria: `c15c49ac07bf2eec2c72d8987c1db52b18a04795`, árbol
 `e21123607bf89ac98772646ea31b690a96eaa661`. Rama nueva
 `codex/m01-3b-hosted-supabase-pilot`. OFFLINE / NO_TRADE.
 El usuario declara auditoría independiente superada y aporta los hallazgos A–D;
-no se recibió un informe independiente adicional. Se implementa B1 mientras
-se espera confirmación de un proyecto exclusivamente de desarrollo para B2.
+no se recibió un informe independiente adicional. Se implementó B1 sin proyecto
+confirmado inicialmente. El usuario lo identificó durante el cierre; su configuración
+pública permanece local e ignorada y solo se validó su formato. No se inició B2.
 
 Diseño previo: presupuestos acotados y atómicos por operación, dirección remota
 del socket y cuenta de login normalizada/hash HMAC efímero. No se confía en

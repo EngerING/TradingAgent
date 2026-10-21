@@ -1,10 +1,13 @@
 # M01.3B — Suite B alojada pendiente
 
-**B2 NO EJECUTADA. No hay proyecto de desarrollo confirmado en esta entrega.**
+**B2 NO EJECUTADA. El usuario confirmó un proyecto de desarrollo durante el cierre de B1.**
 No se seleccionaron proyectos automáticamente ni se creó proyecto, usuario,
 factor o sesión real. Ninguna evidencia sintética constituye validación alojada.
-El usuario autorizó desarrollar el piloto y condicionó su ejecución a confirmar
-un proyecto exclusivamente de desarrollo. B1/CI no necesitan esa configuración.
+Referencia, URL, región y publishable key se conservan en configuración local
+ignorada, fuera de Git y artefactos. Solo se comprobó su formato localmente;
+no se consultaron endpoints alojados, ajustes, claves JWKS ni usuarios reales.
+Esta entrega cierra B1. B2 requiere concretar el canal local de autenticación y
+su ejecución; B1/CI continúan sin credenciales o conexiones alojadas.
 
 Datos públicos necesarios: referencia exacta20 caracteres, URL HTTPS
 `https://<ref>.supabase.co`, issuer derivado `/auth/v1`, audiencia fija
@@ -62,6 +65,6 @@ requieren acciones de prueba explícitas fuera del BFF; no se habilitan endpoint
 administrativos de conveniencia. No se promete que GET user detecte cada caso.
 
 Suite A automatizada y Suite B manual/alojada son estados separados: cero pruebas
-alojadas ejecutadas; ninguna se marca skip para ocultarlo dentro de CI. Una vez
-confirmado el proyecto, el mecanismo local de entrada de credenciales y el plan
-de medición deberán concretarse antes de iniciar conexiones alojadas.
+alojadas ejecutadas; ninguna se marca skip para ocultarlo dentro de CI. Con el
+proyecto ya confirmado, el mecanismo local de entrada de credenciales, certificado,
+ajustes Auth y el plan de medición deben concretarse antes de B2.
