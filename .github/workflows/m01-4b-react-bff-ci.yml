@@ -19,8 +19,6 @@ jobs:
       M012_BOOTSTRAP_PASSWORD: m014b-public-disposable-fixture
       M012_CLUSTER_MARKER: m012_disposable_m014b_ci
       M012_RESULTS_DIRECTORY: ${{ github.workspace }}/artifacts/m014b
-      NUGET_PACKAGES: ${{ runner.temp }}/m014b-nuget
-      NUGET_HTTP_CACHE_PATH: ${{ runner.temp }}/m014b-nuget-http
     services:
       postgres:
         image: postgres:17.11-bookworm@sha256:3645570cccdfa447589da9f57dd740faa29b30938e861289a5574b6ca6b03826
@@ -54,6 +52,9 @@ jobs:
           npm audit signatures > ../artifacts/m014b/npm-signatures.log
           npx --no-install playwright install --with-deps chromium
       - name: Release locked .NET build NuGet audit and safe enrollment regressions
+        env:
+          NUGET_PACKAGES: ${{ runner.temp }}/m014b-nuget
+          NUGET_HTTP_CACHE_PATH: ${{ runner.temp }}/m014b-nuget-http
         shell: pwsh
         run: ./build/react-bff/check.ps1 -Dotnet dotnet
       - name: Start owned HTTPS BFF HTTP Auth fixture and disposable security schema
