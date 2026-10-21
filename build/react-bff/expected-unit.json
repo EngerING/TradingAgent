@@ -1,0 +1,18 @@
+[
+  "BFF transport boundary &gt; blocks duplicate transport while a request is pending",
+  "BFF transport boundary &gt; blocks orphan enrollment without POST enrollment or DELETE",
+  "BFF transport boundary &gt; blocks recovery and invitation without network",
+  "BFF transport boundary &gt; cancelled requests cannot leave a preliminary authenticated state",
+  "BFF transport boundary &gt; does not confuse HTTP success with an authenticated session",
+  "BFF transport boundary &gt; normalizes HTTP 401",
+  "BFF transport boundary &gt; normalizes HTTP 403",
+  "BFF transport boundary &gt; normalizes HTTP 409",
+  "BFF transport boundary &gt; normalizes HTTP 429",
+  "BFF transport boundary &gt; normalizes HTTP 503",
+  "BFF transport boundary &gt; rejects non JSON rather than rendering an upstream error",
+  "BFF transport boundary &gt; rejects oversized request bodies before transmitting credentials",
+  "BFF transport boundary &gt; rejects oversized responses",
+  "BFF transport boundary &gt; uses same-origin cookies CSRF and never accepts a partial login",
+  "coalesces interval and focus checks while a valid session read is pending",
+  "failed logout from an error screen remains explicitly unconfirmed without unhandled rejection"
+]

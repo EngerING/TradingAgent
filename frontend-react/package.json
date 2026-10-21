@@ -9,7 +9,7 @@
     "npm": "12.2.0"
   },
   "scripts": {
-    "dev": "vite --host localhost --port 3000 --strictPort",
+    "dev": "vite --mode demo --host localhost --port 3000 --strictPort",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
     "test": "vitest run",
@@ -21,6 +21,7 @@
   "dependencies": {
     "@fontsource/inter": "5.3.0",
     "@fontsource/libre-baskerville": "5.3.0",
+    "qrcode-generator": "2.0.4",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "react-router": "8.5.0"

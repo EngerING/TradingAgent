@@ -25,6 +25,7 @@ public sealed class TemporarySessions(TimeProvider clock)
     private readonly Dictionary<string, BrowserSession> sessions = new(StringComparer.Ordinal);
     private readonly Dictionary<string, (SessionReference Reference, DateTimeOffset Expires)> completions = new(StringComparer.Ordinal);
     private readonly Dictionary<Guid, (int Count, DateTimeOffset Expires)> accountAttempts = [];
+    private readonly Dictionary<IdentityKey, DateTimeOffset> enrollmentReservations = [];
     private static string Key(SessionReference reference) => Convert.ToHexString(reference.LookupHash());
     internal SessionReference AddPending(AccessCredential credential)
     {
@@ -47,6 +48,18 @@ public sealed class TemporarySessions(TimeProvider clock)
             if (budget.Count >= 15 || accountAttempts.Count >= 256 && budget.Count == 0) throw new AuthException(AuthFailure.RateLimited);
             accountAttempts[user] = (budget.Count + 1, budget.Count == 0 ? clock.GetUtcNow().AddMinutes(5) : budget.Expires);
             value.Attempts++; value.Busy = true; return value;
+        }
+    }
+    // Single-process, bounded exclusion survives lost responses and distinct preauth cookies.
+    // Provider API cannot supply a cross-process atomic compare-and-enroll transaction.
+    internal void ReserveEnrollment(PendingMfa value)
+    {
+        lock (gate)
+        {
+            Prune(); var identity = value.Credential.Identity.Identity;
+            if (enrollmentReservations.ContainsKey(identity)) throw new AuthException(AuthFailure.Conflict);
+            if (enrollmentReservations.Count >= 128) throw new AuthException(AuthFailure.RateLimited);
+            enrollmentReservations.Add(identity, value.Expires);
         }
     }
     internal void Release(PendingMfa pendingMfa) { lock (gate) pendingMfa.Busy = false; }
@@ -75,13 +88,14 @@ public sealed class TemporarySessions(TimeProvider clock)
     {
         lock (gate) { sessions.Remove(Key(reference), out var value); return value; }
     }
-    public void Clear() { lock (gate) { pending.Clear(); sessions.Clear(); completions.Clear(); accountAttempts.Clear(); } }
+    public void Clear() { lock (gate) { pending.Clear(); sessions.Clear(); completions.Clear(); accountAttempts.Clear(); enrollmentReservations.Clear(); } }
     private void Prune()
     {
         var now = clock.GetUtcNow();
         foreach (var item in pending.Where(p => p.Value.Expires <= now).Select(p => p.Key).ToArray()) pending.Remove(item);
         foreach (var item in sessions.Where(p => p.Value.Expires <= now).Select(p => p.Key).ToArray()) sessions.Remove(item);
         foreach (var item in completions.Where(p => p.Value.Expires <= now).Select(p => p.Key).ToArray()) completions.Remove(item);
+        foreach (var item in enrollmentReservations.Where(p => p.Value <= now).Select(p => p.Key).ToArray()) enrollmentReservations.Remove(item);
         foreach (var item in accountAttempts.Where(p => p.Value.Expires <= now).Select(p => p.Key).ToArray()) accountAttempts.Remove(item);
     }
     internal static DateTimeOffset Min(DateTimeOffset first, DateTimeOffset second) => first < second ? first : second;

@@ -19,3 +19,10 @@ financial services and eleven historical SQL migrations. OFFLINE / NO_TRADE.
 Never connect hosted Supabase, IBKR, financial databases or AI to validate frontend fixtures.
 Never collect real passwords or TOTP codes for the development UI. Browser callbacks
 remain fail-closed until a separately reviewed BFF exchange is implemented.
+
+M01.4B-B1 is authorized from efd13f6 on feature/m01-4b-react-bff-integration.
+Its explicit auth/React edit allowlist is enforced by build/react-bff/preservation.mjs.
+The financial components, Vue, historical SQL, approved CSS/visual assets and three
+preexisting untracked files remain protected. Only synthetic HTTP Auth and marked
+disposable PostgreSQL may run. B2 hosted Auth/configuration requires a new approval.
+No browser factor DELETE; incomplete/uncertain enrollment fails closed.

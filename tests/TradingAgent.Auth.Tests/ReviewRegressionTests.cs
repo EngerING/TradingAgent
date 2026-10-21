@@ -37,17 +37,23 @@ public sealed class ReviewRegressionTests(DatabaseFixture fixture)
         using var verify = await second.PostAsync("/bff/auth/mfa/verify", new { challengeId = challengeBody.RootElement.GetProperty("id").GetGuid(), code = "123456" }); Assert.Equal(200, (int)verify.StatusCode);
     }
     [Fact]
-    public async Task OrphanedUnverifiedEnrollmentCanBeReplacedWithoutResettingVerifiedMfa()
+    public async Task OrphanedUnverifiedEnrollmentCannotBeReplacedOrResetVerifiedMfa()
     {
         await using var harness = new BrowserHarness(); await harness.StartAsync(fixture);
         using var login = await harness.Browser.PostAsync("/bff/auth/login", new { email = harness.Email, password = "fixture-password" });
         using var enrollment = await harness.Browser.PostAsync("/bff/auth/mfa/enroll", new { }); Assert.Equal(200, (int)enrollment.StatusCode);
         using var body = JsonDocument.Parse(await enrollment.Content.ReadAsStringAsync()); var orphan = body.RootElement.GetProperty("factorId").GetGuid();
         Assert.False(harness.Provider.VerifiedFactors.ContainsKey(orphan));
-        using var freshBrowser = harness.NewBrowser(); await harness.SignInAsync(freshBrowser);
-        Assert.False(harness.Provider.Factors.ContainsKey(orphan)); Assert.Single(harness.Provider.VerifiedFactors);
+        using var freshBrowser = harness.NewBrowser();
+        using var freshLogin = await freshBrowser.PostAsync("/bff/auth/login", new { email = harness.Email, password = "fixture-password" });
+        using var replacement = await freshBrowser.PostAsync("/bff/auth/mfa/enroll", new { }); Assert.Equal(409, (int)replacement.StatusCode);
+        Assert.True(harness.Provider.Factors.ContainsKey(orphan)); Assert.Empty(harness.Provider.VerifiedFactors);
+        using var orphanChallenge = await freshBrowser.PostAsync("/bff/auth/mfa/challenge", new { factorId = orphan }); Assert.Equal(401, (int)orphanChallenge.StatusCode);
+        // A verified factor established outside this pending login also remains untouched.
+        var verified = Guid.NewGuid(); harness.Provider.Factors[verified] = harness.Subject; harness.Provider.VerifiedFactors[verified] = true;
         using var third = harness.NewBrowser(); using var thirdLogin = await third.PostAsync("/bff/auth/login", new { email = harness.Email, password = "fixture-password" });
         using var resetVerified = await third.PostAsync("/bff/auth/mfa/enroll", new { }); Assert.Equal(409, (int)resetVerified.StatusCode); Assert.Single(harness.Provider.VerifiedFactors);
+        Assert.True(harness.Provider.Factors.ContainsKey(orphan)); Assert.True(harness.Provider.VerifiedFactors[verified]);
     }
     [Fact]
     public async Task IdentityAttemptBudgetSurvivesNewPreauthCookies()

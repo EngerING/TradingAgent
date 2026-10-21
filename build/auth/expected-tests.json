@@ -57,7 +57,7 @@
   "TradingAgent.Auth.Tests.ReviewRegressionTests.IdentityAttemptBudgetSurvivesNewPreauthCookies",
   "TradingAgent.Auth.Tests.ReviewRegressionTests.LogoutWithOnlyOldPreauthRevokesCompletedButDelayedVerifyCookie",
   "TradingAgent.Auth.Tests.ReviewRegressionTests.NewDeviceDiscoversVerifiedFactorThroughBffOnly",
-  "TradingAgent.Auth.Tests.ReviewRegressionTests.OrphanedUnverifiedEnrollmentCanBeReplacedWithoutResettingVerifiedMfa",
+  "TradingAgent.Auth.Tests.ReviewRegressionTests.OrphanedUnverifiedEnrollmentCannotBeReplacedOrResetVerifiedMfa",
   "TradingAgent.Auth.Tests.TransportTests.OversizedResponseIsBoundedAndProviderRateLimitIsExplicit",
   "TradingAgent.Auth.Tests.TransportTests.RedirectErrorsDuplicateJsonAndWrongContentTypeAreRejected(status: 200, type: \"application/json\", body: \"{\\\"x\\\":1,\\\"x\\\":2}\")",
   "TradingAgent.Auth.Tests.TransportTests.RedirectErrorsDuplicateJsonAndWrongContentTypeAreRejected(status: 200, type: \"text/html\", body: \"<script>private</script>\")",

@@ -32,7 +32,23 @@ public static class IntegratedHostFactory
         return Create(settings.Authentication, runtime, issuer, settings.BrowserOrigin, builder =>
             builder.WebHost.UseKestrel(options => options.Listen(IPAddress.Loopback, settings.BrowserOrigin.Port, listener => listener.UseHttps(certificate))));
     }
-    private static WebApplication Create(AuthConfiguration configuration, SecurityDatabase runtime, SecurityDatabase issuer, Uri browserOrigin, Action<WebApplicationBuilder> configureHost)
+    // Explicit synthetic browser composition. No hosted provider can enter this factory.
+    public static WebApplication CreateBrowserFixture(AuthConfiguration configuration, SecurityDatabase runtime, SecurityDatabase issuer,
+        Uri origin, X509Certificate2 certificate, Action<WebApplicationBuilder> configure)
+    {
+        ArgumentNullException.ThrowIfNull(configuration); ArgumentNullException.ThrowIfNull(origin); ArgumentNullException.ThrowIfNull(certificate);
+        if (!configuration.Simulation || origin.Scheme != "https" || origin.Host != "localhost" || origin.AbsolutePath != "/" || origin.Query.Length != 0 || origin.Fragment.Length != 0 || origin.UserInfo.Length != 0 ||
+            !certificate.HasPrivateKey || certificate.NotBefore.ToUniversalTime() > DateTime.UtcNow || certificate.NotAfter.ToUniversalTime() <= DateTime.UtcNow)
+            throw new ArgumentException("Explicit loopback HTTPS synthetic composition required.");
+        var app = Create(configuration, runtime, issuer, origin, builder =>
+        {
+            builder.WebHost.UseKestrel(options => options.Listen(IPAddress.Loopback, origin.Port, listener => listener.UseHttps(certificate)));
+            configure(builder);
+        }, browserAssets: true);
+        app.MapGet("/bff/config", () => Results.Json(new { profile = "SYNTHETIC_HTTP_FIXTURE", mode = "OFFLINE", decision = "NO_TRADE", executionAuthorized = false })).AllowAnonymous();
+        return app;
+    }
+    private static WebApplication Create(AuthConfiguration configuration, SecurityDatabase runtime, SecurityDatabase issuer, Uri browserOrigin, Action<WebApplicationBuilder> configureHost, bool browserAssets = false)
     {
         if (runtime.Purpose != DatabasePurpose.Runtime || issuer.Purpose != DatabasePurpose.SessionIssuer) throw new ArgumentException("Separate disposable runtime and issuer credentials required.");
         var builder = WebApplication.CreateEmptyBuilder(new WebApplicationOptions { ApplicationName = typeof(IntegratedHostFactory).Assembly.GetName().Name, EnvironmentName = "Development" });
@@ -56,6 +72,9 @@ public static class IntegratedHostFactory
         {
             context.Response.Headers.CacheControl = "no-store"; context.Response.Headers.Pragma = "no-cache";
             context.Response.Headers.XContentTypeOptions = "nosniff"; context.Response.Headers.ContentSecurityPolicy = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'";
+            if (browserAssets && !context.Request.Path.StartsWithSegments("/bff") && context.Request.Path != "/health")
+                context.Response.Headers.ContentSecurityPolicy = "default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'";
+            context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
             context.Response.Headers["Referrer-Policy"] = "no-referrer"; context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000";
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted); timeout.CancelAfter(TimeSpan.FromSeconds(15));
             context.RequestAborted = timeout.Token;

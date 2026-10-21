@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../../web/Web.props" />
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../src/TradingAgent.Web.Browser/TradingAgent.Web.Browser.csproj" />
+    <ProjectReference Include="../../../src/TradingAgent.Identity.Migrations/TradingAgent.Identity.Migrations.csproj" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <Compile Include="../../../tests/TradingAgent.Identity.Tests/ConnectionObserver.cs" Link="ConnectionObserver.cs" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,125 @@
+name: M01.4B React BFF Integration
+on:
+  push:
+    branches: [feature/m01-4b-react-bff-integration]
+  pull_request:
+    branches: [develop]
+permissions:
+  contents: read
+jobs:
+  integration:
+    name: M01.4B HTTPS BFF synthetic integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_GENERATE_ASPNET_CERTIFICATE: 'false'
+      DOTNET_NOLOGO: '1'
+      M014B_SYNTHETIC_BROWSER_FIXTURE: 'YES'
+      M012_BOOTSTRAP_PASSWORD: m014b-public-disposable-fixture
+      M012_CLUSTER_MARKER: m012_disposable_m014b_ci
+      M012_RESULTS_DIRECTORY: ${{ github.workspace }}/artifacts/m014b
+      NUGET_PACKAGES: ${{ runner.temp }}/m014b-nuget
+      NUGET_HTTP_CACHE_PATH: ${{ runner.temp }}/m014b-nuget-http
+    services:
+      postgres:
+        image: postgres:17.11-bookworm@sha256:3645570cccdfa447589da9f57dd740faa29b30938e861289a5574b6ca6b03826
+        env:
+          POSTGRES_PASSWORD: m014b-public-disposable-fixture
+          POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256 --set=cluster_name=m012_disposable_m014b_ci
+        ports: ['5432/tcp']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with: { persist-credentials: false, fetch-depth: 0 }
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with: { node-version: '24.20.0', package-manager-cache: false }
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68
+        with: { dotnet-version: '10.0.402', cache: false }
+      - name: Exact tools and preservation
+        run: |
+          npm install --global npm@12.2.0 --ignore-scripts --no-audit --no-fund
+          test "$(node --version)" = v24.20.0
+          test "$(npm --version)" = 12.2.0
+          test "$(cd build/react-bff && dotnet --version)" = 10.0.402
+          node build/react-bff/preservation.mjs
+      - name: Locked frontend install strict checks and dependency audit
+        working-directory: frontend-react
+        run: |
+          npm ci --ignore-scripts
+          npm run verify
+          npm audit --audit-level=low --json > ../artifacts/m014b/npm-audit.json
+          npm audit signatures > ../artifacts/m014b/npm-signatures.log
+          npx --no-install playwright install --with-deps chromium
+      - name: Release locked .NET build NuGet audit and safe enrollment regressions
+        shell: pwsh
+        run: ./build/react-bff/check.ps1 -Dotnet dotnet
+      - name: Start owned HTTPS BFF HTTP Auth fixture and disposable security schema
+        env:
+          M012_TEST_PORT: ${{ job.services.postgres.ports[5432] }}
+        run: |
+          mkdir -p tmp/m014b/browser
+          dotnet build/react-bff/BrowserFixture/bin/Release/net10.0/BrowserFixture.dll "$GITHUB_WORKSPACE" > tmp/m014b/browser/host.log 2>&1 &
+          echo $! > tmp/m014b/browser/pid
+          for attempt in $(seq 1 90); do
+            if test -f tmp/m014b/browser/ready.json; then break; fi
+            if ! kill -0 "$(cat tmp/m014b/browser/pid)" 2>/dev/null; then echo "Synthetic fixture exited; inspect redacted status."; exit 1; fi
+            sleep 1
+          done
+          test -f tmp/m014b/browser/ready.json
+      - name: Trust only ephemeral public test root on clean runner
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y libnss3-tools
+          # Clean hosted runner only. Private CA/leaf keys never leave fixture memory.
+          sudo cp tmp/m014b/browser/root.crt /usr/local/share/ca-certificates/tradingagent-m014b.crt
+          sudo update-ca-certificates
+          mkdir -p "$HOME/.pki/nssdb"
+          if ! test -f "$HOME/.pki/nssdb/cert9.db"; then certutil -N -d "sql:$HOME/.pki/nssdb" --empty-password; fi
+          certutil -A -d "sql:$HOME/.pki/nssdb" -n TradingAgentM014b -t 'C,,' -i tmp/m014b/browser/root.crt
+          echo "NODE_EXTRA_CA_CERTS=$GITHUB_WORKSPACE/tmp/m014b/browser/root.crt" >> "$GITHUB_ENV"
+          origin=$(node -p "JSON.parse(require('fs').readFileSync('tmp/m014b/browser/ready.json','utf8')).origin")
+          curl --fail --silent --show-error --cacert tmp/m014b/browser/root.crt "$origin/bff/config" > artifacts/m014b/profile.json
+      - name: Real browser HTTPS integration without certificate bypass
+        working-directory: frontend-react
+        run: npx --no-install playwright test --config playwright.integration.config.ts
+      - name: Exact E2E identities counts and no skipped cases
+        run: node build/react-bff/verify-e2e.mjs
+      - name: Stop owned fixture and preserve isolation evidence
+        if: always()
+        run: |
+          if test -f tmp/m014b/browser/pid; then
+            touch tmp/m014b/browser/stop
+            for attempt in $(seq 1 30); do
+              if ! kill -0 "$(cat tmp/m014b/browser/pid)" 2>/dev/null; then break; fi
+              sleep 1
+            done
+            if kill -0 "$(cat tmp/m014b/browser/pid)" 2>/dev/null; then echo 'Fixture cleanup did not complete'; exit 1; fi
+            test -f artifacts/m014b/isolation.json
+          fi
+      - name: Redacted evidence only
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: m014b-integration-${{ github.sha }}
+          retention-days: 14
+          path: |
+            artifacts/m014b/identity.json
+            artifacts/m014b/sdk-version.txt
+            artifacts/m014b/restore.log
+            artifacts/m014b/build.log
+            artifacts/m014b/dependencies.json
+            artifacts/m014b/npm-audit.json
+            artifacts/m014b/npm-signatures.log
+            artifacts/m014b/m014b.trx
+            artifacts/m014b/backend-summary.json
+            artifacts/m014b/e2e.xml
+            artifacts/m014b/e2e.json
+            artifacts/m014b/browser-summary.json
+            artifacts/m014b/isolation.json
+            artifacts/m014b/auth-metrics.json
+            artifacts/m014b/profile.json
+            artifacts/m014b/screenshots/
+            frontend-react/test-results/unit.xml

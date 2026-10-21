@@ -1,0 +1,11 @@
+import { readFileSync, writeFileSync } from 'node:fs';
+import assert from 'node:assert/strict';
+const r = JSON.parse(readFileSync('artifacts/m014b/e2e.json','utf8'));
+const expected = JSON.parse(readFileSync('build/react-bff/expected-e2e.json','utf8'));
+const walk = s => [...(s.specs ?? []), ...(s.suites ?? []).flatMap(walk)];
+const specs = r.suites.flatMap(walk);
+assert.deepEqual(specs.map(s => s.title).sort(), expected.toSorted());
+assert(r.stats.expected === expected.length && r.stats.unexpected === 0 && r.stats.flaky === 0 && r.stats.skipped === 0);
+assert(specs.every(s => s.ok && s.tests.length === 1 && s.tests[0].results.length === 1 && s.tests[0].results[0].status === 'passed'));
+const result = { total: expected.length, passed: expected.length, failed: 0, skipped: 0, retries: 0, duration_ms: r.stats.duration, mode:'OFFLINE', decision:'NO_TRADE', boundary:'React HTTPS BFF -> loopback HTTP ES256 fixture -> marked disposable PostgreSQL; no hosted Auth' };
+writeFileSync('artifacts/m014b/browser-summary.json', JSON.stringify(result,null,2)+'\n'); console.log(JSON.stringify(result));
