@@ -174,6 +174,15 @@ suite nueva y smoke TLS con CA explícita sin cambiar confianza del usuario. La
 prueba browser HTTPS completa y su resultado final se acreditan por CI/artifacts;
 los resultados esperados de este documento no sustituyen la ejecución.
 
+El primer arranque de CI rechazó runner.temp en el entorno del job; se corrigió su
+ámbito al paso de build. La primera ejecución Chromium alcanzó22/24: el control
+de caída SQL intentaba ALTER DATABASE desde la propia base y PostgreSQL lo rechazó;
+ahora usa la conexión postgres del mismo cluster desechable, revalidando el marcador.
+La otra comprobación comparaba el vencimiento ajustado por Chromium con Date.now.
+Se verifica ahora el límite exacto300s contra Date del BFF y la correspondencia
+Expires/DTO por segundo RFC6265, sin introducir tolerancia JWT ni ampliar la sesión.
+El smoke local también comprueba rechazo503 durante la caída y recuperación SQL.
+
 Se consultaron Graphify (grafo histórico424nodossinReact/BFF; corroboración en fuentes),
 las diez skills solicitadas, Supabase, TDD y revisión adversarial de contexto separado.
 Hubo RED de contrato inexistente frontend, eliminación TOTP, respuesta incierta,

@@ -88,6 +88,19 @@ public sealed class BrowserDatabaseFixture : IAsyncLifetime, IDisposable
     {
         await using var command = new NpgsqlCommand("SHOW server_version", connection); return (string)(await command.ExecuteScalarAsync())!;
     }
+    public async Task<NpgsqlConnection> OpenClusterAsync()
+    {
+        var options = new NpgsqlConnectionStringBuilder(bootstrap) { Database = "postgres" };
+        var connection = new NpgsqlConnection(options.ConnectionString);
+        try
+        {
+            await connection.OpenAsync();
+            await using var check = new NpgsqlCommand("SHOW cluster_name", connection);
+            if ((string)(await check.ExecuteScalarAsync())! != Environment.GetEnvironmentVariable("M012_CLUSTER_MARKER")) throw new InvalidOperationException("Disposable control marker rejected.");
+            return connection;
+        }
+        catch { await connection.DisposeAsync(); throw; }
+    }
     public async Task<NpgsqlConnection> OpenOwnerAsync()
     {
         var connection = new NpgsqlConnection(bootstrap); await connection.OpenAsync(); return connection;

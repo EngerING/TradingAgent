@@ -29,9 +29,15 @@ test('HTTPS login keeps approved design and no operational routes', async ({ pag
 test('incorrect password never creates an authenticated UI', async ({ page }) => { await login(page, 'viewer', 'incorrect'); await expect(page.getByRole('alert')).toContainText('Check your credentials'); expect((await page.request.get('/bff/session')).status()).toBe(401); });
 test('AAL1 cannot access session or synthetic resource', async ({ page }) => { await login(page); await expect(page.getByRole('button', { name: 'Continue securely' })).toBeVisible(); expect((await page.request.get('/bff/session')).status()).toBe(401); expect((await page.request.get(`/bff/probe/${ready.resource}/Paper`)).status()).toBe(401); });
 test('existing verified MFA AAL2 authorizes SQL resource and logout revokes stale cookie', async ({ page, context }) => {
-  await signedIn(page); const session = await page.request.get('/bff/session'); expect(await session.json()).toMatchObject({ aal: 'aal2', renewable: false, executionAuthorized: false, providerSessionConfirmedActive: false });
+  const verificationResponse = page.waitForResponse(r => r.url().endsWith('/bff/auth/mfa/verify') && r.status() === 200);
+  await signedIn(page); const verified = await verificationResponse; const verifiedBody = await verified.json() as { expiresAt: string };
+  const date = (await verified.allHeaders()).date!; const setCookie = (await verified.headersArray()).find(h => h.name.toLowerCase() === 'set-cookie' && h.value.startsWith('__Host-TradingAgent.Session='))!;
+  const expires = /;\s*expires=([^;]+)/i.exec(setCookie.value)![1]!;
+  expect(Date.parse(verifiedBody.expiresAt) - Date.parse(date)).toBeLessThanOrEqual(300000);
+  expect(Date.parse(expires)).toBe(Math.floor(Date.parse(verifiedBody.expiresAt) / 1000) * 1000);
+  const session = await page.request.get('/bff/session'); expect(await session.json()).toMatchObject({ aal: 'aal2', renewable: false, executionAuthorized: false, providerSessionConfirmedActive: false });
   expect((await page.request.get(`/bff/probe/${ready.resource}/Paper`)).status()).toBe(200);
-  const cookie = (await context.cookies()).find(c => c.name === '__Host-TradingAgent.Session')!; expect({ secure: cookie.secure, httpOnly: cookie.httpOnly, sameSite: cookie.sameSite, path: cookie.path }).toEqual({ secure: true, httpOnly: true, sameSite: 'Strict', path: '/' }); expect(cookie.expires * 1000 - Date.now()).toBeLessThanOrEqual(300000);
+  const cookie = (await context.cookies()).find(c => c.name === '__Host-TradingAgent.Session')!; expect({ secure: cookie.secure, httpOnly: cookie.httpOnly, sameSite: cookie.sameSite, path: cookie.path }).toEqual({ secure: true, httpOnly: true, sameSite: 'Strict', path: '/' }); expect(cookie.expires).toBeGreaterThan(0); // Browser adjusts expiry against server Date; BFF Date/Expires/DTO checked above.
   expect(await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length, cookie: document.cookie }))).toEqual({ local: 0, session: 0, cookie: '' });
   await page.screenshot({ path: '../artifacts/m014b/screenshots/session.png' }); await page.getByRole('button', { name: 'Sign out', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
   await context.addCookies([cookie]); expect((await page.request.get('/bff/session')).status()).toBe(401);

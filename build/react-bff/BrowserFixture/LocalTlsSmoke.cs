@@ -8,7 +8,7 @@ namespace TradingAgent.React.BrowserFixture;
 
 internal static class LocalTlsSmoke
 {
-    public static async Task RunAsync(Uri origin, X509Certificate2 root, Guid resource, string results)
+    public static async Task RunAsync(Uri origin, Uri authOrigin, X509Certificate2 root, Guid resource, string results)
     {
         // Standard platform TLS chain/name verification with an explicit private test trust root.
         // No validation callback, insecure switch, or modification of the user's certificate stores.
@@ -36,8 +36,18 @@ internal static class LocalTlsSmoke
         await PostAsync("/bff/auth/mfa/verify", new { challengeId = challenge.GetProperty("id").GetGuid(), code = "123456" });
         var session = await ReadAsync("/bff/session"); Require(session.GetProperty("aal").GetString() == "aal2" && !session.GetProperty("executionAuthorized").GetBoolean());
         var probe = await ReadAsync($"/bff/probe/{resource}/Paper"); Require(probe.GetProperty("synthetic").GetBoolean());
+        async Task ControlAsync(string command)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(authOrigin, "/fixture/control/" + command));
+            request.Headers.Add("X-Fixture-Control", "public-synthetic-only");
+            using var response = await client.SendAsync(request); Require(response.StatusCode == HttpStatusCode.NoContent);
+        }
+        await ControlAsync("db-down");
+        try { using var down = await client.GetAsync("/bff/session"); Require(down.StatusCode == HttpStatusCode.ServiceUnavailable); }
+        finally { await ControlAsync("db-up"); }
+        await ReadAsync("/bff/session");
         await PostAsync("/bff/auth/logout", new { }, HttpStatusCode.NoContent);
         using (var ended = await client.GetAsync("/bff/session")) Require(ended.StatusCode == HttpStatusCode.Unauthorized);
-        await File.WriteAllTextAsync(Path.Combine(results, "local-tls-smoke.json"), JsonSerializer.Serialize(new { result = "PASS", tls = "CustomRootTrust with normal chain and hostname verification; no user store modified", password = "PASS", aal1_denied = true, aal2 = "PASS", postgres_resource = "PASS", logout = "PASS", mode = "OFFLINE", decision = "NO_TRADE" }));
+        await File.WriteAllTextAsync(Path.Combine(results, "local-tls-smoke.json"), JsonSerializer.Serialize(new { result = "PASS", tls = "CustomRootTrust with normal chain and hostname verification; no user store modified", password = "PASS", aal1_denied = true, aal2 = "PASS", postgres_resource = "PASS", postgres_connection_refusal = "PASS", logout = "PASS", mode = "OFFLINE", decision = "NO_TRADE" }));
     }
 }

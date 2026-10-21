@@ -63,7 +63,7 @@ foreach (var name in new[] { "viewer", "enroll", "orphan", "ambiguous", "no-role
     if (name != "enroll") { var f = Guid.NewGuid(); provider.Factors[f] = subject; if (name != "orphan") provider.VerifiedFactors[f] = true; }
     if (name == "ambiguous") { var f = Guid.NewGuid(); provider.Factors[f] = subject; provider.VerifiedFactors[f] = true; }
 }
-await using var controlConnection = await database.OpenOwnerAsync();
+await using var controlConnection = await database.OpenClusterAsync();
 provider.Control = async command =>
 {
     if (command == "disable-viewer") await database.Administration().ChangeStatusAsync(admin, users["viewer"], UserStatus.Disabled, CancellationToken.None);
@@ -81,7 +81,7 @@ database.AdditionalAllowedAddresses.Add(new IPEndPoint(IPAddress.Loopback.MapToI
 await File.WriteAllTextAsync(Path.Combine(ready, "ready.json"), JsonSerializer.Serialize(new { origin = origin.GetLeftPart(UriPartial.Authority), authOrigin = $"http://127.0.0.1:{authPort}", resource, mode = "OFFLINE", decision = "NO_TRADE" }));
 Console.WriteLine("M014B_SYNTHETIC_HTTPS_READY");
 try {
-    if (Environment.GetEnvironmentVariable("M014B_LOCAL_TLS_SMOKE") == "YES") await LocalTlsSmoke.RunAsync(origin, ca, resource, Environment.GetEnvironmentVariable("M012_RESULTS_DIRECTORY")!);
+    if (Environment.GetEnvironmentVariable("M014B_LOCAL_TLS_SMOKE") == "YES") await LocalTlsSmoke.RunAsync(origin, provider.Configuration.Project, ca, resource, Environment.GetEnvironmentVariable("M012_RESULTS_DIRECTORY")!);
     else { var deadline = DateTimeOffset.UtcNow.AddMinutes(12); while (!File.Exists(Path.Combine(ready, "stop")) && DateTimeOffset.UtcNow < deadline) await Task.Delay(250); }
 }
 catch (Exception error) { await File.WriteAllTextAsync(Path.Combine(ready, "failure.json"), JsonSerializer.Serialize(new { code = error.GetType().Name, http = error is HttpRequestException http ? http.HttpRequestError.ToString() : "NOT_HTTP" })); throw new InvalidOperationException("SYNTHETIC_FIXTURE_FAILED"); }

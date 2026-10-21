@@ -52,5 +52,27 @@
     "No remote active-session guarantee, no refresh, no financial authority.",
     "Windows local TLS uses custom test root and temporary platform key container; no user trust-store change. CI trusts public root on a disposable runner.",
     "Pattern scan and path/hash verification are not universal secret-detection or an OS sandbox."
-  ]
+  ],
+  "local_verification": {
+    "original_regressions_passed": 299,
+    "new_react_unit_passed": 16,
+    "new_enrollment_backend_passed": 14,
+    "failed": 0,
+    "skipped": 0,
+    "tls_smoke": "PASS: normal chain/name CustomRootTrust, AAL1 denied, AAL2, SQL authorization, SQL connection refusal503 and recovery, logout",
+    "browser_https_full": "Requires final CI artifacts; not claimed by local smoke",
+    "nuget_and_npm_audits": "0 vulnerable packages reported locally",
+    "npm_registry_signatures": 253,
+    "npm_attestations": 108,
+    "postgres_local": "17.5",
+    "postgres_ci_required": "17.11"
+  },
+  "local_preservation": {
+    "baseline_tracked": 890,
+    "explicitly_modified": 19,
+    "unchanged_raw_sha256": 871,
+    "preexisting_untracked_preserved": 3,
+    "baseline_manifest_sha256": "89c8373437902bbf59afa0b617c4044a34b07f2e3a429d2ec63532f851b371fa",
+    "raw_hash_scope": "Local Windows checkout only; CI compares portable Git blobs."
+  }
 }
