@@ -10,23 +10,28 @@
   "https_jwks_status": 200,
   "https_settings_status": 200,
   "key_count": 1,
-  "key_profile": { "alg": "ES256", "kty": "EC", "crv": "P-256", "use": "sig" },
+  "key_profile": {
+    "alg": "ES256",
+    "kty": "EC",
+    "crv": "P-256",
+    "use": "sig"
+  },
   "email_enabled": true,
   "google_enabled": false,
-  "public_signup_disabled": false,
+  "public_signup_disabled": true,
   "actual_product_auth_transport_jwks_cache": "PASS: HTTPS GET and key parsing using unchanged AuthTransport and JwksCache",
-  "provider_public_get_requests": 4,
-  "request_split": "One settings GET and three JWKS GETs; two JWKS reads used the actual product transport/cache",
   "tls_validation": "Default system HTTPS certificate validation; no redirects, certificate bypass or proxy override added",
-  "user_session_password_mfa_requests": 0,
   "administrative_requests": 0,
   "financial_operations": 0,
   "pending": [
-    "Disable public signup in the development dashboard",
-    "Confirm TOTP and prepare fictitious users through the independent admin procedure",
-    "Concrete local secure password/authenticator interaction; no secrets through chat",
-    "Actual password/JWT/MFA/BFF/SQL integration and remote revocation/rotation measurements"
+    "Real issued JWT, TOTP freshness, disposable SQL session and remote revocation measurements",
+    "Compatible externally provisioned loopback certificate for real BFF HTTPS tests",
+    "Cross-user MFA, password change, elapsed expiry and hosted signing-key rotation"
   ],
   "limitations": "Public metadata and live transport compatibility only. Does not prove issued JWT claims, TOTP freshness, user identity, remote active-session validity or completion of B2.",
-  "secrets_included": false
+  "secrets_included": false,
+  "initial_provider_public_get_requests": 4,
+  "initial_request_split": "One settings GET and three JWKS GETs; two JWKS reads used the actual product transport/cache",
+  "request_count_scope": "Initial public closeout only; later settings rechecks and interactive attempts are recorded separately in m01-3b-evidence.json",
+  "user_confirmed_totp_and_test_account_ready": true
 }

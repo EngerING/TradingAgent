@@ -1,19 +1,73 @@
-# M01.3B — Suite B alojada pendiente
+# M01.3B — validación alojada B2 parcial
 
-**B2 iniciada parcialmente: solo preflight público de lectura. Login/MFA aún no ejecutados.**
+**B2 parcial; no aprobada.**
 El usuario confirmó un proyecto exclusivamente de desarrollo y autorizó B2.
-No se seleccionaron proyectos automáticamente ni se creó proyecto, usuario,
-factor o sesión real. Ninguna evidencia sintética constituye validación alojada.
+No se seleccionaron proyectos automáticamente ni se creó proyecto o usuario.
+Ninguna evidencia sintética constituye validación alojada.
 Referencia, URL, región y publishable key se conservan en configuración local
 ignorada, fuera de Git y artefactos. Se validó el formato y se consultaron por
 HTTPS los endpoints públicos Auth settings/JWKS. El transporte/cache reales del
 producto también obtuvieron y analizaron la clave: ES256/P-256, un key. Email
-habilitado, Google deshabilitado. No se consultaron usuarios ni sesiones.
-El registro público sigue habilitado: se solicitó al usuario desactivarlo desde
-el panel, porque no hay panel conectado ni se dispone de autoridad administrativa.
-No se piden claves secret/service_role para resolverlo. Login/MFA se mantienen
-pendientes de ese ajuste, TOTP/cuenta ficticia y canal local seguro. CI normal
+habilitado, Google deshabilitado. El registro público ahora está deshabilitado:
+se confirmó `disable_signup=true` por HTTPS. El usuario confirmó TOTP y cuenta
+ficticia preparados. No se piden claves secret/service_role. CI normal
 continúa sin configuración ni conexiones alojadas. [Preflight redactado](m01-3b-hosted-preflight.json).
+
+Los primeros dos intentos interactivos se detuvieron en password: el primero
+reportó `AuthFailure.Invalid` sin diagnóstico HTTP y el segundo HTTP400. No se
+conservó el cuerpo para inferir su causa. El usuario confirmó haber corregido
+la cuenta y autorizó otro intento local. No hay reintentos automáticos ni se
+relajan los controles JWT/MFA. El estado vigente consta en el JSON de evidencia.
+
+El auxiliar Windows bajo `build/auth-pilot/HostedRunner/` recibe email/password
+y TOTP mediante un formulario local, borra los campos y no exporta valores ni
+capturas. No instala React ni modifica la UI del producto. Las credenciales
+permanecen en memoria administrada durante la medición: no se promete borrado
+forense de strings ni aislamiento frente al dueño del host. Los diagnósticos
+conservan únicamente estados HTTP y booleanos de compatibilidad. Decodificar
+un JWT sin verificar para diagnóstico nunca concede autoridad.
+
+El wrapper exige raíz del repositorio y SDK10.0.402, restaura en locked mode,
+compila Release con advertencias estrictas y crea un cluster PostgreSQL17 nuevo,
+marcado, con puerto alto aleatorio y credenciales efímeras. Solo después de
+validar password/JWT crea su base aleatoria `m012_test_*`, reutiliza el esquema
+de seguridad autorizado de M01.2 y prepara roles/grants ficticios. No conecta
+el PostgreSQL habitual ni Supabase DB. Su finally elimina el archivo temporal
+de password y detiene exclusivamente ese cluster.
+
+La prueba local HTTPS falla cerrada: Windows Schannel rechaza la clave efímera
+del listener. No se instalaron certificados, persistieron claves ni eludió TLS.
+El usuario eligió continuar Auth/JWT/MFA/SQL directos y dejar HTTPS BFF pendiente
+de un certificado compatible aprovisionado externamente. El auxiliar Windows
+mantiene esa separación. La prueba fallida de TLS no valida cookies del BFF.
+
+Reproducción manual explícita desde la raíz; requiere configuración pública
+local ignorada, binarios PostgreSQL17 y participación humana. Nunca en CI:
+
+```powershell
+./build/auth-pilot/run-hosted.ps1
+```
+
+Intenta password/JWT AAL1 y GET user, rechazo AAL1 para sesión SQL, factor propio
+existente o enrollment si no existe, TOTP local, JWT AAL2/frescura, sesión SQL,
+grants exactos y revocación local. Mide scopes Auth local/others/global de la
+cuenta ficticia. Un error de dependencia o rate limit queda inconcluso; GET user
+aceptado no se presenta como garantía universal de sesión remota activa.
+Conserva factores verificados y solo intenta retirar el factor no verificado
+creado por esa misma ejecución. Logout remoto de limpieza es best effort y
+acotado; una caída o rechazo del contrato tras emitir un token puede requerir
+revisión manual de las sesiones de desarrollo. Exit0 del auxiliar significa
+mediciones seleccionadas terminadas con casos pendientes, nunca aprobación B2.
+
+Comprobación del redactor sin red ni configuración alojada:
+
+```powershell
+./tmp/m011/dotnet/dotnet.exe exec ./build/auth-pilot/HostedRunner/bin/Release/net10.0-windows/HostedRunner.dll --redaction-self-test
+```
+
+Pasó con un JWT fixture sin firma válida y marcadores privados: ningún token,
+issuer ni marcador llegó a la evidencia y no se concedió autoridad. Es una
+comprobación del auxiliar, fuera del conteo xUnit y de los logins reales.
 
 Datos públicos necesarios: referencia exacta20 caracteres, URL HTTPS
 `https://<ref>.supabase.co`, issuer derivado `/auth/v1`, audiencia fija
@@ -71,7 +125,6 @@ una comprobación soportada. Logout global/password change para esta medición
 requieren acciones de prueba explícitas fuera del BFF; no se habilitan endpoints
 administrativos de conveniencia. No se promete que GET user detecte cada caso.
 
-Suite A automatizada y Suite B manual/alojada son estados separados: preflight
-público ejecutado, cero pruebas alojadas de login/MFA; ninguna se marca skip dentro de CI. Con el
-proyecto ya confirmado, el mecanismo local de entrada de credenciales, certificado,
-ajustes Auth y el plan de medición deben concretarse antes de B2.
+Suite A automatizada y Suite B manual/alojada son estados separados. Los casos
+B2 pendientes no son skips silenciosos ni se cuentan entre las190 pruebas de
+Suite A. CI no recibe credenciales alojadas ni ejecuta este auxiliar interactivo.

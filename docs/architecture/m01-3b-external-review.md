@@ -30,3 +30,18 @@ El observer no es sandbox de OS y tooling queda fuera del conteo de conexiones.
 Reproducir Suite A con ./build/auth-pilot/local-test.ps1: usa un cluster nuevo,
 no el PostgreSQL habitual. B2 no se ejecuta con ese comando ni por push.
 La confirmación del proyecto y los pendientes de infraestructura están documentados.
+
+Para el auxiliar B2, revisar además `build/auth-pilot/HostedRunner/` y
+`run-hosted.ps1`: entrada local de credenciales, cancelación/deadline, salida
+redactada, cero reintentos automáticos, cluster nuevo marcado, grants solo en
+base ficticia y cleanup acotado. La revisión interna del auxiliar usó tres
+ciclos; se corrigieron cleanup remoto/factor propio, cancelación, resultado
+inconcluso de dependencias y el estado al vencer el plazo. No se presenta como
+auditoría independiente. La compilación/redactor locales no prueban MFA real.
+
+Comprobar que los intentos fallidos no se cuenten como JWT/MFA/sesión/revocación
+aprobados; HTTP400 sin cuerpo no distingue por sí solo la causa. Los booleanos
+de un JWT decodificado son diagnóstico no confiable, nunca evidencia de firma.
+Mantener pendiente HTTPS del BFF hasta disponer del certificado compatible,
+según la elección del usuario. No solicitar passwords, TOTP, PFX o claves por chat.
+Los tests B2 no se ejecutan en CI ni reciben sus secretos.

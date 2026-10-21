@@ -6,8 +6,9 @@ Base obligatoria: `c15c49ac07bf2eec2c72d8987c1db52b18a04795`, árbol
 El usuario declara auditoría independiente superada y aporta los hallazgos A–D;
 no se recibió un informe independiente adicional. Se implementó B1 sin proyecto
 confirmado inicialmente. El usuario lo identificó durante el cierre; su configuración
-pública permanece local e ignorada. Después autorizó B2: solo se ejecutó el
-preflight público de lectura descrito aparte, sin login/MFA ni operaciones de usuario.
+pública permanece local e ignorada. Después autorizó B2: el preflight público y
+los intentos interactivos se describen en la validación alojada. B2 sigue parcial,
+sin aprobación; HTTPS BFF espera un certificado Windows compatible.
 
 Diseño previo: presupuestos acotados y atómicos por operación, dirección remota
 del socket y cuenta de login normalizada/hash HMAC efímero. No se confía en
@@ -130,9 +131,9 @@ y [paquete manual](m01-3b-external-review.md). No se ejecutaron suites financier
 cuantitativas, frontend o proyectos .NET históricos ajenos a los wrappers citados.
 La conexión observada de tests se limita a PostgreSQL desechable; no es sandbox
 de OS ni conteo de todo el tooling. No hubo IBKR, órdenes, PaperFeed, migraciones
-financieras, login/MFA alojado, OpenAI/Kronos, merge, despliegue o cambio de main.
-El preflight público B2 separado usa cuatro GET Auth alojados; no forma parte
-del conteo de sockets de la Suite A ni se presenta como autenticación validada.
+financieras, OpenAI/Kronos, merge, despliegue o cambio de main. Los intentos B2
+Auth autorizados se registran aparte; no forman parte del conteo de sockets
+de Suite A ni un intento fallido se presenta como autenticación validada.
 
 Al preparar B2 se reprodujo además un bypass de CSRF previo: routing acepta
 post/pOsT, mientras el guard comparaba POST literalmente. Dos regresiones fallaron
@@ -143,8 +144,8 @@ ninguna prueba anterior y el total actual es190, incluyendo las dos nuevas.
 Fuentes primarias contrastadas: [TOTP](https://supabase.com/docs/guides/auth/auth-mfa/totp),
 [OpenAPI](https://github.com/supabase/auth/blob/master/openapi.yaml),
 [rate limiting ASP.NET10](https://learn.microsoft.com/en-us/aspnet/core/performance/rate-limit?view=aspnetcore-10.0).
-Las instrucciones de B2 y la infraestructura de entrada segura de credenciales
-deben concretarse con el proyecto confirmado; M01.4 no se inicia.
+El auxiliar local B2 recibe credenciales fuera del chat y de CI. Su estado real
+y los casos pendientes están documentados aparte; M01.4 no se inicia.
 
 ## CI verificada
 
@@ -162,5 +163,15 @@ PostgreSQL desechable durante los ciclos de pruebas, sin afirmar sandbox del run
 La entrega registra un commit posterior exclusivamente documental y vuelve a
 ejecutar la misma CI: su identidad/árbol exactos y artefacto constan en la respuesta
 final y en identity.json. No se introduce una autorreferencia de hash imposible
-en este documento. B2 continúa sin ejecutar y la auditoría independiente de B1
+en este documento. B2 continúa parcial y la auditoría independiente de B1
 sigue pendiente: un resultado verde no concede aprobación operacional.
+
+La ejecución posterior [39540990956](https://github.com/EngerING/TradingAgent/actions/runs/39540990956)
+verificó44+64+61+21=190 pruebas, cero fallos/omitidas, sobre commit
+`245c456b0449ce4412ca555aafaf603d79f1d7f7`, árbol
+`0b685463e1cf4ee0e435705e01f5390da13cb28c`. Se descargó el
+[artefacto12319698153](https://github.com/EngerING/TradingAgent/actions/runs/39540990956/artifacts/12319698153),
+SHA-256 `3d05b8a83a8ab4fe8a72a0dca698450bc821780a4e25079a43bbac7c5f2b3f9a`,
+y se verificaron los cuatro TRX, identidad, SDK, builds, NuGet y aislamiento.
+El auxiliar interactivo Windows posterior se compila y verifica localmente;
+la CI Linux no lo ejecuta ni valida su integración real alojada.
