@@ -1,0 +1,135 @@
+name: M01.4A React authentication
+on:
+  push:
+    branches: [feature/m01-4a-react-auth, develop]
+  pull_request:
+    branches: [develop, main]
+permissions:
+  contents: read
+jobs:
+  frontend:
+    name: M01.4A frontend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false, fetch-depth: 0 }
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # reviewed official v6
+        with: { node-version: '24.20.0', package-manager-cache: false }
+      - name: Pin npm and preserve baseline
+        run: |
+          npm install --global npm@12.2.0 --ignore-scripts --no-audit --no-fund
+          node build/react-auth/preservation.mjs
+      - name: Clean locked install without dependency scripts
+        working-directory: frontend-react
+        run: npm ci --ignore-scripts
+      - name: Typecheck lint unit tests build and fail-closed boundary
+        working-directory: frontend-react
+        run: npm run verify
+      - name: Dependency audit
+        working-directory: frontend-react
+        run: npm audit --audit-level=low --json > ../artifacts/m014a/dependencies.json
+      - name: Install pinned Chromium
+        working-directory: frontend-react
+        run: npx --no-install playwright install --with-deps chromium
+      - name: Routes accessibility responsive and simulated flows
+        working-directory: frontend-react
+        run: npm run e2e
+      - name: Compare supplied reference and verify exact results
+        working-directory: frontend-react
+        run: |
+          node scripts/compare-reference.mjs
+          node scripts/verify-results.mjs
+      - name: Preserve frontend evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: m014a-frontend-${{ github.sha }}
+          retention-days: 14
+          path: |
+            artifacts/m014a/identity.json
+            artifacts/m014a/dependencies.json
+            artifacts/m014a/e2e.xml
+            artifacts/m014a/e2e.json
+            artifacts/m014a/screenshots/
+            artifacts/m014a/reference-comparison.json
+            artifacts/m014a/reference-diff.png
+            artifacts/m014a/result.json
+            frontend-react/test-results/unit.xml
+            frontend-react/reference/tradingagent-login-reference.png
+  backend:
+    name: M01.4A backend 266
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run: { shell: pwsh }
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_GENERATE_ASPNET_CERTIFICATE: 'false'
+      DOTNET_NOLOGO: '1'
+      DOTNET_CLI_UI_LANGUAGE: en
+    services:
+      postgres:
+        image: postgres:17.11-bookworm@sha256:3645570cccdfa447589da9f57dd740faa29b30938e861289a5574b6ca6b03826
+        env:
+          POSTGRES_PASSWORD: m014a-public-disposable-fixture
+          POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256 --set=cluster_name=m012_disposable_m014a_ci
+        ports: ['5432/tcp']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with: { persist-credentials: false, fetch-depth: 0 }
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68
+        with: { dotnet-version: '10.0.402', cache: false }
+      - name: Preserved 266 backend tests and audits
+        env:
+          M012_TEST_PORT: ${{ job.services.postgres.ports[5432] }}
+          M012_BOOTSTRAP_PASSWORD: m014a-public-disposable-fixture
+          M012_CLUSTER_MARKER: m012_disposable_m014a_ci
+          NUGET_PACKAGES: ${{ runner.temp }}/m014a-nuget
+          NUGET_HTTP_CACHE_PATH: ${{ runner.temp }}/m014a-nuget-http
+        run: |
+          $ErrorActionPreference = 'Stop'
+          node build/react-auth/preservation.mjs
+          if ($LASTEXITCODE) { throw 'Preservation failed.' }
+          ./build/auth-pilot/check.ps1 -Dotnet dotnet
+          ./build/auth/check.ps1 -Dotnet dotnet
+          ./build/identity/check.ps1 -Dotnet dotnet
+          ./build/web/check.ps1 -Dotnet dotnet
+          ./build/identity/verify-results.ps1 -Trx ./tmp/m011/check/m011.trx -Assembly TradingAgent.Web.Tests.dll -Expected ./build/identity/expected-m011-tests.json -Summary ./artifacts/m013b/m011-summary.json
+          $counts = @(@('artifacts/m013b/summary.json',120),@('artifacts/m013/summary.json',64),@('artifacts/m012/summary.json',61),@('artifacts/m013b/m011-summary.json',21))
+          foreach ($item in $counts) {
+            $result = Get-Content $item[0] -Raw | ConvertFrom-Json
+            if ($result.passed -ne $item[1] -or $result.failed -ne 0 -or $result.skipped -ne 0) { throw 'Missing backend regressions.' }
+          }
+          '266 backend tests passed; no hosted Auth or financial operations.' >> $env:GITHUB_STEP_SUMMARY
+      - name: Preserve backend evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: m014a-backend-${{ github.sha }}
+          retention-days: 14
+          path: |
+            artifacts/m014a/identity.json
+            artifacts/m013b/summary.json
+            artifacts/m013b/m011-summary.json
+            artifacts/m013b/m013b.trx
+            artifacts/m013b/dependencies.json
+            artifacts/m013b/isolation.json
+            artifacts/m013b/build.log
+            artifacts/m013b/restore.log
+            artifacts/m013/summary.json
+            artifacts/m013/m013.trx
+            artifacts/m013/dependencies.json
+            artifacts/m013/isolation.json
+            artifacts/m013/build.log
+            artifacts/m012/summary.json
+            artifacts/m012/m012.trx
+            artifacts/m012/dependencies.json
+            artifacts/m012/isolation.json
+            artifacts/m012/build.log
+            tmp/m011/check/m011.trx
+            tmp/m011/check/build.log
+            tmp/m011/check/dependencies.json

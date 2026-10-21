@@ -1,0 +1,275 @@
+{
+  "schema": "trading.m014a.react_auth_evidence",
+  "schema_version": 1,
+  "inspection_date": "2026-10-21",
+  "timezone": "America/La_Paz",
+  "mode": "OFFLINE",
+  "decision": "NO_TRADE",
+  "baseline_commit": "cd25a103b177d43a59f9d99c8047c0db3d20abbb",
+  "baseline_tree": "c8193bf17437e0c7987231a62b7adf46182c0d88",
+  "develop_published_commit": "cd25a103b177d43a59f9d99c8047c0db3d20abbb",
+  "develop_published_tree": "c8193bf17437e0c7987231a62b7adf46182c0d88",
+  "feature_branch": "feature/m01-4a-react-auth",
+  "main": "f67fa92086d10b9562df214f4e869344bf0753d8",
+  "main_ancestor": true,
+  "ahead_of_main_commits": 25,
+  "final_identity": "CI identity.json and final delivery; self-reference omitted",
+  "preservation": {
+    "tracked_files": 843,
+    "raw_sha256_differences": 0,
+    "untracked_sha256": {
+      "docs/TradingAgent_Supabase_Diagnostico.ps1": "380769966da835ed8e63191ebe1330f4b47e525f0fa9b994142e2a0d2b3d7cf8",
+      "docs/architecture/core-v3-phase0-audit.md": "419d1e97b7f7017bddebd3074b1433d48702a59a274194f017129933e4314537",
+      "docs/manual/TradingAgent_Manual_Tecnico_Integral.pdf": "1f31321892f532b3d5de1bc3d574bd5f66c3af38ae634d7173b6b173c49b3944"
+    },
+    "protected_git_objects": {
+      "python/trading_agent/core_v3": "0c6a3c211249151582556862d610ffe29ae221a0",
+      "python/trading_agent/market_analyst": "1cdcffba113842977a881b57912be1e101eae688",
+      "src": "87dbbe0ce0340e0d82f81a0e01fc7b8e503a7177",
+      "frontend": "8b2101aeb2c3cd8661e95ee8ae13511e5dff09e2",
+      "tests": "40b83ad87e435e667e73f05811166d7356c75ad6",
+      "build/auth": "52011f38d3851a0a567c1f2775c03f31b5b68537",
+      "build/auth-pilot": "71d8733e100404a3f46a0da42ab827fe60eefe94",
+      "build/web": "fa8dc4abf916dc7c50a5832103cf4f47fafac0ad",
+      "build/identity": "8bfc7a243f903165bfbf20071368087307c6c545",
+      "Directory.Build.props": "e8f7495b8834700231914c090846d2a2bece5c95",
+      "TradingAgent.sln": "85f076d47efc02709bc44708ac9b86e5bcc5f514"
+    },
+    "historical_migration_count": 11
+  },
+  "frontend": {
+    "unit_passed": 13,
+    "e2e_passed": 20,
+    "failed": 0,
+    "skipped": 0,
+    "retries": 0,
+    "routes": [
+      "simulated login, loading, MFA, invalid code, completion and logout",
+      "recovery and single-use password continuation are explicit fixtures",
+      "invitation demonstration never enables public registration",
+      "keyboard, password visibility, errors and disabled actions",
+      "callback values are discarded, never reflected or persisted",
+      "session state expired has a recovery path and no execution control",
+      "session state denied has a recovery path and no execution control",
+      "session state unavailable has a recovery path and no execution control",
+      "session state progress has a recovery path and no execution control",
+      "reference composition 1536x1024",
+      "reference composition 1440x900",
+      "reference composition 1366x768",
+      "reference composition 1024x768",
+      "reference composition 768x1024",
+      "reference composition 390x844",
+      "reference composition 360x800",
+      "reduced motion stops animations; console remains clean",
+      "MFA routes cannot restore a pending session after reload",
+      "complementary screen evidence",
+      "production build fails closed and never uses fixture login"
+    ],
+    "mode": "OFFLINE",
+    "decision": "NO_TRADE"
+  },
+  "backend": {
+    "m013b": {
+      "assembly": "TradingAgent.Auth.Pilot.Tests.dll",
+      "total": 120,
+      "passed": 120,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 16.535130499999998,
+      "expected_test_manifest": "PASS",
+      "mode": "OFFLINE",
+      "decision": "NO_TRADE"
+    },
+    "m013": {
+      "assembly": "TradingAgent.Auth.Tests.dll",
+      "total": 64,
+      "passed": 64,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 31.857192299999998,
+      "expected_test_manifest": "PASS",
+      "mode": "OFFLINE",
+      "decision": "NO_TRADE"
+    },
+    "m012": {
+      "assembly": "TradingAgent.Identity.Tests.dll",
+      "total": 61,
+      "passed": 61,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 31.2810456,
+      "expected_test_manifest": "PASS",
+      "mode": "OFFLINE",
+      "decision": "NO_TRADE"
+    },
+    "m011": {
+      "assembly": "TradingAgent.Web.Tests.dll",
+      "total": 21,
+      "passed": 21,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 1.9902852,
+      "expected_test_manifest": "PASS",
+      "mode": "OFFLINE",
+      "decision": "NO_TRADE"
+    }
+  },
+  "backend_total_passed": 266,
+  "dependency_audit": {
+    "known_vulnerabilities": 0,
+    "install_scripts_enabled": false,
+    "native_prebuilt_tooling_verified": true,
+    "signatures_verified_packages": 252,
+    "attestations_verified_packages": 108,
+    "limitations": "Known advisories/signatures are not universal supply-chain guarantees."
+  },
+  "visual_comparison": {
+    "width": 1536,
+    "height": 1024,
+    "changed_pixels": 75881,
+    "changed_fraction": 0.04824384053548177,
+    "per_pixel_threshold": 0.1,
+    "maximum_fraction": 0.3,
+    "reference_sha256": "773d40b3f46888d736d8cda69d0cfaa7f2b1474805f7e9c209bc445cd1a9c8a5",
+    "screenshot_sha256": "2da63360235b08264ada71613520c4c02c96ea57bf64ac5b39ce8308b2d9c5d6",
+    "limitation": "Pixel difference catches gross drift; not a perceptual similarity score or independent visual approval. Original fonts and raster illustration are approximated with local fonts and editable vectors."
+  },
+  "visual_review": {
+    "batched_rounds": 2,
+    "viewports": [
+      [
+        1536,
+        1024
+      ],
+      [
+        1440,
+        900
+      ],
+      [
+        1366,
+        768
+      ],
+      [
+        1024,
+        768
+      ],
+      [
+        768,
+        1024
+      ],
+      [
+        390,
+        844
+      ],
+      [
+        360,
+        800
+      ]
+    ],
+    "login_axe_violations": 0,
+    "impeccable_detector_findings": 0,
+    "remaining_differences": [
+      "Editable reconstructed mark",
+      "Local font approximations",
+      "Simplified SVG geometry",
+      "Explicit demo/data labels and disabled unavailable capabilities"
+    ]
+  },
+  "review": {
+    "type": "Internal fresh-context adversarial review; not independent audit",
+    "cycles": 2,
+    "fixed": [
+      "Initial focus/browser readiness",
+      "Safe exit from rejected callback",
+      "Autofill hints removed; unavailable production entry disabled"
+    ],
+    "remaining_actionable_findings": 0,
+    "external": "Manual package; no external review CLI"
+  },
+  "branch_protection": {
+    "status": "Prepared only; not activated/certified",
+    "template": "build/react-auth/branch-protection.template.json",
+    "reason": "No authenticated branch-administration operation exposed by available connector; no permissions expanded"
+  },
+  "not_executed": [
+    "Hosted Supabase or real user changes",
+    "IBKR/AI/financial DB/services",
+    "Financial migrations",
+    "Vue/backend modifications",
+    "Merge to develop/main",
+    "Deployment",
+    "M01.4B"
+  ],
+  "pending_real_integration": [
+    "M01.3B JWT/MFA/session/revocation completion",
+    "Reviewed same-origin BFF/CSRF/opaque cookies",
+    "One-use recovery/invitation exchange",
+    "Real callback server-side handling"
+  ],
+  "independent_ci": {
+    "status_at_documentation_commit": "Pending feature push; final run/artifacts reported in delivery",
+    "workflow": ".github/workflows/m01-4a-react-auth-ci.yml"
+  },
+  "screenshots": [
+    {
+      "path": "artifacts/m014a/screenshots/forgot-password.png",
+      "sha256": "6e943a1e49e5eb75dfb92ec8fc36ae4171f0576ba9db19d76dc5c857a2099c53"
+    },
+    {
+      "path": "artifacts/m014a/screenshots/invitation.png",
+      "sha256": "0333ecd59df716e2d1d3f9fe534f76e165d53610d993b7a404ca35ff16da477a"
+    },
+    {
+      "path": "artifacts/m014a/screenshots/login-1024x768.png",
+      "sha256": "9e8a91108036c8d221495dbaaba4d2583aa23de37ee929a696786a7fb7273a97"
+    },
+    {
+      "path": "artifacts/m014a/screenshots/login-1366x768.png",
+      "sha256": "3d8f8f3a714a2b8d7f96de9cc61455f5f3bc526702b358586ab5e223026869ea"
+    },
+    {
+      "path": "artifacts/m014a/screenshots/login-1440x900.png",
+      "sha256": "17f1cdfeaf1c2888343b14208f993c71f193cc0d8b3eaed0c40ac21cbbd8991d"
+    },
+    {
+      "path": "artifacts/m014a/screenshots/login-1536x1024.png",
+      "sha256": "2da63360235b08264ada71613520c4c02c96ea57bf64ac5b39ce8308b2d9c5d6"
+    },
+    {
+      "path": "artifacts/m014a/screenshots/login-360x800.png",
+      "sha256": "7e0b937d562b7a4be2f205abedf59a223b5d02d3b5ce7f30d2803eed77e0acd8"
+    },
+    {
+      "path": "artifacts/m014a/screenshots/login-390x844.png",
+      "sha256": "9b721d23f46e15cec4c5fe6290ea8765b4cba60e78259559b593cc193a8bcb62"
+    },
+    {
+      "path": "artifacts/m014a/screenshots/login-768x1024.png",
+      "sha256": "bec9d7095565d147d08d082c1086cde8a7561b93dd6ed157c3b60932d9d9b51e"
+    },
+    {
+      "path": "artifacts/m014a/screenshots/mfa-enroll.png",
+      "sha256": "7179adcfed9c42dc4a4f794a409d6a09e046cad79a76c04e9231be117d37ea78"
+    },
+    {
+      "path": "artifacts/m014a/screenshots/mfa-verify.png",
+      "sha256": "c37a55a7f9f3a7e94139931591a6c314f16c8c28cca6b3cef1022671dabc05d7"
+    },
+    {
+      "path": "artifacts/m014a/screenshots/reset-password.png",
+      "sha256": "77f4d3bd2a5dced2b9f3839324be09a6af570074c0958288b3b7b02b6dfcf189"
+    },
+    {
+      "path": "artifacts/m014a/screenshots/session-denied.png",
+      "sha256": "79446326f11c295529d07462f00797a513018b808b22bf0b62a513b7ecb90564"
+    },
+    {
+      "path": "artifacts/m014a/screenshots/session-expired.png",
+      "sha256": "7283b3e1db158cf5d31117f270ff9f667a3ff89ffa39988ba796187feec859ba"
+    },
+    {
+      "path": "artifacts/m014a/screenshots/session-unavailable.png",
+      "sha256": "67e7b3d70d1f08a4bb03cb71ba023c162b77bc46d483d8765cf7550682b5aff9"
+    }
+  ]
+}
