@@ -2,6 +2,8 @@
   <Import Project="../../build/web/Web.props" />
   <PropertyGroup><IsTestProject>true</IsTestProject><IsPackable>false</IsPackable></PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../build/react-bff/BrowserFixture/LocalPilotPreparation.cs" Link="Fixtures/LocalPilotPreparation.cs" />
+    <Compile Include="../../build/react-bff/BrowserFixture/LocalPilotDiagnostic.cs" Link="Fixtures/LocalPilotDiagnostic.cs" />
     <ProjectReference Include="../../src/TradingAgent.Web.Auth/TradingAgent.Web.Auth.csproj" />
     <ProjectReference Include="../../src/TradingAgent.Identity.Migrations/TradingAgent.Identity.Migrations.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="10.0.13" />

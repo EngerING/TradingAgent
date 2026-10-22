@@ -2,12 +2,14 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using TradingAgent.Identity.Persistence;
 using TradingAgent.Identity.Supabase;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace TradingAgent.Web.Auth;
 
 internal static class PilotEndpoints
 {
-    internal static void Map(WebApplication app)
+    internal static void Map(WebApplication app, bool allowEnrollment = true)
     {
         app.MapPost("/bff/auth/login", async (HttpContext context, PilotRuntime runtime, PilotRequestBudgets budgets) =>
         {
@@ -19,11 +21,21 @@ internal static class PilotEndpoints
             if (context.Request.Cookies.ContainsKey(HttpBoundary.SessionCookie)) context.Response.Cookies.Delete(HttpBoundary.SessionCookie, HttpBoundary.CookieOptions(DateTimeOffset.UnixEpoch));
             if (HttpBoundary.Cookie(context.Request, HttpBoundary.PreauthCookie) is { } old) await runtime.LogoutAsync(null, old, context.RequestAborted);
             var pending = await runtime.LoginAsync(email, password, context.RequestAborted);
+            var logger = context.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("TradingAgent.Web.Auth.Boundary");
+            if (logger.IsEnabled(LogLevel.Information))
+            {
+                var verifiedCount = 0;
+                foreach (var factor in pending.Factors) if (factor.Verified) verifiedCount++;
+                BoundaryLog.Inventory(logger, verifiedCount, pending.Factors.Count - verifiedCount);
+            }
             context.Response.Cookies.Append(HttpBoundary.PreauthCookie, pending.Reference.ExportForCookie(), HttpBoundary.CookieOptions(pending.Expires));
             return Results.Json(new { status = "MFA_REQUIRED", factors = pending.Factors, executionAuthorized = false });
         }).WithMetadata(new PilotOperationMetadata(PilotOperation.Login)).AllowAnonymous();
         app.MapPost("/bff/auth/mfa/enroll", async (HttpContext context, PilotRuntime runtime) =>
-            Results.Json(await runtime.EnrollAsync(Preauth(context), context.RequestAborted))).WithMetadata(new PilotOperationMetadata(PilotOperation.Mfa)).AllowAnonymous();
+        {
+            if (!allowEnrollment) throw new AuthException(AuthFailure.Conflict);
+            return Results.Json(await runtime.EnrollAsync(Preauth(context), context.RequestAborted));
+        }).WithMetadata(new PilotOperationMetadata(PilotOperation.Mfa)).AllowAnonymous();
         app.MapPost("/bff/auth/mfa/challenge", async (HttpContext context, PilotRuntime runtime) =>
         {
             using var body = await HttpBoundary.BodyAsync(context);

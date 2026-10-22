@@ -10,10 +10,23 @@ using TradingAgent.Identity.Tests;
 using TradingAgent.React.BrowserFixture;
 using TradingAgent.Web.Browser;
 
+if (args.Length == 1 && args[0] == "--prepare-local-pilot")
+{
+    await LocalPilotPreparation.PrepareAsync();
+    return;
+}
+if (args.Length == 1 && args[0] == "--hosted-local-checks")
+{
+    try { await HostedDevelopmentRunner.RunAsync(localChecksOnly: true); }
+    catch (Exception) { Console.WriteLine("LOCAL_STARTUP_PREFLIGHT_FAILED; NO_SENSITIVE_DETAILS"); Environment.ExitCode = 1; }
+    return;
+}
 if (args.Length == 1 && args[0] == "--hosted-development")
 {
     // Isolated B2 entrypoint: no fixture Auth, grants, migrations, synthetic tokens or SQL bootstrap.
-    await HostedDevelopmentRunner.RunAsync();
+    try { await HostedDevelopmentRunner.RunAsync(); }
+    catch (TradingAgent.Identity.Supabase.AuthException error) { Console.WriteLine("HOSTED_AUTH_REJECTED:" + error.Diagnostic); Environment.ExitCode = 1; }
+    catch (Exception) { Console.WriteLine("HOSTED_LOCAL_PREFLIGHT_OR_DEPENDENCY_FAILED; NO_SENSITIVE_DETAILS"); Environment.ExitCode = 1; }
     return;
 }
 if (Environment.GetEnvironmentVariable("M014B_SYNTHETIC_BROWSER_FIXTURE") != "YES") throw new InvalidOperationException("Explicit synthetic fixture opt-in required.");
