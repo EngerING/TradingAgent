@@ -32,6 +32,15 @@ public static class IntegratedHostFactory
         ArgumentNullException.ThrowIfNull(settings); ArgumentNullException.ThrowIfNull(certificate);
         if (settings.Authentication.Simulation) throw new InvalidOperationException("Hosted development pilot must use real provider configuration.");
         if (!certificate.HasPrivateKey || certificate.NotBefore.ToUniversalTime() > DateTime.UtcNow || certificate.NotAfter.ToUniversalTime() <= DateTime.UtcNow) throw new ArgumentException("Valid externally supplied development TLS certificate required.", nameof(certificate));
+        if (browserAssets)
+        {
+            var encodedSan = certificate.Extensions["2.5.29.17"];
+            if (encodedSan is null) throw new ArgumentException("Explicit loopback IP SAN required.", nameof(certificate));
+            var san = new X509SubjectAlternativeNameExtension();
+            san.CopyFrom(encodedSan);
+            if (!san.EnumerateIPAddresses().Contains(IPAddress.Loopback))
+                throw new ArgumentException("Only a loopback IP SAN is accepted.", nameof(certificate));
+        }
         return Create(settings.Authentication, runtime, issuer, settings.BrowserOrigin, builder =>
             builder.WebHost.UseKestrel(options => options.Listen(IPAddress.Loopback, settings.BrowserOrigin.Port, listener => listener.UseHttps(certificate))), browserAssets);
     }
