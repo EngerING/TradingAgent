@@ -9,6 +9,7 @@ class Rejected extends Error { constructor(readonly kind: AuthKind) { super('AUT
 /** Browser owns neither provider tokens nor session references. No retries or fallback transport. */
 export class BffAuthAdapter implements AuthAdapter {
   readonly mode = 'bff' as const;
+  constructor(readonly source: 'synthetic' | 'hosted' = 'synthetic') {}
   private pendingUntil = 0;
   private factor: string | undefined;
   private epoch = 0;
@@ -99,7 +100,7 @@ export class BffAuthAdapter implements AuthAdapter {
 }
 
 export async function configuredBff(): Promise<AuthAdapter | undefined> {
-  if (location.protocol !== 'https:' || location.hostname !== 'localhost' || location.search || location.hash) return undefined;
+  if (location.protocol !== 'https:' || !['localhost', '127.0.0.1'].includes(location.hostname) || location.search || location.hash) return undefined;
   const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 3000);
   try {
     const response = await fetch('/bff/config', { credentials: 'same-origin', redirect: 'error', cache: 'no-store', signal: controller.signal });
