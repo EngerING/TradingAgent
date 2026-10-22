@@ -1,3 +1,7 @@
+using System.Net;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using TradingAgent.Auth.Tests;
 using TradingAgent.Identity.Persistence;
@@ -9,6 +13,38 @@ namespace TradingAgent.React.Integration.Tests;
 
 public sealed class EnrollmentSafetyTests
 {
+    [Fact]
+    public async Task HostedBrowserRequiresExplicitLoopbackSanAndPublishesClosedConfig()
+    {
+        using var rsa = RSA.Create(2048);
+        var request = new CertificateRequest("CN=127.0.0.1", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        var alt = new SubjectAlternativeNameBuilder();
+        alt.AddIpAddress(IPAddress.Loopback);
+        request.CertificateExtensions.Add(alt.Build());
+        using var valid = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddMinutes(15));
+        var origin = new Uri("https://127.0.0.1:29997/");
+        var settings = HostedPilotSettings.FromExternalValues(
+            "Development", "ocwabwmzhpedyxlkjpje",
+            new Uri("https://ocwabwmzhpedyxlkjpje.supabase.co/"),
+            "sb_publishable_testonly_localfixture", origin);
+        var target = new DisposableTarget("127.0.0.1", 29999, "m012_test_" + Guid.NewGuid().ToString("N"));
+        var runtime = new SecurityDatabase(target, "test_runtime", "PUBLIC_TEST_ONLY", DatabasePurpose.Runtime);
+        var issuer = new SecurityDatabase(target, "test_issuer", "PUBLIC_TEST_ONLY", DatabasePurpose.SessionIssuer);
+        await using (var app = IntegratedHostFactory.CreateHostedBrowserPilot(settings, runtime, issuer, valid))
+        {
+            var mapped = ((IEndpointRouteBuilder)app).DataSources.SelectMany(d => d.Endpoints).OfType<RouteEndpoint>();
+            Assert.Contains(mapped, route => route.RoutePattern.RawText == "/bff/config");
+            Assert.Contains(mapped, route => route.RoutePattern.RawText == "/bff/auth/login");
+        }
+        using var otherKey = RSA.Create(2048);
+        var wrongRequest = new CertificateRequest("CN=127.0.0.1", otherKey, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        using var missingSan = wrongRequest.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddMinutes(15));
+        Assert.Throws<ArgumentException>(() => IntegratedHostFactory.CreateHostedBrowserPilot(settings, runtime, issuer, missingSan));
+        Assert.Throws<ArgumentException>(() => HostedPilotSettings.FromExternalValues(
+            "Development", "ocwabwmzhpedyxlkjpje",
+            new Uri("https://ocwabwmzhpedyxlkjpje.supabase.co/"),
+            "sb_publishable_testonly_localfixture", new Uri("https://localhost:29997/")));
+    }
     [Theory]
     [InlineData(1, false)]
     [InlineData(2, false)]
