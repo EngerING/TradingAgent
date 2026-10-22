@@ -50,7 +50,7 @@ public static class IntegratedHostFactory
         ArgumentNullException.ThrowIfNull(settings);
         if (settings.Authentication.Simulation) throw new InvalidOperationException("Hosted browser cannot use synthetic Auth.");
         var app = CreateHostedDevelopmentPilot(settings, runtime, issuer, certificate, browserAssets: true, localChecksOnly);
-        app.MapGet("/bff/config", () => Results.Json(new { profile = "HOSTED_DEVELOPMENT_AUTH", mode = "OFFLINE", decision = "NO_TRADE", executionAuthorized = false })).AllowAnonymous();
+        app.MapGet("/bff/config", () => Results.Json(new { profile = localChecksOnly ? "HOSTED_LOCAL_CHECKS_ONLY" : "HOSTED_DEVELOPMENT_AUTH", mode = "OFFLINE", decision = "NO_TRADE", executionAuthorized = false })).AllowAnonymous();
         return app;
     }
     // Explicit synthetic browser composition. No hosted provider can enter this factory.

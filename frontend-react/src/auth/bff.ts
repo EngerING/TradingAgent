@@ -1,4 +1,4 @@
-import { bffRoutes } from './contracts';
+import { bffRoutes, unavailableAdapter } from './contracts';
 import type { AuthAdapter, AuthKind, AuthResult } from './contracts';
 const uuid = (s: unknown): s is string => typeof s === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
 const record = (v: unknown): Record<string, unknown> => { if (!v || typeof v !== 'object' || Array.isArray(v)) throw new Error('CONTRACT'); return v as Record<string, unknown>; };
@@ -114,6 +114,7 @@ export async function configuredBff(): Promise<AuthAdapter | undefined> {
     const b = record(JSON.parse(text)); keys(b, ['profile', 'mode', 'decision', 'executionAuthorized']);
     if (b.mode !== 'OFFLINE' || b.decision !== 'NO_TRADE' || b.executionAuthorized !== false) return undefined;
     if (b.profile === 'SYNTHETIC_HTTP_FIXTURE' && location.hostname === 'localhost') return new BffAuthAdapter('synthetic');
+    if (b.profile === 'HOSTED_LOCAL_CHECKS_ONLY' && location.hostname === '127.0.0.1') return { ...unavailableAdapter, source: 'local-checks' };
     if (b.profile === 'HOSTED_DEVELOPMENT_AUTH' && location.hostname === '127.0.0.1') return new BffAuthAdapter('hosted');
   } catch { /* Fail closed. Never select demo on a transport error. */ }
   finally { clearTimeout(timeout); }
