@@ -4,6 +4,9 @@ const uuid = (s: unknown): s is string => typeof s === 'string' && /^[0-9a-f]{8}
 const record = (v: unknown): Record<string, unknown> => { if (!v || typeof v !== 'object' || Array.isArray(v)) throw new Error('CONTRACT'); return v as Record<string, unknown>; };
 const keys = (v: Record<string, unknown>, expected: string[]) => { if (Object.keys(v).sort().join() !== expected.sort().join()) throw new Error('CONTRACT'); };
 const future = (v: unknown): v is string => typeof v === 'string' && Number.isFinite(Date.parse(v)) && Date.parse(v) > Date.now() && Date.parse(v) <= Date.now() + 301000;
+const previewFuture = (v: unknown, maxMs: number): v is string =>
+  typeof v === 'string' && Number.isFinite(Date.parse(v)) && Date.parse(v) > Date.now() &&
+  Date.parse(v) <= Date.now() + maxMs + 60000;
 class Rejected extends Error { constructor(readonly kind: AuthKind) { super('AUTH_REQUEST_REJECTED'); } }
 
 /** Browser owns neither provider tokens nor session references. No retries or fallback transport. */
@@ -15,13 +18,12 @@ export class BffAuthAdapter implements AuthAdapter {
   private epoch = 0;
   private active: AbortController | undefined;
   private clear() { this.pendingUntil = 0; this.factor = undefined; }
-  private previewPayload(body: Record<string, unknown>, login: boolean): boolean {
-    keys(body, login
-      ? ['status','authenticated','aal','profile','expiresAt','renewable','executionAuthorized','mode','decision']
-      : ['authenticated','aal','profile','expiresAt','renewable','executionAuthorized','mode','decision']);
-    return (!login || body.status === 'PASSWORD_PREVIEW') &&
-      body.authenticated === true && body.aal === 'aal1' && body.profile === 'PASSWORD_ONLY_DEV_PREVIEW' &&
-      future(body.expiresAt) && body.renewable === false && body.executionAuthorized === false &&
+  private previewPayload(body: Record<string, unknown>): boolean {
+    keys(body, ['status','authenticated','aal','profile','expiresAt','idleExpiresAt','renewable','executionAuthorized','mode','decision']);
+    return body.status === 'PASSWORD_PREVIEW' && body.authenticated === true &&
+      body.aal === 'aal1' && body.profile === 'PASSWORD_ONLY_DEV_PREVIEW' &&
+      previewFuture(body.expiresAt, 8 * 3600000) && previewFuture(body.idleExpiresAt, 30 * 60000) &&
+      body.renewable === true && body.executionAuthorized === false &&
       body.mode === 'OFFLINE' && body.decision === 'NO_TRADE';
   }
   private async request(path: string, body: unknown | undefined, signal: AbortSignal): Promise<Record<string, unknown>> {
@@ -57,7 +59,7 @@ export class BffAuthAdapter implements AuthAdapter {
       if (this.source === 'preview') {
         try { body = await this.request(bffRoutes.previewLogin, { email, password }, s); }
         catch (e) { if (e instanceof Rejected && e.kind === 'expired') return { kind: 'invalid-credentials' }; throw e; }
-        if (!this.previewPayload(body, true)) throw new Error('CONTRACT');
+        if (!this.previewPayload(body)) throw new Error('CONTRACT');
         return { kind: 'preview-complete' };
       }
       try { body = await this.request(bffRoutes.login, { email, password }, s); }
@@ -73,7 +75,7 @@ export class BffAuthAdapter implements AuthAdapter {
   async session(signal?: AbortSignal): Promise<AuthResult> {
     if (this.source === 'preview') return this.operation(async s => {
       const response = await this.request(bffRoutes.previewSession, undefined, s);
-      if (!this.previewPayload(response, false)) throw new Error('CONTRACT');
+      if (!this.previewPayload(response)) throw new Error('CONTRACT');
       return { kind: 'preview-complete' };
     }, signal);
     if (this.pendingUntil > Date.now()) return { kind: 'mfa-required' };
@@ -82,6 +84,14 @@ export class BffAuthAdapter implements AuthAdapter {
       keys(b, ['authenticated', 'aal', 'expiresAt', 'renewable', 'providerSessionConfirmedActive', 'executionAuthorized', 'mode', 'decision']);
       if (b.authenticated !== true || b.aal !== 'aal2' || !future(b.expiresAt) || b.renewable !== false || b.providerSessionConfirmedActive !== false || b.executionAuthorized !== false || b.mode !== 'OFFLINE' || b.decision !== 'NO_TRADE') throw new Error('CONTRACT');
       return { kind: 'complete' };
+    }, signal);
+  }
+  async activity(signal?: AbortSignal): Promise<AuthResult> {
+    if (this.source !== 'preview') return { kind: 'unavailable' };
+    return this.operation(async s => {
+      const state = await this.request(bffRoutes.previewActivity, {}, s);
+      if (!this.previewPayload(state)) throw new Error('CONTRACT');
+      return { kind: 'preview-complete' };
     }, signal);
   }
   async enroll(signal?: AbortSignal): Promise<AuthResult> {

@@ -3,65 +3,133 @@ using TradingAgent.Identity.Supabase;
 
 namespace TradingAgent.Web.Auth;
 
-/// <summary>Process-only Auth Dev password preview; NEVER a financial or SQL session.</summary>
-public sealed class PasswordPreviewSessions(SupabaseAuthClient provider, JwtVerifier verifier, TimeProvider clock, string allowedEmail)
+/// <summary>AAL1 developer preview is not an app_security session or financial capability.</summary>
+public static class PreviewSessionPolicy
 {
-    private readonly object gate = new();
-    private readonly string allowed = allowedEmail.Trim();
-    private SessionReference? reference;
-    private AccessCredential? credential;
-    private DateTimeOffset expires;
+    public static readonly TimeSpan MaximumLifetime = TimeSpan.FromHours(8);
+    public static readonly TimeSpan InactivityLimit = TimeSpan.FromMinutes(30);
+    public static readonly TimeSpan RefreshThreshold = TimeSpan.FromMinutes(2);
+    public static bool Active(DateTimeOffset now, DateTimeOffset absoluteEnd, DateTimeOffset lastActivity) =>
+        now < absoluteEnd && now < lastActivity + InactivityLimit;
+    public static bool NeedsRefresh(DateTimeOffset now, DateTimeOffset tokenEnd) => now + RefreshThreshold >= tokenEnd;
+}
+public sealed record PreviewSessionSnapshot(DateTimeOffset ExpiresAt, DateTimeOffset IdleExpiresAt);
 
-    public async Task<(SessionReference Reference, DateTimeOffset Expires)> LoginAsync(string email, string password, CancellationToken ct)
+/// <summary>
+/// Single local process-only slot with rotating server-held refresh token.
+/// Browser owns just the separate short random preview reference. No disk or durable SQL.
+/// </summary>
+public sealed class PasswordPreviewSessions(IPreviewTokenProvider tokens, TimeProvider clock, string allowedEmail) : IDisposable
+{
+    public void Dispose() => gate.Dispose();
+    private sealed record Slot(SessionReference Reference, PreviewTokenPair Tokens,
+        DateTimeOffset AbsoluteEnd, DateTimeOffset LastActivity);
+    private readonly SemaphoreSlim gate = new(1, 1);
+    private readonly string allowed = allowedEmail.Trim();
+    private Slot? current;
+    private static PreviewSessionSnapshot Snapshot(Slot entry)
     {
-        if (!string.Equals(email.Trim(), allowed, StringComparison.OrdinalIgnoreCase)) throw new AuthException(AuthFailure.Invalid);
-        var verified = await provider.PasswordAsync(email.Trim(), password, ct).ConfigureAwait(false);
-        if (verified.Identity.Aal is < 1 or > 2) throw new AuthException(AuthFailure.Invalid);
-        await provider.CheckUserAsync(verified, ct).ConfigureAwait(false);
-        var now = clock.GetUtcNow();
-        var end = verified.Identity.ExpiresAt < now.AddMinutes(5) ? verified.Identity.ExpiresAt : now.AddMinutes(5);
-        if (end <= now) throw new AuthException(AuthFailure.Invalid);
-        var issued = SessionReference.Generate();
-        lock (gate) { reference = issued; credential = verified; expires = end; }
-        return (issued, end);
+        var idleEnd = entry.LastActivity + PreviewSessionPolicy.InactivityLimit;
+        return new(entry.AbsoluteEnd, idleEnd < entry.AbsoluteEnd ? idleEnd : entry.AbsoluteEnd);
     }
 
-    public async Task<object> SessionAsync(SessionReference? cookie, CancellationToken ct)
+    public async Task<(SessionReference Reference, PreviewSessionSnapshot Session)> LoginAsync(
+        string email, string password, CancellationToken ct)
+    {
+        if (!string.Equals(email.Trim(), allowed, StringComparison.OrdinalIgnoreCase))
+            throw new AuthException(AuthFailure.Invalid);
+        await gate.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            var now = clock.GetUtcNow();
+            if (current is { } existing && PreviewSessionPolicy.Active(now, existing.AbsoluteEnd, existing.LastActivity))
+                throw new AuthException(AuthFailure.Conflict);
+            current = null;
+            var issued = await tokens.PasswordAsync(email.Trim(), password, ct).ConfigureAwait(false);
+            if (issued.Credential.Identity.Aal != 1) throw new AuthException(AuthFailure.Invalid);
+            now = clock.GetUtcNow();
+            if (issued.Credential.Identity.ExpiresAt <= now) throw new AuthException(AuthFailure.Invalid);
+            var saved = new Slot(SessionReference.Generate(), issued, now + PreviewSessionPolicy.MaximumLifetime, now);
+            ct.ThrowIfCancellationRequested();
+            current = saved;
+            return (saved.Reference, Snapshot(saved));
+        }
+        finally { gate.Release(); }
+    }
+
+    public async Task<PreviewSessionSnapshot> SessionAsync(SessionReference? cookie, bool activity, CancellationToken ct)
     {
         if (cookie is null) throw new AuthException(AuthFailure.Invalid);
-        AccessCredential saved; DateTimeOffset end;
-        lock (gate)
+        await gate.WaitAsync(ct).ConfigureAwait(false);
+        try
         {
-            if (reference is null || credential is null || expires <= clock.GetUtcNow() ||
-                !reference.LookupHash().AsSpan().SequenceEqual(cookie.LookupHash()))
+            var entry = current;
+            var now = clock.GetUtcNow();
+            if (entry is null || !entry.Reference.LookupHash().AsSpan().SequenceEqual(cookie.LookupHash()) ||
+                !PreviewSessionPolicy.Active(now, entry.AbsoluteEnd, entry.LastActivity))
+            {
+                if (entry is not null && !PreviewSessionPolicy.Active(now, entry.AbsoluteEnd, entry.LastActivity)) current = null;
                 throw new AuthException(AuthFailure.Invalid);
-            saved = credential; end = expires;
+            }
+            var access = entry.Tokens.Credential;
+            if (PreviewSessionPolicy.NeedsRefresh(now, access.Identity.ExpiresAt))
+            {
+                try
+                {
+                    var renewed = await tokens.RefreshAsync(entry.Tokens.RefreshToken, ct).ConfigureAwait(false);
+                    // Refresh token reuse, account change or cross-session substitution is forbidden.
+                    if (renewed.Credential.Identity.Identity != access.Identity.Identity ||
+                        renewed.Credential.Identity.ProviderSessionId != access.Identity.ProviderSessionId ||
+                        renewed.Credential.Identity.Aal != 1 ||
+                        renewed.Credential.Identity.ExpiresAt <= clock.GetUtcNow() ||
+                        string.Equals(renewed.RefreshToken, entry.Tokens.RefreshToken, StringComparison.Ordinal))
+                        throw new AuthException(AuthFailure.Invalid);
+                    entry = entry with { Tokens = renewed };
+                    current = entry;
+                }
+                catch
+                {
+                    // A late/ambiguous refresh may have consumed the one-time token.
+                    // Never replay it or return an authenticated UI.
+                    current = null;
+                    throw;
+                }
+            }
+            else
+            {
+                try { await tokens.CheckAsync(access, ct).ConfigureAwait(false); }
+                catch
+                {
+                    // An unavailable identity provider is never a reason to keep an unverified preview.
+                    current = null;
+                    throw;
+                }
+            }
+            now = clock.GetUtcNow();
+            if (!PreviewSessionPolicy.Active(now, entry.AbsoluteEnd, entry.LastActivity))
+            {
+                current = null; throw new AuthException(AuthFailure.Invalid);
+            }
+            if (activity) entry = entry with { LastActivity = now };
+            current = entry;
+            return Snapshot(entry);
         }
-        var identity = await verifier.ValidateAsync(saved.Token, ct).ConfigureAwait(false);
-        if (identity != saved.Identity || identity.Aal is < 1 or > 2 || end <= clock.GetUtcNow())
-            throw new AuthException(AuthFailure.Invalid);
-        await provider.CheckUserAsync(saved, ct).ConfigureAwait(false);
-        lock (gate)
-        {
-            if (reference is null || credential != saved || expires <= clock.GetUtcNow() ||
-                !reference.LookupHash().AsSpan().SequenceEqual(cookie.LookupHash()))
-                throw new AuthException(AuthFailure.Invalid);
-        }
-        return new { authenticated = true, aal = "aal1", profile = "PASSWORD_ONLY_DEV_PREVIEW", expiresAt = end,
-            renewable = false, executionAuthorized = false, mode = "OFFLINE", decision = "NO_TRADE" };
+        finally { gate.Release(); }
     }
-
     public async Task LogoutAsync(SessionReference? cookie, CancellationToken ct)
     {
-        AccessCredential? old = null;
-        lock (gate)
+        if (cookie is null) return;
+        AccessCredential? token = null;
+        await gate.WaitAsync(ct).ConfigureAwait(false);
+        try
         {
-            if (cookie is not null && reference is not null &&
-                reference.LookupHash().AsSpan().SequenceEqual(cookie.LookupHash()))
+            if (current is { } entry && entry.Reference.LookupHash().AsSpan().SequenceEqual(cookie.LookupHash()))
             {
-                old = credential; credential = null; reference = null; expires = DateTimeOffset.MinValue;
+                token = entry.Tokens.Credential;
+                current = null; // Always revoke the local capability before remote I/O.
             }
         }
-        if (old is not null) await provider.LogoutAsync(old, ct).ConfigureAwait(false);
+        finally { gate.Release(); }
+        if (token is not null) await tokens.LogoutAsync(token, ct).ConfigureAwait(false);
     }
 }
