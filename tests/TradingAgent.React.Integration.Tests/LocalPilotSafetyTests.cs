@@ -29,6 +29,14 @@ public sealed class LocalPilotSafetyTests
         // Invoke only the endpoint: no listener, TLS trust, SQL or hosted request starts.
         var error = await Assert.ThrowsAsync<AuthException>(() => endpoint.RequestDelegate!(context));
         Assert.Equal(AuthFailure.Conflict, error.Failure);
+        // Opt-in is not automatically enabled, and does not bypass preauth.
+        await using var enabled = IntegratedHostFactory.CreateHostedBrowserPilot(settings, runtime, issuer, material.Leaf, allowHostedEnrollment: true);
+        var enabledEndpoint = ((IEndpointRouteBuilder)enabled).DataSources.SelectMany(s => s.Endpoints)
+            .OfType<RouteEndpoint>().Single(e => e.RoutePattern.RawText == "/bff/auth/mfa/enroll");
+        var noPreauth = new DefaultHttpContext { RequestServices = enabled.Services };
+        var missingIdentity = await Assert.ThrowsAsync<AuthException>(() => enabledEndpoint.RequestDelegate!(noPreauth));
+        Assert.Equal(AuthFailure.Invalid, missingIdentity.Failure);
+        Assert.Throws<InvalidOperationException>(() => IntegratedHostFactory.CreateHostedBrowserPilot(settings, runtime, issuer, material.Leaf, localChecksOnly: true, allowHostedEnrollment: true));
     }
     [Fact]
     public void DiagnosticOnlyWritesClosedCodesAndNeverFormatsPayloadsOrExceptions()

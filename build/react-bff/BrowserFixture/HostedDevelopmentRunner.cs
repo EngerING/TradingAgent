@@ -78,7 +78,13 @@ internal static class HostedDevelopmentRunner
         }
 
         var reactRoot = Path.GetFullPath(Required("M014B_B2_REACT_DIST"));
-        await using var app = BrowserHost.CreateHosted(settings, runtime, issuer, certificate, reactRoot, localChecksOnly);
+        var optIn = Environment.GetEnvironmentVariable("M014B_B2_ALLOW_FRESH_ENROLLMENT");
+        if (optIn is not null && optIn != "APPROVED_EMPTY_FACTOR_ENROLLMENT_NO_TRADE")
+            throw new InvalidOperationException("Invalid enrollment authorization.");
+        if (localChecksOnly && optIn is not null)
+            throw new InvalidOperationException("Enrollment is forbidden during local-only checks.");
+        var allowHostedEnrollment = !localChecksOnly && optIn == "APPROVED_EMPTY_FACTOR_ENROLLMENT_NO_TRADE";
+        await using var app = BrowserHost.CreateHosted(settings, runtime, issuer, certificate, reactRoot, localChecksOnly, allowHostedEnrollment);
         // Hosted login is separately approved and single-attempt. Diagnostic output is closed/redacted.
         // Local-checks mode skips all auth paths and never installs this login middleware.
         if (!localChecksOnly)

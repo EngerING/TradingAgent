@@ -48,7 +48,16 @@ test('safe fresh enrollment QR clears before verification and wrong code gets a 
   await page.getByLabel('Verification code').fill('000000'); await page.getByRole('button', { name: 'Verify code' }).click(); await expect(page.getByRole('alert')).toContainText('Code rejected'); await expect(page.getByLabel('Verification code')).toBeEmpty();
   await page.getByLabel('Verification code').fill('123456'); await page.getByRole('button', { name: 'Verify code' }).click(); await expect(page.getByRole('heading', { name: 'Identity authenticated' })).toBeVisible();
 });
-for (const user of ['orphan', 'ambiguous']) test(`incomplete or ambiguous MFA blocks ${user} without deletion`, async ({ page }) => { await login(page, user); await expect(page.getByRole('alert')).toContainText('No factor was deleted'); });
+for (const user of ['orphan', 'ambiguous']) test(`incomplete or ambiguous MFA blocks ${user} without deletion`, async ({ page }) => {
+  await login(page, user);
+  if (user === 'orphan') {
+    await expect(page.getByRole('heading', { name: 'MFA setup needs review' })).toBeVisible();
+    await expect(page.getByText(/No factor was deleted/)).toBeVisible();
+    expect((await page.request.get('/bff/session')).status()).toBe(401);
+  } else {
+    await expect(page.getByRole('alert')).toContainText('No factor was deleted');
+  }
+});
 for (const user of ['no-role', 'no-grant', 'other']) test(`SQL denies missing authorization or different resource for ${user}`, async ({ page }) => {
   await signedIn(page, user); const resource = user === 'other' ? 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' : ready.resource;
   expect((await page.request.get(`/bff/probe/${resource}/Paper`)).status()).toBe(403); expect((await page.request.get(`/bff/probe/${ready.resource}/Live`)).status()).toBe(403);
