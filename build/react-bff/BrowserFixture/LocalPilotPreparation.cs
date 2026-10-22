@@ -26,7 +26,7 @@ public static class LocalPilotPreparation
         rootRequest.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, false, 0, true));
         rootRequest.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.KeyCertSign, true));
         var now = DateTimeOffset.UtcNow;
-        var root = rootRequest.CreateSelfSigned(now.AddMinutes(-1), now.AddHours(4));
+        var root = rootRequest.CreateSelfSigned(now.AddMinutes(-1), now.AddHours(12));
         try
         {
             using var key = RSA.Create(3072);
@@ -35,7 +35,7 @@ public static class LocalPilotPreparation
             request.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment, true));
             request.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension(new OidCollection { new("1.3.6.1.5.5.7.3.1") }, true));
             var san = new SubjectAlternativeNameBuilder(); san.AddIpAddress(IPAddress.Loopback); request.CertificateExtensions.Add(san.Build());
-            using var issued = request.Create(root, now.AddMinutes(-1), now.AddHours(3), RandomNumberGenerator.GetBytes(16));
+            using var issued = request.Create(root, now.AddMinutes(-1), now.AddHours(10), RandomNumberGenerator.GetBytes(16));
             var leaf = issued.CopyWithPrivateKey(key);
             return new(root, leaf);
         }

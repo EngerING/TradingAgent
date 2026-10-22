@@ -10,6 +10,10 @@ public sealed class AccessCredential(string token, VerifiedIdentity identity)
     public override string ToString() => "[REDACTED_AUTH_CREDENTIAL]";
 }
 public sealed record TotpFactor(Guid Id, bool Verified);
+public sealed record RefreshableCredential(AccessCredential Access, string RefreshToken)
+{
+    public override string ToString() => "[REDACTED_REFRESHABLE_CREDENTIAL]";
+}
 public sealed record TotpEnrollment(Guid FactorId, string Secret, string Uri)
 {
     public override string ToString() => "[REDACTED_TOTP_ENROLLMENT]";
@@ -22,6 +26,34 @@ public sealed class SupabaseAuthClient(AuthTransport transport, JwtVerifier veri
     {
         using var document = await transport.SendAsync(HttpMethod.Post, "/auth/v1/token?grant_type=password", new { email, password }, null, cancellationToken).ConfigureAwait(false);
         return await CredentialAsync(document, cancellationToken).ConfigureAwait(false);
+    }
+    // Only the explicitly opted-in hosted development preview retains rotating refresh tokens in BFF memory.
+    public async Task<RefreshableCredential> PasswordWithRefreshAsync(string email, string password, CancellationToken ct)
+    {
+        using var document = await transport.SendAsync(HttpMethod.Post, "/auth/v1/token?grant_type=password", new { email, password }, null, ct).ConfigureAwait(false);
+        return await RefreshableAsync(document, ct).ConfigureAwait(false);
+    }
+    public async Task<RefreshableCredential> RefreshAsync(string token, CancellationToken ct)
+    {
+        if (!ValidRefreshToken(token)) throw new AuthException(AuthFailure.Invalid);
+        using var document = await transport.SendAsync(HttpMethod.Post, "/auth/v1/token?grant_type=refresh_token", new { refresh_token = token }, null, ct).ConfigureAwait(false);
+        return await RefreshableAsync(document, ct).ConfigureAwait(false);
+    }
+    private static bool ValidRefreshToken(string? token) =>
+        token is { Length: >= 10 and <= 4096 } && !token.Any(char.IsWhiteSpace);
+    private async Task<RefreshableCredential> RefreshableAsync(JsonDocument document, CancellationToken ct)
+    {
+        var access = await CredentialAsync(document, ct).ConfigureAwait(false);
+        try
+        {
+            var rotated = document.RootElement.GetProperty("refresh_token").GetString();
+            if (!ValidRefreshToken(rotated)) throw new AuthException(AuthFailure.Unavailable);
+            return new(access, rotated!);
+        }
+        catch (Exception error) when (error is KeyNotFoundException or InvalidOperationException)
+        {
+            throw new AuthException(AuthFailure.Unavailable);
+        }
     }
     private async Task<AccessCredential> CredentialAsync(JsonDocument document, CancellationToken cancellationToken)
     {

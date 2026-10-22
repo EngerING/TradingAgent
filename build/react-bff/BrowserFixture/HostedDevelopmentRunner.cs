@@ -97,7 +97,7 @@ internal static class HostedDevelopmentRunner
             app.Use(async (context, next) =>
             {
                 if ((context.Request.Path == "/bff/auth/login" || context.Request.Path == "/bff/preview/login") && HttpMethods.IsPost(context.Request.Method) &&
-                    Interlocked.Increment(ref loginAttempts) != 1)
+                    Interlocked.Increment(ref loginAttempts) > (previewEmail is null ? 1 : 5))
                 {
                     context.Response.StatusCode = 409;
                     await context.Response.WriteAsJsonAsync(new { code = "LOCAL_PILOT_ATTEMPT_CONSUMED", correlationId = Guid.NewGuid(), executionAuthorized = false });
@@ -110,7 +110,8 @@ internal static class HostedDevelopmentRunner
         }
         // Local-only diagnostic server stays active until an owned Stop signal.
         // The separately approved hosted login runner has a 20-minute safety deadline.
-        using var stop = localChecksOnly ? new CancellationTokenSource() : new CancellationTokenSource(TimeSpan.FromMinutes(20));
+        using var stop = localChecksOnly ? new CancellationTokenSource() : new CancellationTokenSource(
+            previewEmail is null ? TimeSpan.FromMinutes(20) : TimeSpan.FromHours(8));
         Console.CancelKeyPress += (_, args) => { args.Cancel = true; stop.Cancel(); };
         await app.StartAsync(stop.Token);
         var stateFile = localChecksOnly ? Required("M014B_B2_STATE_FILE") : null;

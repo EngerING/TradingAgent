@@ -13,11 +13,14 @@ export interface AuthAdapter {
   invitation(signal?: AbortSignal): Promise<AuthResult>;
   setPassword(password: string, signal?: AbortSignal): Promise<AuthResult>;
   logout(): Promise<void>;
+  /** Browser-only local preview: explicit human activity, never automatic polling. */
+  activity?(signal?: AbortSignal): Promise<AuthResult>;
 }
 
 // Existing BFF wire contracts only. No transport is enabled by M01.4A.
 export const bffRoutes = Object.freeze({ csrf: '/bff/csrf', login: '/bff/auth/login',
-  previewLogin: '/bff/preview/login', previewSession: '/bff/preview/session', previewLogout: '/bff/preview/logout',
+  previewLogin: '/bff/preview/login', previewSession: '/bff/preview/session',
+  previewActivity: '/bff/preview/activity', previewLogout: '/bff/preview/logout',
   enroll: '/bff/auth/mfa/enroll', challenge: '/bff/auth/mfa/challenge',
   verify: '/bff/auth/mfa/verify', session: '/bff/session', logout: '/bff/auth/logout' });
 export interface BffCsrfResponse { token: string }
