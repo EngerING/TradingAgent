@@ -8,6 +8,16 @@ namespace TradingAgent.Web.Browser;
 
 public static class BrowserHost
 {
+    /// <summary>Explicit hosted development composition; this method does not provision identities or database permissions.</summary>
+    public static WebApplication CreateHosted(HostedPilotSettings settings, SecurityDatabase runtime, SecurityDatabase issuer,
+        X509Certificate2 certificate, string reactRoot)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        var app = IntegratedHostFactory.CreateHostedBrowserPilot(settings, runtime, issuer, certificate);
+        BrowserAssets.Map(app, reactRoot);
+        return app;
+    }
+
     public static WebApplication CreateSynthetic(AuthConfiguration configuration, SecurityDatabase runtime, SecurityDatabase issuer,
         Uri origin, X509Certificate2 certificate, string reactRoot, Action<WebApplicationBuilder> configure)
     {
