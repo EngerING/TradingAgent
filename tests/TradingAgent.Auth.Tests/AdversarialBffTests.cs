@@ -32,7 +32,10 @@ public sealed class AdversarialBffTests(DatabaseFixture fixture)
     [Fact]
     public async Task AnotherBrowserCannotUseForeignChallengeAndExpiredChallengeFails()
     {
-        await using var harness = new BrowserHarness(); await harness.StartAsync(fixture); var preliminary = await harness.PreliminaryAsync();
+        await using var harness = new BrowserHarness(); await harness.StartAsync(fixture);
+        // Both browsers use an existing verified factor. A foreign unverified enrollment is now intentionally blocked.
+        var factor = Guid.NewGuid(); harness.Provider.Factors[factor] = harness.Subject; harness.Provider.VerifiedFactors[factor] = true;
+        var preliminary = await harness.PreliminaryAsync();
         using var other = harness.NewBrowser(); await harness.PreliminaryAsync(other);
         using var foreign = await other.PostAsync("/bff/auth/mfa/verify", new { challengeId = preliminary.Challenge, code = "123456" }); Assert.Equal(401, (int)foreign.StatusCode);
         harness.Provider.Clock.Advance(TimeSpan.FromSeconds(61));

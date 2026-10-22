@@ -1,0 +1,78 @@
+{
+  "schema": "trading.m014b.react_bff_evidence",
+  "schema_version": 1,
+  "date": "2026-10-21",
+  "mode": "OFFLINE",
+  "decision": "NO_TRADE",
+  "phase": "B1",
+  "hosted_B2_executed": false,
+  "baseline_commit": "efd13f6be8c3c720e24cd9921c2cf7f5b1db7bd5",
+  "baseline_ci": "https://github.com/EngerING/TradingAgent/actions/runs/39677117167",
+  "baseline_ci_conclusion": "success",
+  "branch": "feature/m01-4b-react-bff-integration",
+  "final_commit_and_tree": "Recorded by CI identity.json; self-reference omitted",
+  "expected_distinct_tests": {
+    "original_react_unit": 13,
+    "original_playwright": 20,
+    "original_backend": 266,
+    "new_react_unit": 16,
+    "new_enrollment_backend": 14,
+    "new_https_browser": 24,
+    "total": 353
+  },
+  "protected_git_objects": {
+    "python/trading_agent/core_v3": "0c6a3c211249151582556862d610ffe29ae221a0",
+    "python/trading_agent/market_analyst": "1cdcffba113842977a881b57912be1e101eae688",
+    "src/TradingAgent.Core": "e7c3f7cfa0ed45a8e6f18100c14f639c8f8c37a6",
+    "src/TradingAgent.Api": "3cb11938debcbf3f1d21001a9d6b10611f86751b",
+    "src/TradingAgent.Infrastructure": "c9322ebfb7e813c71ba6098eedabf5ba8b6970dd",
+    "frontend": "8b2101aeb2c3cd8661e95ee8ae13511e5dff09e2",
+    "Directory.Build.props": "e8f7495b8834700231914c090846d2a2bece5c95",
+    "TradingAgent.sln": "85f076d47efc02709bc44708ac9b86e5bcc5f514",
+    "frontend-react/src/styles": "63314a89a307b087703217484d73e0d84f826719",
+    "frontend-react/src/components/Icons.tsx": "5570f0408af4aed50ffdf7b8a435dd85d2743894",
+    "frontend-react/src/components/MarketIllustration.tsx": "01b6799b536132e477df0e7b769b5da57b0f957a",
+    "frontend-react/reference": "28a5f2178669c88ad0aa9837da054b38f9ece98f"
+  },
+  "preservation_guard": "build/react-bff/preservation.mjs",
+  "manual_review_package": "m01-4b-external-review.md",
+  "constraints": {
+    "no_automatic_factor_deletion": true,
+    "hosted_auth_disabled": true,
+    "jwt_verifier_unchanged": true,
+    "existing_financial_sql_unchanged": true,
+    "rulesets_unchanged": true,
+    "merge_deployment_financial_operations": 0
+  },
+  "limitations": [
+    "CI artifacts determine executed results; expected counts are not an approval.",
+    "Simulated Auth uses signed fixture JWTs and a public fixture verification code, not real TOTP generation.",
+    "Recovery and invitations blocked: no code exchange, email, account mutation or accepted invitation.",
+    "Single-process enrollment reservation and post-reads cannot make provider API changes atomic.",
+    "No remote active-session guarantee, no refresh, no financial authority.",
+    "Windows local TLS uses custom test root and temporary platform key container; no user trust-store change. CI trusts public root on a disposable runner.",
+    "Pattern scan and path/hash verification are not universal secret-detection or an OS sandbox."
+  ],
+  "local_verification": {
+    "original_regressions_passed": 299,
+    "new_react_unit_passed": 16,
+    "new_enrollment_backend_passed": 14,
+    "failed": 0,
+    "skipped": 0,
+    "tls_smoke": "PASS: normal chain/name CustomRootTrust, AAL1 denied, AAL2, SQL authorization, SQL connection refusal503 and recovery, logout",
+    "browser_https_full": "Requires final CI artifacts; not claimed by local smoke",
+    "nuget_and_npm_audits": "0 vulnerable packages reported locally",
+    "npm_registry_signatures": 253,
+    "npm_attestations": 108,
+    "postgres_local": "17.5",
+    "postgres_ci_required": "17.11"
+  },
+  "local_preservation": {
+    "baseline_tracked": 890,
+    "explicitly_modified": 19,
+    "unchanged_raw_sha256": 871,
+    "preexisting_untracked_preserved": 3,
+    "baseline_manifest_sha256": "89c8373437902bbf59afa0b617c4044a34b07f2e3a429d2ec63532f851b371fa",
+    "raw_hash_scope": "Local Windows checkout only; CI compares portable Git blobs."
+  }
+}

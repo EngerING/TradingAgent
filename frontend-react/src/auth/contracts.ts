@@ -1,11 +1,11 @@
 export type AuthKind = 'anonymous' | 'mfa-required' | 'demo-enrollment' | 'invalid-code' |
   'demo-complete' | 'invalid-credentials' | 'expired' | 'unavailable' | 'denied' |
-  'demo-recovery' | 'demo-invitation' | 'demo-password-set';
-export type AuthResult = Readonly<{ kind: AuthKind }>;
+  'demo-recovery' | 'demo-invitation' | 'demo-password-set' | 'complete' | 'enrollment' | 'conflict' | 'rate-limited';
+export type AuthResult = Readonly<{ kind: AuthKind; enrollment?: Readonly<{ secret: string; uri: string }> }>;
 export interface AuthAdapter {
-  readonly mode: 'demo' | 'unavailable';
+  readonly mode: 'demo' | 'unavailable' | 'bff';
   login(email: string, password: string, signal?: AbortSignal): Promise<AuthResult>;
-  session(): Promise<AuthResult>;
+  session(signal?: AbortSignal): Promise<AuthResult>;
   enroll(signal?: AbortSignal): Promise<AuthResult>;
   verify(code: string, signal?: AbortSignal): Promise<AuthResult>;
   recover(email: string, signal?: AbortSignal): Promise<AuthResult>;

@@ -20,7 +20,7 @@ export function Login() {
       if (result.kind === 'mfa-required') void navigate('/mfa/enroll');
       else if (result.kind === 'denied') void navigate('/session/denied');
       else if (result.kind === 'unavailable') void navigate('/session/unavailable');
-      else operation.setMessage('Unable to sign in. Check the demonstration credentials and try again.');
+      else operation.setMessage(auth.mode === 'demo' ? 'Unable to sign in. Check the demonstration credentials and try again.' : result.kind === 'conflict' ? 'An incomplete or ambiguous MFA enrollment requires manual review. No factor was deleted.' : result.kind === 'rate-limited' ? 'Too many attempts. Wait before trying again.' : 'Unable to sign in. Check your credentials and try again.');
     });
   }
   return <><Heading title="Welcome back" subtitle="Sign in to continue on TradingAgent" />

@@ -1,3 +1,7 @@
+// M01.4B has a separately scoped edit allowlist; the original M01.4A path remains unchanged.
+if (process.env.GITHUB_REF?.includes('m01-4b') || (() => { try { execFileSync('git', ['merge-base','--is-ancestor','efd13f6be8c3c720e24cd9921c2cf7f5b1db7bd5','HEAD']); return true; } catch { return false; } })()) {
+  await import('../react-bff/preservation.mjs'); process.exit(0);
+}
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import assert from 'node:assert/strict';

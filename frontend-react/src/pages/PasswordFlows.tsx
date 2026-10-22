@@ -16,7 +16,8 @@ export function ForgotPassword() {
     });
   }
   return <><Heading title="Forgot your password?" subtitle="Let’s help you get back to TradingAgent." />
-    <form className="secondary-form" noValidate onSubmit={event => { void submit(event); }}><Field label="Email address" type="email" autoComplete="off" disabled={auth.mode === 'unavailable'} placeholder="you@company.com" maxLength={320} value={email} onChange={e => setEmail(e.target.value)} error={error} /><SubmitButton busy={operation.busy} disabled={auth.mode === 'unavailable'}>Send recovery link</SubmitButton></form>
+    {auth.mode === 'bff' && <p className="support-copy">Recovery exchange is blocked pending a reviewed BFF callback. No email will be sent.</p>}
+    <form className="secondary-form" noValidate onSubmit={event => { void submit(event); }}><Field label="Email address" type="email" autoComplete="off" disabled={auth.mode !== 'demo'} placeholder="you@company.com" maxLength={320} value={email} onChange={e => setEmail(e.target.value)} error={error} /><SubmitButton busy={operation.busy} disabled={auth.mode !== 'demo'}>Send recovery link</SubmitButton></form>
     <Notice text={operation.message} error />
     {done && <div className="flow-result"><Notice text="Recovery demonstration only. No email was sent and no account was changed." /><Link className="outline-button" to="/reset-password">Continue recovery demo</Link></div>}
     <Link className="back-link" to="/">Back to sign in</Link>
@@ -38,11 +39,11 @@ export function PasswordSetup({ invitation = false }: { invitation?: boolean }) 
   }
   return <><Heading title={invitation ? 'Your invitation awaits' : 'Set a new password'} subtitle={invitation ? 'A considered start to your TradingAgent workspace.' : 'Choose a strong password for your next chapter.'} />
     <p className="support-copy">{auth.mode === 'demo' ? 'Development demonstration. No real invitation or recovery link is exchanged.' : 'Secure invitation and recovery exchange is not available yet.'}</p>
-    {!ready && <button className="primary-button" type="button" disabled={operation.busy || auth.mode === 'unavailable'} onClick={() => { void operation.run(signal => auth.invitation(signal), result => { if (result.kind === 'demo-invitation') setReady(true); else operation.setMessage('Invitation acceptance is not connected.'); }); }}>Start invitation demo</button>}
+    {!ready && <button className="primary-button" type="button" disabled={operation.busy || auth.mode !== 'demo'} onClick={() => { void operation.run(signal => auth.invitation(signal), result => { if (result.kind === 'demo-invitation') setReady(true); else operation.setMessage('Invitation acceptance is not connected.'); }); }}>Start invitation demo</button>}
     {ready && !done && <form className="secondary-form" noValidate onSubmit={event => { void submit(event); }}>
-      <Field label="New password" type="password" icon="lock" autoComplete="off" disabled={auth.mode === 'unavailable'} placeholder="At least 12 characters" maxLength={1024} value={password} onChange={e => setPassword(e.target.value)} error={error} />
-      <Field label="Confirm password" type="password" icon="lock" autoComplete="off" disabled={auth.mode === 'unavailable'} placeholder="Re-enter your password" maxLength={1024} value={confirm} onChange={e => setConfirm(e.target.value)} />
-      <SubmitButton busy={operation.busy} disabled={auth.mode === 'unavailable'}>{invitation ? 'Accept invitation' : 'Set new password'}</SubmitButton>
+      <Field label="New password" type="password" icon="lock" autoComplete="off" disabled={auth.mode !== 'demo'} placeholder="At least 12 characters" maxLength={1024} value={password} onChange={e => setPassword(e.target.value)} error={error} />
+      <Field label="Confirm password" type="password" icon="lock" autoComplete="off" disabled={auth.mode !== 'demo'} placeholder="Re-enter your password" maxLength={1024} value={confirm} onChange={e => setConfirm(e.target.value)} />
+      <SubmitButton busy={operation.busy} disabled={auth.mode !== 'demo'}>{invitation ? 'Accept invitation' : 'Set new password'}</SubmitButton>
     </form>}
     <Notice text={operation.message} error />{done && <Notice text="Demonstration complete. No real password or account has been changed." />}
     <Link className="back-link" to="/">Back to sign in</Link>

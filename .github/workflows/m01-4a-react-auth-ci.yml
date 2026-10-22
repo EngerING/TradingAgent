@@ -1,7 +1,7 @@
 name: M01.4A React authentication
 on:
   push:
-    branches: [feature/m01-4a-react-auth, develop]
+    branches: [feature/m01-4a-react-auth, feature/m01-4b-react-bff-integration, develop]
   pull_request:
     branches: [develop, main]
 permissions:

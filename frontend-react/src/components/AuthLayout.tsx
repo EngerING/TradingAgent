@@ -29,6 +29,6 @@ export function AuthLayout({ children }: { children: ReactNode }) {
       </section>
       <section id="auth-content" className="form-panel" aria-label="Authentication"><div key={location.pathname} className="route-panel">{children}</div></section>
     </div>
-    <footer className="preview-note">{auth.mode === 'demo' ? 'Development demo' : 'Offline preview'} · OFFLINE / NO_TRADE · {auth.mode === 'demo' ? 'No real authentication. Use demo@tradingagent.test and a made-up password.' : 'Authentication is unavailable. No BFF is connected.'}</footer>
+    <footer className="preview-note">{auth.mode === 'demo' ? 'Development demo' : auth.mode === 'bff' ? 'HTTP Auth fixture' : 'Offline preview'} · OFFLINE / NO_TRADE · {auth.mode === 'demo' ? 'No real authentication. Use demo@tradingagent.test and a made-up password.' : auth.mode === 'bff' ? 'Synthetic identity only. BFF and disposable PostgreSQL connected; no financial access.' : 'Authentication is unavailable. No BFF is connected.'}</footer>
   </main>;
 }

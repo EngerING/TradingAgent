@@ -32,11 +32,19 @@ public sealed class PilotRuntime(SecurityDatabase runtime, SecurityDatabase issu
         {
             await CheckPendingAsync(pending, cancellationToken).ConfigureAwait(false);
             var factors = await provider.CheckUserAsync(pending.Credential, cancellationToken).ConfigureAwait(false);
-            if (factors.Any(f => f.Verified)) throw new AuthException(AuthFailure.Conflict);
-            // Recovery is limited to this user's unverified enrollments, never verified MFA factors.
+            // Browser enrollment is never recovery consent. Existing/incomplete factors must
+            // remain untouched; verified factors can use the separate challenge endpoint.
+            // Remember a successful enrollment even if a later provider list omits it.
+            if (factors.Count != 0 || pending.Enrolled is not null) throw new AuthException(AuthFailure.Conflict);
             pending.Challenge = null;
-            foreach (var factor in factors) await provider.RemoveUnverifiedFactorAsync(pending.Credential, factor.Id, cancellationToken).ConfigureAwait(false);
-            var enrollment = await provider.EnrollAsync(pending.Credential, cancellationToken).ConfigureAwait(false); pending.Enrolled = enrollment.FactorId; return enrollment;
+            // A missing response cannot establish whether the provider created a factor.
+            // Consume this pending enrollment before I/O; never retry it implicitly.
+            state.ReserveEnrollment(pending); pending.Enrolled = Guid.Empty;
+            var enrollment = await provider.EnrollAsync(pending.Credential, cancellationToken).ConfigureAwait(false);
+            var observed = await provider.CheckUserAsync(pending.Credential, cancellationToken).ConfigureAwait(false);
+            if (observed.Count != 1 || observed[0].Id != enrollment.FactorId || observed[0].Verified) throw new AuthException(AuthFailure.Conflict);
+            await CheckPendingAsync(pending, cancellationToken).ConfigureAwait(false);
+            pending.Enrolled = enrollment.FactorId; return enrollment;
         }
         finally { state.Release(pending); }
     }
@@ -47,7 +55,8 @@ public sealed class PilotRuntime(SecurityDatabase runtime, SecurityDatabase issu
         {
             await CheckPendingAsync(pending, cancellationToken).ConfigureAwait(false);
             var factors = await provider.CheckUserAsync(pending.Credential, cancellationToken).ConfigureAwait(false);
-            if (factor == Guid.Empty || factor != pending.Enrolled && !factors.Any(f => f.Id == factor && f.Verified)) throw new AuthException(AuthFailure.Invalid);
+            if (factors.Count != 1) throw new AuthException(AuthFailure.Conflict);
+            if (factors[0].Id != factor || factor == Guid.Empty || factor != pending.Enrolled && !factors.Any(f => f.Id == factor && f.Verified)) throw new AuthException(AuthFailure.Invalid);
             pending.Challenge = null; var started = clock.GetUtcNow();
             var challenge = await provider.ChallengeAsync(pending.Credential, factor, cancellationToken).ConfigureAwait(false);
             if (challenge.Id == Guid.Empty || challenge.ExpiresAt <= started || challenge.ExpiresAt > started.AddMinutes(5)) throw new AuthException(AuthFailure.Unavailable);
@@ -64,11 +73,14 @@ public sealed class PilotRuntime(SecurityDatabase runtime, SecurityDatabase issu
             await CheckPendingAsync(pending, cancellationToken).ConfigureAwait(false);
             if (pending.Challenge != challenge || pending.ChallengeExpires <= clock.GetUtcNow() || pending.Factor is null) throw new AuthException(AuthFailure.Invalid);
             pending.Challenge = null; // One-shot before remote I/O; never restore after timeout or cancellation.
+            var currentFactors = await provider.CheckUserAsync(pending.Credential, cancellationToken).ConfigureAwait(false);
+            if (currentFactors.Count != 1 || currentFactors[0].Id != pending.Factor) throw new AuthException(AuthFailure.Conflict);
             var elevated = await provider.VerifyAsync(pending.Credential, pending.Factor.Value, challenge, code, cancellationToken).ConfigureAwait(false);
             var identity = elevated.Identity;
             if (identity.Identity != pending.Credential.Identity.Identity || identity.ProviderSessionId != pending.Credential.Identity.ProviderSessionId || identity.Aal != 2 || identity.MfaAt is null ||
                 identity.MfaAt < pending.ChallengeAt.AddSeconds(-1) || identity.MfaAt > clock.GetUtcNow() || clock.GetUtcNow() - identity.MfaAt > TimeSpan.FromMinutes(5)) throw new AuthException(AuthFailure.Invalid);
-            await provider.CheckUserAsync(elevated, cancellationToken).ConfigureAwait(false);
+            var elevatedFactors = await provider.CheckUserAsync(elevated, cancellationToken).ConfigureAwait(false);
+            if (elevatedFactors.Count != 1 || elevatedFactors[0].Id != pending.Factor || !elevatedFactors[0].Verified) throw new AuthException(AuthFailure.Conflict);
             var creation = await new SessionIssuer(issuer, verifier).CreateAsync(elevated.Token.AsMemory(), cancellationToken).ConfigureAwait(false);
             if (creation.Outcome != StoreOutcome.Success || creation.Reference is null || creation.Session is null) throw new AuthException(creation.Outcome == StoreOutcome.Unavailable ? AuthFailure.Unavailable : AuthFailure.Invalid);
             try

@@ -1,0 +1,16 @@
+[
+  "TradingAgent.React.Integration.Tests.EnrollmentSafetyTests.ASecondFactorAppearingConcurrentlyStopsChallengeWithoutMutation",
+  "TradingAgent.React.Integration.Tests.EnrollmentSafetyTests.AnotherLoginCannotRetryAnEnrollmentWhoseResponseWasLost",
+  "TradingAgent.React.Integration.Tests.EnrollmentSafetyTests.ExistingOwnFactorsBlockEnrollmentWithoutDeletingOrReplacing(count: 1, verified: False)",
+  "TradingAgent.React.Integration.Tests.EnrollmentSafetyTests.ExistingOwnFactorsBlockEnrollmentWithoutDeletingOrReplacing(count: 1, verified: True)",
+  "TradingAgent.React.Integration.Tests.EnrollmentSafetyTests.ExistingOwnFactorsBlockEnrollmentWithoutDeletingOrReplacing(count: 2, verified: False)",
+  "TradingAgent.React.Integration.Tests.EnrollmentSafetyTests.ExistingOwnFactorsBlockEnrollmentWithoutDeletingOrReplacing(count: 2, verified: True)",
+  "TradingAgent.React.Integration.Tests.EnrollmentSafetyTests.ExistingVerifiedFactorCanBeChallengedWithoutEnrollmentOrDeletion",
+  "TradingAgent.React.Integration.Tests.EnrollmentSafetyTests.FactorAmbiguityObservedAfterVerifyStopsBeforeSqlIssuance",
+  "TradingAgent.React.Integration.Tests.EnrollmentSafetyTests.OrphanFromAnotherLoginCannotBeChallengedOrReplaced",
+  "TradingAgent.React.Integration.Tests.EnrollmentSafetyTests.OtherUsersFactorIsNeverDeletedByEnrollment",
+  "TradingAgent.React.Integration.Tests.EnrollmentSafetyTests.RejectedCurrentIdentityCannotMutateExistingEnrollment",
+  "TradingAgent.React.Integration.Tests.EnrollmentSafetyTests.RepeatedEnrollmentPreservesFirstUnverifiedFactorAndCanStillChallengeIt",
+  "TradingAgent.React.Integration.Tests.EnrollmentSafetyTests.SuccessfulEnrollmentCannotBeRepeatedWhenProviderListTemporarilyOmitsIt",
+  "TradingAgent.React.Integration.Tests.EnrollmentSafetyTests.UncertainEnrollmentResponseCannotBeAutomaticallyRetried"
+]
