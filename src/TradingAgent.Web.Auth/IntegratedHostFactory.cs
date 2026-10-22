@@ -25,12 +25,15 @@ public static class IntegratedHostFactory
         if (!configuration.Simulation || runtime.Purpose != DatabasePurpose.Runtime || issuer.Purpose != DatabasePurpose.SessionIssuer) throw new InvalidOperationException("M01.3A supports only explicit synthetic composition.");
         return Create(configuration, runtime, issuer, new Uri("https://tradingagent.test"), configureTestHost);
     }
-    public static WebApplication CreateHostedDevelopmentPilot(HostedPilotSettings settings, SecurityDatabase runtime, SecurityDatabase issuer, X509Certificate2 certificate)
+    public static WebApplication CreateHostedDevelopmentPilot(HostedPilotSettings settings, SecurityDatabase runtime, SecurityDatabase issuer, X509Certificate2 certificate) =>
+        CreateHostedDevelopmentPilot(settings, runtime, issuer, certificate, browserAssets: false);
+    private static WebApplication CreateHostedDevelopmentPilot(HostedPilotSettings settings, SecurityDatabase runtime, SecurityDatabase issuer, X509Certificate2 certificate, bool browserAssets)
     {
         ArgumentNullException.ThrowIfNull(settings); ArgumentNullException.ThrowIfNull(certificate);
+        if (settings.Authentication.Simulation) throw new InvalidOperationException("Hosted development pilot must use real provider configuration.");
         if (!certificate.HasPrivateKey || certificate.NotBefore.ToUniversalTime() > DateTime.UtcNow || certificate.NotAfter.ToUniversalTime() <= DateTime.UtcNow) throw new ArgumentException("Valid externally supplied development TLS certificate required.", nameof(certificate));
         return Create(settings.Authentication, runtime, issuer, settings.BrowserOrigin, builder =>
-            builder.WebHost.UseKestrel(options => options.Listen(IPAddress.Loopback, settings.BrowserOrigin.Port, listener => listener.UseHttps(certificate))));
+            builder.WebHost.UseKestrel(options => options.Listen(IPAddress.Loopback, settings.BrowserOrigin.Port, listener => listener.UseHttps(certificate))), browserAssets);
     }
     // Explicit synthetic browser composition. No hosted provider can enter this factory.
     public static WebApplication CreateBrowserFixture(AuthConfiguration configuration, SecurityDatabase runtime, SecurityDatabase issuer,
