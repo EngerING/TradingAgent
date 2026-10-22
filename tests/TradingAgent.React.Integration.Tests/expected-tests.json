@@ -21,5 +21,10 @@
   "TradingAgent.React.Integration.Tests.LocalPilotSafetyTests.WrongNameOrMissingServerAuthCannotPassPreflight",
   "TradingAgent.React.Integration.Tests.LocalStartupTests.LocalStartupAllowsOnlyMappedAnonymousGetResources",
   "TradingAgent.React.Integration.Tests.LocalStartupTests.LocalStartupCannotAuthenticateAnOldBrowserCookie",
-  "TradingAgent.React.Integration.Tests.LocalStartupTests.LocalStartupDeniesAllAuthenticationAndSessionRoutes"
+  "TradingAgent.React.Integration.Tests.LocalStartupTests.LocalStartupDeniesAllAuthenticationAndSessionRoutes",
+  "TradingAgent.React.Integration.Tests.PreviewSessionLifecycleTests.EightHourAbsoluteExpiryWinsEvenWithUserActivity",
+  "TradingAgent.React.Integration.Tests.PreviewSessionLifecycleTests.ExplicitActivityRenewsIdleAndRotatesProviderRefresh",
+  "TradingAgent.React.Integration.Tests.PreviewSessionLifecycleTests.PassiveSessionChecksDoNotExtendThirtyMinuteInactivity",
+  "TradingAgent.React.Integration.Tests.PreviewSessionLifecycleTests.RefreshSessionSubstitutionFailsClosedAndCannotBeReplayed",
+  "TradingAgent.React.Integration.Tests.PreviewSessionLifecycleTests.RemoteLogoutFailureStillInvalidatesLocalPreviewCapability"
 ]

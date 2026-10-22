@@ -3,6 +3,7 @@ param(
     [string]$RunId,
     [switch]$EnableFreshEnrollment,
     [switch]$PasswordOnlyPreview,
+    [switch]$ExtendedPreviewCertificate,
     [string]$Dotnet = './tmp/m011/dotnet/dotnet.exe',
     [string]$PostgresBin = 'C:/Program Files/PostgreSQL/17/bin'
 )
@@ -14,6 +15,7 @@ if ((Get-Location).Path -cne $root) { throw 'Run from repository root.' }
 if ($Mode -eq 'Prepare' -and !$RunId) { $RunId = [guid]::NewGuid().ToString('N') }
 if ($EnableFreshEnrollment -and $Mode -cne 'Run') { throw 'Enrollment opt-in is allowed only for Run.' }
 if ($PasswordOnlyPreview -and ($Mode -cne 'Run' -or $EnableFreshEnrollment)) { throw 'Password-only preview requires Run and excludes MFA enrollment.' }
+if ($ExtendedPreviewCertificate -and $Mode -cne 'Prepare') { throw 'Extended preview certificate is selected only during Prepare.' }
 if ($RunId -cnotmatch '^[a-f0-9]{32}$') { throw 'An exact owned RunId is required.' }
 $runs = Join-Path $root 'tmp/m014b-local-pilot/runs'
 $run = [IO.Path]::GetFullPath((Join-Path $runs $RunId))
@@ -110,6 +112,10 @@ try {
             $env:M012_TEST_PORT="$port"; $env:M012_CLUSTER_MARKER=$owner.marker; $env:M012_BOOTSTRAP_PASSWORD=$secrets.bootstrap
             $env:M014B_LOCAL_PILOT_RUN_DIRECTORY=$run
             $env:M014B_LOCAL_MIGRATION_PASSWORD=$secrets.migration; $env:M014B_LOCAL_RUNTIME_PASSWORD=$secrets.runtime; $env:M014B_LOCAL_ISSUER_PASSWORD=$secrets.issuer; $env:M014B_LOCAL_TLS_PASSWORD=$secrets.tls
+            $name='M014B_LOCAL_PREVIEW_CERTIFICATE'
+            $previous[$name]=[Environment]::GetEnvironmentVariable($name,'Process')
+            if ($ExtendedPreviewCertificate) { [Environment]::SetEnvironmentVariable($name,'EXPLICIT_EXTENDED_PREVIEW_CERTIFICATE','Process') }
+            else { [Environment]::SetEnvironmentVariable($name,$null,'Process') }
             & $dotnetExe (Join-Path $PSScriptRoot 'BrowserFixture/bin/Release/net10.0/BrowserFixture.dll') --prepare-local-pilot *> (Join-Path $run 'prepare.log')
             if ($LASTEXITCODE) { throw 'Preparation failed; inspect code locally, preserve protected logs.' }
         } finally { Stop-OwnedPostgres }
@@ -140,7 +146,7 @@ try {
                 try {
                     $store.Open('ReadWrite')
                     if ($store.Certificates.Find('FindByThumbprint',$cert.Thumbprint,$false).Count) { throw 'Root already exists; no ownership of prior trust inferred.' }
-                    Confirm-Local "Install ONLY this public local development CA in CurrentUser Root?`nThumbprint: $($cert.Thumbprint)`nValid for four hours. No LocalMachine store, private key or Supabase call. Cleanup removes this exact owned root."
+                    Confirm-Local "Install ONLY this public local development CA in CurrentUser Root?`nThumbprint: $($cert.Thumbprint)`nExpires UTC: $($cert.NotAfter.ToUniversalTime().ToString('u'))`nNo LocalMachine store, private key or Supabase call. Cleanup removes this exact owned root."
                     $cert.Thumbprint | Set-Content -LiteralPath (Join-Path $run 'trust-owned.txt') -Encoding ASCII
                     $store.Add($cert)
                 } finally { $store.Dispose() }
@@ -148,11 +154,31 @@ try {
             Write-Output 'CURRENT_USER_OWNED_ROOT_INSTALLED_AFTER_LOCAL_CONFIRMATION'
         } elseif ($Mode -eq 'Run') {
             if (!(Test-Path -LiteralPath (Join-Path $run 'trust-owned.txt'))) { throw 'Trusted certificate approval is pending.' }
-            Confirm-Local "Authorize ONE local React/BFF pilot against ocwabwmzhpedyxlkjpje Auth Dev?`nOrigin: $($owner.origin)`nPassword only in that browser if Preview is selected. Protected endpoints still require MFA. No DELETE, recovery, grants or financial access. Maximum20minutes. SQL authorization is EMPTY."
+            Confirm-Local "Authorize local React/BFF development authentication against ocwabwmzhpedyxlkjpje Auth Dev?`nOrigin: $($owner.origin)`nPassword preview maximum8h15m runner, 8h session, 30m inactivity. Protected endpoints still require MFA. No DELETE, recovery, grants or financial access. SQL authorization is EMPTY."
             if ($PasswordOnlyPreview) {
-                Confirm-Local "Authorize password-only AAL1 VIEW of a local development preview? No actual trading dashboard, app_security, financial data or IBKR. No factor changes, and all protected routes still require AAL2."
+                if (!$prepared.extendedPreviewCertificate -or
+                    [DateTime]::Parse($prepared.expiresAt).ToUniversalTime() -le [DateTime]::UtcNow.AddHours(8).AddMinutes(15)) {
+                    throw 'Prepare a NEW pilot using -ExtendedPreviewCertificate. Existing TLS material is too short for an 8-hour session.'
+                }
+                Confirm-Local "Authorize password-only AAL1 preview, maximum8h and 30min inactivity? Requires genuine provider credentials. No dashboard financial data, app_security, IBKR, TOTP changes, grants or trading."
                 $previewEmail=(Read-Host 'Enter the exact Supabase Auth Dev email permitted for this preview').Trim()
-                if ($previewEmail.Length -lt 3 -or $previewEmail.Length -gt 320 -or $previewEmail -notmatch '^[^\s@]+@[^\s@]+ "Authorize exactly ONE NEW TOTP enrollment if and only if Supabase reports ZERO existing factors for the signed-in identity? Existing verified or unverified factors MUST block enrollment. No deletes, resets, grants or trading. The authenticator QR and secret stay on the local browser only."
+                if ($previewEmail.Length -lt 3 -or $previewEmail.Length -gt 320 -or
+                    $previewEmail -notmatch '^[^\s@]+@[^\s@]+$') { throw 'Invalid preview email.' }
+                foreach ($item in @(
+                    @('M014B_B2_PASSWORD_PREVIEW','APPROVED_PASSWORD_ONLY_DEV_VIEW_NO_TRADE'),
+                    @('M014B_B2_PREVIEW_ALLOWED_EMAIL',$previewEmail)
+                )) {
+                    $previous[$item[0]]=[Environment]::GetEnvironmentVariable($item[0],'Process')
+                    [Environment]::SetEnvironmentVariable($item[0],$item[1],'Process')
+                }
+            } else {
+                foreach ($name in @('M014B_B2_PASSWORD_PREVIEW','M014B_B2_PREVIEW_ALLOWED_EMAIL')) {
+                    $previous[$name]=[Environment]::GetEnvironmentVariable($name,'Process')
+                    [Environment]::SetEnvironmentVariable($name,$null,'Process')
+                }
+            }
+            if ($EnableFreshEnrollment) {
+                Confirm-Local "Authorize ONE fresh TOTP enrollment only with ZERO existing factors? No factor deletion, reset, grants or trading."
                 $name='M014B_B2_ALLOW_FRESH_ENROLLMENT'
                 $previous[$name]=[Environment]::GetEnvironmentVariable($name,'Process')
                 [Environment]::SetEnvironmentVariable($name,'APPROVED_EMPTY_FACTOR_ENROLLMENT_NO_TRADE','Process')

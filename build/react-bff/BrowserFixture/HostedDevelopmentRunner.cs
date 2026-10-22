@@ -88,15 +88,17 @@ internal static class HostedDevelopmentRunner
         if (previewConsent is not null && previewConsent != "APPROVED_PASSWORD_ONLY_DEV_VIEW_NO_TRADE") throw new InvalidOperationException("Invalid password-only preview authorization.");
         var previewEmail = previewConsent is null ? null : Required("M014B_B2_PREVIEW_ALLOWED_EMAIL");
         if (previewEmail is not null && (localChecksOnly || allowHostedEnrollment)) throw new InvalidOperationException("Password preview cannot coexist with MFA or local-only mode.");
+        if (previewEmail is not null && certificate.NotAfter.ToUniversalTime() <= DateTime.UtcNow.AddHours(8).AddMinutes(15))
+            throw new InvalidOperationException("Extended preview requires a newly prepared long-lived TLS certificate.");
         await using var app = BrowserHost.CreateHosted(settings, runtime, issuer, certificate, reactRoot, localChecksOnly, allowHostedEnrollment, previewEmail);
-        // Hosted login is separately approved and single-attempt. Diagnostic output is closed/redacted.
+        // MFA hosted pilot remains single attempt; password-only preview uses bounded login budgets. Diagnostic output is closed/redacted.
         // Local-checks mode skips all auth paths and never installs this login middleware.
         if (!localChecksOnly)
         {
             var loginAttempts = 0;
             app.Use(async (context, next) =>
             {
-                if ((context.Request.Path == "/bff/auth/login" || context.Request.Path == "/bff/preview/login") && HttpMethods.IsPost(context.Request.Method) &&
+                if (context.Request.Path == "/bff/auth/login" && HttpMethods.IsPost(context.Request.Method) &&
                     Interlocked.Increment(ref loginAttempts) != 1)
                 {
                     context.Response.StatusCode = 409;
@@ -110,7 +112,9 @@ internal static class HostedDevelopmentRunner
         }
         // Local-only diagnostic server stays active until an owned Stop signal.
         // The separately approved hosted login runner has a 20-minute safety deadline.
-        using var stop = localChecksOnly ? new CancellationTokenSource() : new CancellationTokenSource(TimeSpan.FromMinutes(20));
+        // Only the password-only preview receives an extended local-runner lifetime.
+        using var stop = localChecksOnly ? new CancellationTokenSource()
+            : new CancellationTokenSource(previewEmail is null ? TimeSpan.FromMinutes(20) : TimeSpan.FromHours(8).Add(TimeSpan.FromMinutes(15)));
         Console.CancelKeyPress += (_, args) => { args.Cancel = true; stop.Cancel(); };
         await app.StartAsync(stop.Token);
         var stateFile = localChecksOnly ? Required("M014B_B2_STATE_FILE") : null;

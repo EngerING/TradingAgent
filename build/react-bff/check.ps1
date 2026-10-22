@@ -1,5 +1,10 @@
 param([string]$Dotnet = 'dotnet')
 $ErrorActionPreference = 'Stop'
+# Fail before package/build work if the Windows launcher is syntactically broken.
+$pilotTokens=$null; $pilotErrors=$null
+$null=[System.Management.Automation.Language.Parser]::ParseFile(
+  (Join-Path $PSScriptRoot 'local-pilot.ps1'), [ref]$pilotTokens, [ref]$pilotErrors)
+if (@($pilotErrors).Count -ne 0) { throw 'LOCAL_PILOT_POWERSHELL_SYNTAX_REJECTED' }
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $executable = (Get-Command $Dotnet -ErrorAction Stop).Source
 $results = Join-Path $root 'artifacts/m014b'

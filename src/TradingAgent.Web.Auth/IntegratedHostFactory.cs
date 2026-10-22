@@ -78,7 +78,8 @@ public static class IntegratedHostFactory
         var builder = WebApplication.CreateEmptyBuilder(new WebApplicationOptions { ApplicationName = typeof(IntegratedHostFactory).Assembly.GetName().Name, EnvironmentName = "Development" });
         builder.Logging.ClearProviders(); builder.Services.AddRouting();
         builder.Services.AddSupabaseAuth(configuration);
-        if (passwordPreviewEmail is not null) builder.Services.AddSingleton(sp => new PasswordPreviewSessions(sp.GetRequiredService<SupabaseAuthClient>(), sp.GetRequiredService<JwtVerifier>(), sp.GetRequiredService<TimeProvider>(), passwordPreviewEmail));
+        if (passwordPreviewEmail is not null) builder.Services.AddSingleton<IPreviewTokenProvider, PreviewTokenProvider>();
+        if (passwordPreviewEmail is not null) builder.Services.AddSingleton(sp => new PasswordPreviewSessions(sp.GetRequiredService<IPreviewTokenProvider>(), sp.GetRequiredService<TimeProvider>(), passwordPreviewEmail));
         builder.Services.AddSingleton<TemporarySessions>();
         builder.Services.AddSingleton<PilotRequestBudgets>();
         builder.Services.AddSingleton(sp => new PilotRuntime(runtime, issuer, sp.GetRequiredService<JwtVerifier>(), sp.GetRequiredService<SupabaseAuthClient>(), sp.GetRequiredService<TemporarySessions>(), sp.GetRequiredService<TimeProvider>()));

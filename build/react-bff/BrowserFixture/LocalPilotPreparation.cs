@@ -19,14 +19,14 @@ public static class LocalPilotPreparation
         public void Dispose() { Leaf.Dispose(); Root.Dispose(); }
     }
 
-    public static CertificateMaterial Certificate()
+    public static CertificateMaterial Certificate(bool extendedPreview = false)
     {
         using var rootKey = RSA.Create(3072);
         var rootRequest = new CertificateRequest("CN=TradingAgent owned local pilot " + Guid.NewGuid().ToString("N"), rootKey, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         rootRequest.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, false, 0, true));
         rootRequest.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.KeyCertSign, true));
         var now = DateTimeOffset.UtcNow;
-        var root = rootRequest.CreateSelfSigned(now.AddMinutes(-1), now.AddHours(4));
+        var root = rootRequest.CreateSelfSigned(now.AddMinutes(-1), now.AddHours(extendedPreview ? 11 : 4));
         try
         {
             using var key = RSA.Create(3072);
@@ -35,7 +35,7 @@ public static class LocalPilotPreparation
             request.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment, true));
             request.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension(new OidCollection { new("1.3.6.1.5.5.7.3.1") }, true));
             var san = new SubjectAlternativeNameBuilder(); san.AddIpAddress(IPAddress.Loopback); request.CertificateExtensions.Add(san.Build());
-            using var issued = request.Create(root, now.AddMinutes(-1), now.AddHours(3), RandomNumberGenerator.GetBytes(16));
+            using var issued = request.Create(root, now.AddMinutes(-1), now.AddHours(extendedPreview ? 10 : 3), RandomNumberGenerator.GetBytes(16));
             var leaf = issued.CopyWithPrivateKey(key);
             return new(root, leaf);
         }
@@ -107,7 +107,10 @@ public static class LocalPilotPreparation
             await using var count = new NpgsqlCommand("SELECT (SELECT count(*) FROM app_security.app_users)+(SELECT count(*) FROM app_security.user_roles)+(SELECT count(*) FROM app_security.resource_grants)", owner);
             if (Convert.ToInt64(await count.ExecuteScalarAsync(deadline.Token), System.Globalization.CultureInfo.InvariantCulture) != 0) throw new InvalidOperationException("APPLICATION_AUTHORIZATION_MUST_REMAIN_EMPTY");
         }
-        using var material = Certificate();
+        var certificateProfile = Environment.GetEnvironmentVariable("M014B_LOCAL_PREVIEW_CERTIFICATE");
+        if (certificateProfile is not null && certificateProfile != "EXPLICIT_EXTENDED_PREVIEW_CERTIFICATE")
+            throw new InvalidOperationException("INVALID_CERTIFICATE_PROFILE");
+        using var material = Certificate(certificateProfile is not null);
         ValidateCertificate(material.Leaf, material.Root);
         await File.WriteAllBytesAsync(Path.Combine(directory, "root.cer"), material.Root.Export(X509ContentType.Cert), deadline.Token);
         var pfx = material.Leaf.Export(X509ContentType.Pkcs12, Required("M014B_LOCAL_TLS_PASSWORD"));
@@ -116,7 +119,7 @@ public static class LocalPilotPreparation
         await File.WriteAllTextAsync(Path.Combine(directory, "prepared.json"), JsonSerializer.Serialize(new {
             database = target.Database, runtimeUser = credentials[DatabasePurpose.Runtime].User, issuerUser = credentials[DatabasePurpose.SessionIssuer].User,
             rootThumbprint = material.Root.Thumbprint, leafThumbprint = material.Leaf.Thumbprint, expiresAt = material.Leaf.NotAfter.ToUniversalTime(),
-            appUsers = 0, userRoles = 0, resourceGrants = 0, sqlRolesValidated = true, certificateProfileValidated = true,
+            appUsers = 0, userRoles = 0, resourceGrants = 0, sqlRolesValidated = true, certificateProfileValidated = true, extendedPreviewCertificate = certificateProfile is not null,
             osTrustInstalled = false, hostedRequests = 0, mode = "OFFLINE", decision = "NO_TRADE" }), deadline.Token);
         Console.WriteLine("LOCAL_PREPARATION_PASS; EMPTY_APPLICATION_AUTHORIZATION; NO_HOSTED_REQUESTS");
     }
