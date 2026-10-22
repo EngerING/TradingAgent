@@ -1,0 +1,75 @@
+using System.Net;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using TradingAgent.React.BrowserFixture;
+using Xunit;
+using Microsoft.Extensions.Logging;
+using TradingAgent.Identity.Supabase;
+using TradingAgent.Identity.Persistence;
+using TradingAgent.Web.Auth;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace TradingAgent.React.Integration.Tests;
+
+public sealed class LocalPilotSafetyTests
+{
+    [Fact]
+    public async Task HostedEnrollmentEndpointDeniesBeforePreauthOrProviderAccess()
+    {
+        using var material = LocalPilotPreparation.Certificate();
+        var target = new DisposableTarget("127.0.0.1", 24444, "m012_test_" + Guid.NewGuid().ToString("N"));
+        var runtime = new SecurityDatabase(target, "public_fixture", "public_fixture", DatabasePurpose.Runtime);
+        var issuer = new SecurityDatabase(target, "public_fixture", "public_fixture", DatabasePurpose.SessionIssuer);
+        var settings = HostedPilotSettings.FromExternalValues("Development", "ocwabwmzhpedyxlkjpje", new Uri("https://ocwabwmzhpedyxlkjpje.supabase.co/"), "sb_publishable_publicfixture", new Uri("https://127.0.0.1:24443/"));
+        await using var app = IntegratedHostFactory.CreateHostedBrowserPilot(settings, runtime, issuer, material.Leaf);
+        var endpoint = ((IEndpointRouteBuilder)app).DataSources.SelectMany(s => s.Endpoints).OfType<RouteEndpoint>().Single(e => e.RoutePattern.RawText == "/bff/auth/mfa/enroll");
+        var context = new DefaultHttpContext { RequestServices = app.Services };
+        // Invoke only the endpoint: no listener, TLS trust, SQL or hosted request starts.
+        var error = await Assert.ThrowsAsync<AuthException>(() => endpoint.RequestDelegate!(context));
+        Assert.Equal(AuthFailure.Conflict, error.Failure);
+    }
+    [Fact]
+    public void DiagnosticOnlyWritesClosedCodesAndNeverFormatsPayloadsOrExceptions()
+    {
+        var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".jsonl");
+        try
+        {
+            using var log = new LocalPilotDiagnostic(path);
+            var state = new Dictionary<string, object?> { ["DiagnosticCode"] = AuthDiagnostic.JwtIssuedAtFuture, ["password"] = "PUBLIC_SECRET_SENTINEL" };
+            log.Log(LogLevel.Warning, new EventId(1302), state, new InvalidOperationException("PUBLIC_SECRET_SENTINEL"), (_, _) => throw new InvalidOperationException("Formatter must not run"));
+            log.Log(LogLevel.Warning, new EventId(42), state, null, (_, _) => "PUBLIC_SECRET_SENTINEL");
+            Assert.Equal("{\"diagnostic\":\"JwtIssuedAtFuture\"}\n", File.ReadAllText(path));
+        }
+        finally { if (File.Exists(path)) File.Delete(path); }
+    }
+    [Fact]
+    public void GeneratedCertificateHasLoopbackSanServerAuthAndValidCustomChain()
+    {
+        using var material = LocalPilotPreparation.Certificate();
+        LocalPilotPreparation.ValidateCertificate(material.Leaf, material.Root);
+        var san = new X509SubjectAlternativeNameExtension();
+        san.CopyFrom(material.Leaf.Extensions["2.5.29.17"]!);
+        Assert.Contains(IPAddress.Loopback, san.EnumerateIPAddresses());
+        Assert.True(material.Leaf.HasPrivateKey);
+    }
+
+    [Fact]
+    public void WrongNameOrMissingServerAuthCannotPassPreflight()
+    {
+        using var key = RSA.Create(2048);
+        var request = new CertificateRequest("CN=wrong.invalid", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        using var bad = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddMinutes(5));
+        Assert.Throws<InvalidOperationException>(() => LocalPilotPreparation.ValidateCertificate(bad, bad));
+    }
+
+    [Fact]
+    public void CredentialsDoNotContainApplicationOrAdministrativeAuthority()
+    {
+        var purposes = LocalPilotPreparation.LoginPurposes;
+        Assert.Equal(3, purposes.Count);
+        Assert.DoesNotContain(TradingAgent.Identity.Persistence.DatabasePurpose.Administration, purposes);
+        Assert.DoesNotContain(TradingAgent.Identity.Persistence.DatabasePurpose.Reader, purposes);
+    }
+}

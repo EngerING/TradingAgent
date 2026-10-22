@@ -2,9 +2,24 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim();
+// Local pilot adds no permission to change any other integrated develop component.
+const localBase = 'e4e2cd9e28b4a885c744a27a2f4b4e5dc5a5d33a';
+let localPilot = false;
+try { execFileSync('git', ['merge-base','--is-ancestor',localBase,'HEAD']); localPilot = true; } catch { /* Earlier B1/B2 history keeps its original checks. */ }
+if (localPilot) {
+ const edits = new Set(['build/react-bff/BrowserFixture/HostedDevelopmentRunner.cs','build/react-bff/BrowserFixture/Program.cs','build/react-bff/preservation.mjs','build/react-bff/verify-results.ps1','src/TradingAgent.Web.Auth/BoundaryLog.cs','src/TradingAgent.Web.Auth/IntegratedHostFactory.cs','src/TradingAgent.Web.Auth/PilotEndpoints.cs','tests/TradingAgent.React.Integration.Tests/TradingAgent.React.Integration.Tests.csproj','tests/TradingAgent.React.Integration.Tests/expected-tests.json','src/TradingAgent.Web.Browser/BrowserHost.cs']);
+ const additions = new Set(['build/react-bff/BrowserFixture/LocalPilotPreparation.cs','build/react-bff/BrowserFixture/LocalPilotDiagnostic.cs','build/react-bff/local-pilot.ps1','tests/TradingAgent.React.Integration.Tests/LocalPilotSafetyTests.cs','docs/architecture/m01-4b-b2-local-pilot.md','build/react-bff/serve-local.ps1','tests/TradingAgent.React.Integration.Tests/LocalStartupTests.cs','docs/architecture/m01-4b-b2-persistent-launcher.md']);
+ for (const row of git('diff','--name-status','--no-renames',localBase,'HEAD').split('\n').filter(Boolean)) {
+  const [status,path] = row.split('\t');
+  assert(status === 'M' && edits.has(path) || status === 'A' && additions.has(path), `Local pilot exceeds scope: ${row}`);
+ }
+ for (const path of git('ls-tree','-r','--name-only',localBase).split('\n').filter(p => !edits.has(p)))
+  assert(git('rev-parse',`${localBase}:${path}`) === git('rev-parse',`HEAD:${path}`), `Integrated baseline changed: ${path}`);
+}
 const baseline = 'efd13f6be8c3c720e24cd9921c2cf7f5b1db7bd5';
 execFileSync('git', ['merge-base', '--is-ancestor', baseline, 'HEAD']);
 const allowedEdits = new Set([
+ 'src/TradingAgent.Web.Auth/BoundaryLog.cs', 'src/TradingAgent.Web.Auth/PilotEndpoints.cs',
  '.github/workflows/m01-4a-react-auth-ci.yml', 'AGENTS.md', 'build/react-auth/preservation.mjs', 'build/auth/expected-tests.json',
  'tests/TradingAgent.Auth.Tests/ReviewRegressionTests.cs', 'tests/TradingAgent.Auth.Tests/AdversarialBffTests.cs',
  'src/TradingAgent.Web.Auth/IntegratedHostFactory.cs', 'src/TradingAgent.Web.Auth/PilotRuntime.cs', 'src/TradingAgent.Web.Auth/TemporarySessions.cs',
