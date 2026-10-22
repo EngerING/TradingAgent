@@ -110,7 +110,7 @@ public static class IntegratedHostFactory
                 }
                 await next(context);
             }
-            catch (AuthException error) when (!context.Response.HasStarted) { await HttpBoundary.ErrorAsync(context, error.Failure switch { AuthFailure.Invalid => 401, AuthFailure.Conflict => 409, AuthFailure.RateLimited => 429, _ => 503 }); }
+            catch (AuthException error) when (!context.Response.HasStarted) { BoundaryLog.AuthRejected(boundaryLogger, error.Diagnostic); await HttpBoundary.ErrorAsync(context, error.Failure switch { AuthFailure.Invalid => 401, AuthFailure.Conflict => 409, AuthFailure.RateLimited => 429, _ => 503 }); }
             catch (ProbeDeniedException) when (!context.Response.HasStarted) { await HttpBoundary.ErrorAsync(context, 403); }
             catch (AntiforgeryValidationException) when (!context.Response.HasStarted) { await HttpBoundary.ErrorAsync(context, 403); }
             catch (BadHttpRequestException error) when (!context.Response.HasStarted) { await HttpBoundary.ErrorAsync(context, error.StatusCode == 413 ? 413 : 400); }
@@ -134,7 +134,7 @@ public static class IntegratedHostFactory
         app.UseAuthentication(); app.UseAuthorization();
         app.MapGet("/health", () => Results.Json(new { status = "ok" })).AllowAnonymous();
         app.MapGet("/bff/csrf", (HttpContext context, IAntiforgery antiforgery) => Results.Json(new { token = antiforgery.GetAndStoreTokens(context).RequestToken })).AllowAnonymous();
-        PilotEndpoints.Map(app);
+        PilotEndpoints.Map(app, allowEnrollment: configuration.Simulation || !browserAssets);
         return app;
     }
     private sealed class RoutingAuthorizationResultHandler : IAuthorizationMiddlewareResultHandler

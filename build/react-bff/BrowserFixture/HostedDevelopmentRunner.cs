@@ -3,6 +3,10 @@ using System.Security.Cryptography.X509Certificates;
 using TradingAgent.Identity.Persistence;
 using TradingAgent.Web.Auth;
 using TradingAgent.Web.Browser;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 
 namespace TradingAgent.React.BrowserFixture;
 
@@ -62,17 +66,40 @@ internal static class HostedDevelopmentRunner
             // Local development authorities commonly have no OCSP. Chain and name
             // trust remain mandatory; no custom root or accept-all callback.
             chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+            chain.ChainPolicy.ApplicationPolicy.Add(new System.Security.Cryptography.Oid("1.3.6.1.5.5.7.3.1"));
+            if (certificate.Extensions.OfType<X509EnhancedKeyUsageExtension>().SingleOrDefault()?.EnhancedKeyUsages.Cast<System.Security.Cryptography.Oid>().Any(o => o.Value == "1.3.6.1.5.5.7.3.1") != true)
+                throw new InvalidOperationException("Explicit serverAuth certificate required.");
             if (!chain.Build(certificate))
                 throw new InvalidOperationException("Loopback certificate must chain to an already-trusted development CA.");
         }
 
         var reactRoot = Path.GetFullPath(Required("M014B_B2_REACT_DIST"));
         await using var app = BrowserHost.CreateHosted(settings, runtime, issuer, certificate, reactRoot);
-        using var stop = new CancellationTokenSource();
+        var loginAttempts = 0;
+        app.Use(async (context, next) =>
+        {
+            if (context.Request.Path == "/bff/auth/login" && HttpMethods.IsPost(context.Request.Method) && Interlocked.Increment(ref loginAttempts) != 1)
+            {
+                context.Response.StatusCode = 409;
+                await context.Response.WriteAsJsonAsync(new { code = "LOCAL_PILOT_ATTEMPT_CONSUMED", correlationId = Guid.NewGuid(), executionAuthorized = false });
+                return;
+            }
+            await next(context);
+        });
+        if (Environment.GetEnvironmentVariable("M014B_B2_DIAGNOSTIC_FILE") is { } diagnosticFile)
+            app.Services.GetRequiredService<ILoggerFactory>().AddProvider(new LocalPilotDiagnostic(diagnosticFile));
+        using var stop = new CancellationTokenSource(TimeSpan.FromMinutes(20));
         Console.CancelKeyPress += (_, args) => { args.Cancel = true; stop.Cancel(); };
         await app.StartAsync(stop.Token);
         Console.WriteLine("B2_HOSTED_BROWSER_READY; development only; OFFLINE / NO_TRADE.");
-        try { await Task.Delay(Timeout.InfiniteTimeSpan, stop.Token); }
+        try {
+            var stopFile = Environment.GetEnvironmentVariable("M014B_B2_STOP_FILE");
+            while (!stop.IsCancellationRequested)
+            {
+                if (stopFile is not null && File.Exists(stopFile)) { stop.Cancel(); break; }
+                await Task.Delay(500, stop.Token);
+            }
+        }
         catch (OperationCanceledException) when (stop.IsCancellationRequested) { }
         finally { await app.StopAsync(); }
     }

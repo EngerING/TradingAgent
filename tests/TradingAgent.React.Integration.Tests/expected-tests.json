@@ -13,5 +13,10 @@
   "TradingAgent.React.Integration.Tests.EnrollmentSafetyTests.RejectedCurrentIdentityCannotMutateExistingEnrollment",
   "TradingAgent.React.Integration.Tests.EnrollmentSafetyTests.RepeatedEnrollmentPreservesFirstUnverifiedFactorAndCanStillChallengeIt",
   "TradingAgent.React.Integration.Tests.EnrollmentSafetyTests.SuccessfulEnrollmentCannotBeRepeatedWhenProviderListTemporarilyOmitsIt",
-  "TradingAgent.React.Integration.Tests.EnrollmentSafetyTests.UncertainEnrollmentResponseCannotBeAutomaticallyRetried"
+  "TradingAgent.React.Integration.Tests.EnrollmentSafetyTests.UncertainEnrollmentResponseCannotBeAutomaticallyRetried",
+  "TradingAgent.React.Integration.Tests.LocalPilotSafetyTests.GeneratedCertificateHasLoopbackSanServerAuthAndValidCustomChain",
+  "TradingAgent.React.Integration.Tests.LocalPilotSafetyTests.WrongNameOrMissingServerAuthCannotPassPreflight",
+  "TradingAgent.React.Integration.Tests.LocalPilotSafetyTests.CredentialsDoNotContainApplicationOrAdministrativeAuthority",
+  "TradingAgent.React.Integration.Tests.LocalPilotSafetyTests.DiagnosticOnlyWritesClosedCodesAndNeverFormatsPayloadsOrExceptions",
+  "TradingAgent.React.Integration.Tests.LocalPilotSafetyTests.HostedEnrollmentEndpointDeniesBeforePreauthOrProviderAccess"
 ]
