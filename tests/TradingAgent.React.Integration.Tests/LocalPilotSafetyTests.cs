@@ -123,6 +123,21 @@ public sealed class LocalPilotSafetyTests
     }
 
     [Fact]
+    public void PreviewLeasePolicyExpiresByIdleAndAbsoluteDeadline()
+    {
+        var issued = new DateTimeOffset(2026, 10, 22, 14, 0, 0, TimeSpan.Zero);
+        var absolute = PreviewLeasePolicy.Absolute(issued);
+        Assert.Equal(TimeSpan.FromHours(8), absolute - issued);
+        var idle = PreviewLeasePolicy.Idle(issued, absolute);
+        Assert.Equal(TimeSpan.FromMinutes(30), idle - issued);
+        Assert.True(PreviewLeasePolicy.Active(issued.AddMinutes(29), absolute, idle));
+        Assert.False(PreviewLeasePolicy.Active(idle, absolute, idle));
+        var lastIdle = PreviewLeasePolicy.Idle(absolute.AddMinutes(-10), absolute);
+        Assert.Equal(absolute, lastIdle);
+        Assert.False(PreviewLeasePolicy.Active(absolute, absolute, lastIdle));
+    }
+
+    [Fact]
     public void DiagnosticOnlyWritesClosedCodesAndNeverFormatsPayloadsOrExceptions()
     {
         var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".jsonl");
