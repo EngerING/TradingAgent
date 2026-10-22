@@ -8,6 +8,15 @@ import { MarketIllustration } from './MarketIllustration';
 export function AuthLayout({ children }: { children: ReactNode }) {
   const location = useLocation(); const auth = useAuth();
   const previousPath = useRef(location.pathname);
+  const footer = auth.source === 'local-checks'
+    ? 'Local HTTPS checks · Sign-in disabled by server; no hosted requests.'
+    : auth.mode === 'bff' && auth.source === 'hosted'
+    ? 'Supabase Auth Dev via HTTPS BFF · MFA and SQL authorization required; no financial access.'
+    : auth.mode === 'bff' && auth.source === 'synthetic'
+    ? 'HTTP Auth fixture · Synthetic identity only; no financial access.'
+    : auth.mode === 'demo'
+    ? 'Development demo · No real authentication.'
+    : 'Offline preview · Authentication is unavailable.';
   useEffect(() => {
     if (previousPath.current !== location.pathname) document.querySelector<HTMLElement>('.form-panel h1')?.focus({ preventScroll: true });
     previousPath.current = location.pathname;
@@ -29,6 +38,6 @@ export function AuthLayout({ children }: { children: ReactNode }) {
       </section>
       <section id="auth-content" className="form-panel" aria-label="Authentication"><div key={location.pathname} className="route-panel">{children}</div></section>
     </div>
-    <footer className="preview-note">{auth.mode === 'demo' ? 'Development demo' : auth.mode === 'bff' ? 'HTTP Auth fixture' : 'Offline preview'} · OFFLINE / NO_TRADE · {auth.mode === 'demo' ? 'No real authentication. Use demo@tradingagent.test and a made-up password.' : auth.mode === 'bff' ? 'Synthetic identity only. BFF and disposable PostgreSQL connected; no financial access.' : 'Authentication is unavailable. No BFF is connected.'}</footer>
+    <footer className="preview-note">{footer} · OFFLINE / NO_TRADE</footer>
   </main>;
 }

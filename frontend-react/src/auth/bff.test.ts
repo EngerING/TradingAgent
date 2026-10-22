@@ -65,5 +65,17 @@ describe('BFF transport boundary', () => {
     vi.stubGlobal('location', { protocol: 'https:', hostname: '127.0.0.1', search: '', hash: '' });
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ profile: 'HOSTED_DEVELOPMENT_AUTH', mode: 'OFFLINE', decision: 'NO_TRADE', executionAuthorized: true })));
     expect(await configuredBff()).toBeUndefined();
+    // Local checks must disable the form and must never make a login request.
+    const localFetch = vi.fn().mockResolvedValue(json({
+      profile: 'HOSTED_LOCAL_CHECKS_ONLY', mode: 'OFFLINE', decision: 'NO_TRADE', executionAuthorized: false,
+    }));
+    vi.stubGlobal('fetch', localFetch);
+    const localOnly = await configuredBff();
+    expect(localOnly?.mode).toBe('unavailable');
+    expect(localOnly?.source).toBe('local-checks');
+    expect(await localOnly?.login('fixture@example.test', 'public-fixture')).toEqual({ kind: 'unavailable' });
+    expect(localFetch).toHaveBeenCalledTimes(1);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ profile: 'HOSTED_LOCAL_CHECKS_ONLY', mode: 'OFFLINE', decision: 'NO_TRADE', executionAuthorized: true })));
+    expect(await configuredBff()).toBeUndefined();
   });
 });

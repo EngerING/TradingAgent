@@ -36,6 +36,17 @@ public sealed class EnrollmentSafetyTests
             Assert.Contains(mapped, route => route.RoutePattern.RawText == "/bff/config");
             Assert.Contains(mapped, route => route.RoutePattern.RawText == "/bff/auth/login");
         }
+        await using (var local = IntegratedHostFactory.CreateHostedBrowserPilot(settings, runtime, issuer, valid, localChecksOnly: true))
+        {
+            var config = ((IEndpointRouteBuilder)local).DataSources.SelectMany(d => d.Endpoints)
+                .OfType<RouteEndpoint>().Single(e => e.RoutePattern.RawText == "/bff/config");
+            var requestContext = new Microsoft.AspNetCore.Http.DefaultHttpContext { RequestServices = local.Services };
+            requestContext.Response.Body = new MemoryStream();
+            await config.RequestDelegate!(requestContext);
+            var payload = System.Text.Encoding.UTF8.GetString(((MemoryStream)requestContext.Response.Body).ToArray());
+            Assert.Contains("HOSTED_LOCAL_CHECKS_ONLY", payload);
+            Assert.DoesNotContain("HOSTED_DEVELOPMENT_AUTH", payload);
+        }
         using var otherKey = RSA.Create(2048);
         var wrongRequest = new CertificateRequest("CN=127.0.0.1", otherKey, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         using var missingSan = wrongRequest.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddMinutes(15));
