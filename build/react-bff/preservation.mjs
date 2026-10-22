@@ -30,7 +30,7 @@ const allowedEdits = new Set([
 const changes = git('diff', '--name-status', '--no-renames', baseline, 'HEAD').split('\n').filter(Boolean);
 for (const row of changes) {
  const [status, path] = row.split('\t');
- assert(status === 'M' && allowedEdits.has(path) || status === 'A' && /^(src\/TradingAgent.Web.Browser\/|tests\/TradingAgent.React.Integration.Tests\/|build\/react-bff\/|frontend-react\/(integration\/|playwright.integration.config.ts$|src\/auth\/(?:bff(?:.test)?.ts|session-ui.test.tsx)$|src\/components\/EnrollmentQr.tsx$|src\/pages\/MfaRecovery.tsx$|src\/pages\/PasswordPreview.tsx$|src\/TradingAgent.Web.Auth\/PasswordPreview(?:Sessions|Endpoints).cs$)|docs\/architecture\/m01-4b-[\w-]+\.(md|json)$|\.github\/workflows\/m01-4b-react-bff-ci.yml$)/.test(path), `Unapproved diff: ${row}`);
+ assert(status === 'M' && allowedEdits.has(path) || status === 'A' && /^(src\/TradingAgent.Web.Browser\/|tests\/TradingAgent.React.Integration.Tests\/|build\/react-bff\/|frontend-react\/(integration\/|playwright.integration.config.ts$|src\/auth\/(?:bff(?:.test)?.ts|session-ui.test.tsx)$|src\/components\/EnrollmentQr.tsx$|src\/pages\/MfaRecovery.tsx$|src\/pages\/PasswordPreview.tsx$)|src\/TradingAgent.Web.Auth\/PasswordPreview(?:Sessions|Endpoints).cs$|docs\/architecture\/m01-4b-[\w-]+\.(md|json)$|\.github\/workflows\/m01-4b-react-bff-ci.yml$)/.test(path), `Unapproved diff: ${row}`);
  assert(!/(^|\/)(node_modules|dist|\.local|\.env|bin|obj|test-results|playwright-report)(\/|$)|\.(pfx|p12|pem|crt|key|exe|dll|zip|db|sqlite)$/i.test(path), `Sensitive path: ${path}`);
 }
 // Every baseline file outside the explicit edit list is compared by Git blob, including tests and visual assets.
