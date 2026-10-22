@@ -19,8 +19,9 @@ public sealed record PreviewSessionSnapshot(DateTimeOffset ExpiresAt, DateTimeOf
 /// Single local process-only slot with rotating server-held refresh token.
 /// Browser owns just the separate short random preview reference. No disk or durable SQL.
 /// </summary>
-public sealed class PasswordPreviewSessions(IPreviewTokenProvider tokens, TimeProvider clock, string allowedEmail)
+public sealed class PasswordPreviewSessions(IPreviewTokenProvider tokens, TimeProvider clock, string allowedEmail) : IDisposable
 {
+    public void Dispose() => gate.Dispose();
     private sealed record Slot(SessionReference Reference, PreviewTokenPair Tokens,
         DateTimeOffset AbsoluteEnd, DateTimeOffset LastActivity);
     private readonly SemaphoreSlim gate = new(1, 1);

@@ -11,10 +11,10 @@ public sealed record PreviewTokenPair(AccessCredential Credential, string Refres
 
 public interface IPreviewTokenProvider
 {
-    Task<PreviewTokenPair> PasswordAsync(string email, string password, CancellationToken cancellationToken);
-    Task<PreviewTokenPair> RefreshAsync(string refreshToken, CancellationToken cancellationToken);
-    Task CheckAsync(AccessCredential credential, CancellationToken cancellationToken);
-    Task LogoutAsync(AccessCredential credential, CancellationToken cancellationToken);
+    Task<PreviewTokenPair> PasswordAsync(string email, string password, CancellationToken ct);
+    Task<PreviewTokenPair> RefreshAsync(string refreshToken, CancellationToken ct);
+    Task CheckAsync(AccessCredential credential, CancellationToken ct);
+    Task LogoutAsync(AccessCredential credential, CancellationToken ct);
 }
 
 public sealed class PreviewTokenProvider(AuthTransport transport, JwtVerifier verifier, SupabaseAuthClient provider) : IPreviewTokenProvider
