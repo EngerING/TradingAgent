@@ -2,6 +2,9 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using TradingAgent.React.BrowserFixture;
+using TradingAgent.Auth.Tests;
+using Microsoft.IdentityModel.JsonWebTokens;
+using System.Text.Json;
 using Xunit;
 using Microsoft.Extensions.Logging;
 using TradingAgent.Identity.Supabase;
@@ -48,6 +51,92 @@ public sealed class LocalPilotSafetyTests
         Assert.DoesNotContain("/orders", previewPaths);
         Assert.Throws<InvalidOperationException>(() => IntegratedHostFactory.CreateHostedBrowserPilot(settings, runtime, issuer, material.Leaf, localChecksOnly: true, passwordPreviewEmail: "fixture@fixture.invalid"));
     }
+    private sealed class RotatingRefreshHandler(SimulatedAuth sim, Guid user) : DelegatingHandler
+    {
+        internal int Rotations { get; private set; }
+        internal bool ChangeSubject { get; set; }
+        private Guid session;
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            if (request.RequestUri?.AbsolutePath == "/auth/v1/user" && request.Headers.Authorization is { } bearer)
+            {
+                var jwt = new JsonWebTokenHandler().ReadJsonWebToken(bearer.Parameter!);
+                session = Guid.Parse(jwt.GetClaim("session_id").Value);
+            }
+            if (request.Method == HttpMethod.Post && request.RequestUri?.AbsolutePath == "/auth/v1/token" &&
+                request.RequestUri.Query == "?grant_type=refresh_token")
+            {
+                using var requestBody = JsonDocument.Parse(await request.Content!.ReadAsStringAsync(ct));
+                Assert.Equal("PUBLIC_FIXTURE_REFRESH_DISCARD", requestBody.RootElement.GetProperty("refresh_token").GetString());
+                Rotations++;
+                var token = sim.Token(ChangeSubject ? Guid.NewGuid() : user, session, 1);
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(JsonSerializer.Serialize(new
+                    {
+                        token_type = "bearer", access_token = token,
+                        refresh_token = "PUBLIC_ROTATED_TOKEN_NUMBER_" + Rotations
+                    }), System.Text.Encoding.UTF8, "application/json"),
+                    RequestMessage = request
+                };
+            }
+            return await base.SendAsync(request, ct);
+        }
+    }
+
+    [Fact]
+    public async Task PasswordPreviewRefreshRotatesOnceAndRejectsForeignSubject()
+    {
+        await using var sim = new SimulatedAuth();
+        await sim.StartAsync();
+        var subject = Guid.NewGuid();
+        const string email = "preview@fixture.invalid";
+        sim.Users[email] = subject;
+        var handler = new RotatingRefreshHandler(sim, subject);
+        var services = new ServiceCollection();
+        sim.Configure(services);
+        services.AddHttpClient<AuthTransport>().AddHttpMessageHandler(() => handler);
+        await using var container = services.BuildServiceProvider();
+        var preview = new PasswordPreviewSessions(
+            container.GetRequiredService<SupabaseAuthClient>(),
+            container.GetRequiredService<JwtVerifier>(), sim.Clock, email);
+
+        var login = await preview.LoginAsync(email, "fixture-password", CancellationToken.None);
+        Assert.InRange(login.Expires - sim.Clock.GetUtcNow(), TimeSpan.FromHours(8) - TimeSpan.FromSeconds(5), TimeSpan.FromHours(8));
+        Assert.InRange(login.IdleExpires - sim.Clock.GetUtcNow(), TimeSpan.FromMinutes(30) - TimeSpan.FromSeconds(5), TimeSpan.FromMinutes(30));
+        sim.Clock.Advance(TimeSpan.FromMinutes(4));
+        var first = await preview.SessionAsync(login.Reference, CancellationToken.None);
+        Assert.Contains("\"renewable\":true", JsonSerializer.Serialize(first));
+        Assert.Equal(1, handler.Rotations);
+        await preview.SessionAsync(login.Reference, CancellationToken.None);
+        Assert.Equal(1, handler.Rotations); // Polling neither rotates again nor renews idle deadline.
+        sim.Clock.Advance(TimeSpan.FromMinutes(27));
+        await Assert.ThrowsAsync<AuthException>(() => preview.SessionAsync(login.Reference, CancellationToken.None));
+
+        // A successful rotated JWT for an unrelated identity must invalidate the local session.
+        var second = await preview.LoginAsync(email, "fixture-password", CancellationToken.None);
+        handler.ChangeSubject = true;
+        sim.Clock.Advance(TimeSpan.FromMinutes(4));
+        await Assert.ThrowsAsync<AuthException>(() => preview.SessionAsync(second.Reference, CancellationToken.None));
+        await Assert.ThrowsAsync<AuthException>(() => preview.SessionAsync(second.Reference, CancellationToken.None));
+        Assert.Equal(2, handler.Rotations);
+    }
+
+    [Fact]
+    public void PreviewLeasePolicyExpiresByIdleAndAbsoluteDeadline()
+    {
+        var issued = new DateTimeOffset(2026, 10, 22, 14, 0, 0, TimeSpan.Zero);
+        var absolute = PreviewLeasePolicy.Absolute(issued);
+        Assert.Equal(TimeSpan.FromHours(8), absolute - issued);
+        var idle = PreviewLeasePolicy.Idle(issued, absolute);
+        Assert.Equal(TimeSpan.FromMinutes(30), idle - issued);
+        Assert.True(PreviewLeasePolicy.Active(issued.AddMinutes(29), absolute, idle));
+        Assert.False(PreviewLeasePolicy.Active(idle, absolute, idle));
+        var lastIdle = PreviewLeasePolicy.Idle(absolute.AddMinutes(-10), absolute);
+        Assert.Equal(absolute, lastIdle);
+        Assert.False(PreviewLeasePolicy.Active(absolute, absolute, lastIdle));
+    }
+
     [Fact]
     public void DiagnosticOnlyWritesClosedCodesAndNeverFormatsPayloadsOrExceptions()
     {

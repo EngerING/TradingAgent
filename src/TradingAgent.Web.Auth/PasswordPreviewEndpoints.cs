@@ -23,13 +23,18 @@ internal static class PasswordPreviewEndpoints
             var created = await preview.LoginAsync(email, pass, ctx.RequestAborted);
             ctx.Response.Cookies.Append(CookieName, created.Reference.ExportForCookie(), HttpBoundary.CookieOptions(created.Expires));
             return Results.Json(new { status = "PASSWORD_PREVIEW", authenticated = true, aal = "aal1",
-                profile = "PASSWORD_ONLY_DEV_PREVIEW", expiresAt = created.Expires, renewable = false,
-                executionAuthorized = false, mode = "OFFLINE", decision = "NO_TRADE" });
+                profile = "PASSWORD_ONLY_DEV_PREVIEW", expiresAt = created.Expires, idleExpiresAt = created.IdleExpires,
+                renewable = true, executionAuthorized = false, mode = "OFFLINE", decision = "NO_TRADE" });
         }).WithMetadata(new PilotOperationMetadata(PilotOperation.Login)).AllowAnonymous();
 
         app.MapGet("/bff/preview/session", async (HttpContext ctx, PasswordPreviewSessions preview) =>
             Results.Json(await preview.SessionAsync(HttpBoundary.Cookie(ctx.Request, CookieName), ctx.RequestAborted)))
             .AllowAnonymous();
+
+        // Explicit browser interaction; session polling cannot silently renew the idle timeout.
+        app.MapPost("/bff/preview/activity", async (HttpContext ctx, PasswordPreviewSessions preview) =>
+            Results.Json(await preview.ActivityAsync(HttpBoundary.Cookie(ctx.Request, CookieName), ctx.RequestAborted)))
+            .WithMetadata(new PilotOperationMetadata(PilotOperation.Session)).AllowAnonymous();
 
         app.MapPost("/bff/preview/logout", async (HttpContext ctx, PasswordPreviewSessions preview) =>
         {

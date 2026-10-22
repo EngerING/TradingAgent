@@ -140,7 +140,7 @@ try {
                 try {
                     $store.Open('ReadWrite')
                     if ($store.Certificates.Find('FindByThumbprint',$cert.Thumbprint,$false).Count) { throw 'Root already exists; no ownership of prior trust inferred.' }
-                    Confirm-Local "Install ONLY this public local development CA in CurrentUser Root?`nThumbprint: $($cert.Thumbprint)`nValid for four hours. No LocalMachine store, private key or Supabase call. Cleanup removes this exact owned root."
+                    Confirm-Local "Install ONLY this public local development CA in CurrentUser Root?`nThumbprint: $($cert.Thumbprint)`nValid for twelve hours. No LocalMachine store, private key or Supabase call. Cleanup removes this exact owned root."
                     $cert.Thumbprint | Set-Content -LiteralPath (Join-Path $run 'trust-owned.txt') -Encoding ASCII
                     $store.Add($cert)
                 } finally { $store.Dispose() }
@@ -150,6 +150,8 @@ try {
             if (!(Test-Path -LiteralPath (Join-Path $run 'trust-owned.txt'))) { throw 'Trusted certificate approval is pending.' }
             Confirm-Local "Authorize ONE local React/BFF pilot against ocwabwmzhpedyxlkjpje Auth Dev?`nOrigin: $($owner.origin)`nPassword only in that browser if Preview is selected. Protected endpoints still require MFA. No DELETE, recovery, grants or financial access. Maximum20minutes. SQL authorization is EMPTY."
             if ($PasswordOnlyPreview) {
+                $validUntil=[DateTimeOffset]::Parse([string]$prepared.expiresAt)
+                if ($validUntil -le [DateTimeOffset]::UtcNow.AddHours(8)) { throw 'Durable preview requires a newly prepared run and an HTTPS certificate valid for at least eight more hours.' }
                 Confirm-Local "Authorize password-only AAL1 VIEW of a local development preview? No actual trading dashboard, app_security, financial data or IBKR. No factor changes, and all protected routes still require AAL2."
                 $previewEmail=(Read-Host 'Enter the exact Supabase Auth Dev email permitted for this preview').Trim()
                 if ($previewEmail.Length -lt 3 -or $previewEmail.Length -gt 320 -or $previewEmail -notmatch '^[^\s@]+@[^\s@]+ "Authorize exactly ONE NEW TOTP enrollment if and only if Supabase reports ZERO existing factors for the signed-in identity? Existing verified or unverified factors MUST block enrollment. No deletes, resets, grants or trading. The authenticator QR and secret stay on the local browser only."

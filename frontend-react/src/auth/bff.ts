@@ -4,6 +4,9 @@ const uuid = (s: unknown): s is string => typeof s === 'string' && /^[0-9a-f]{8}
 const record = (v: unknown): Record<string, unknown> => { if (!v || typeof v !== 'object' || Array.isArray(v)) throw new Error('CONTRACT'); return v as Record<string, unknown>; };
 const keys = (v: Record<string, unknown>, expected: string[]) => { if (Object.keys(v).sort().join() !== expected.sort().join()) throw new Error('CONTRACT'); };
 const future = (v: unknown): v is string => typeof v === 'string' && Number.isFinite(Date.parse(v)) && Date.parse(v) > Date.now() && Date.parse(v) <= Date.now() + 301000;
+const boundedPreviewTime = (v: unknown, milliseconds: number): v is string =>
+  typeof v === 'string' && Number.isFinite(Date.parse(v)) &&
+  Date.parse(v) > Date.now() && Date.parse(v) <= Date.now() + milliseconds + 60000;
 class Rejected extends Error { constructor(readonly kind: AuthKind) { super('AUTH_REQUEST_REJECTED'); } }
 
 /** Browser owns neither provider tokens nor session references. No retries or fallback transport. */
@@ -17,11 +20,14 @@ export class BffAuthAdapter implements AuthAdapter {
   private clear() { this.pendingUntil = 0; this.factor = undefined; }
   private previewPayload(body: Record<string, unknown>, login: boolean): boolean {
     keys(body, login
-      ? ['status','authenticated','aal','profile','expiresAt','renewable','executionAuthorized','mode','decision']
-      : ['authenticated','aal','profile','expiresAt','renewable','executionAuthorized','mode','decision']);
+      ? ['status','authenticated','aal','profile','expiresAt','idleExpiresAt','renewable','executionAuthorized','mode','decision']
+      : ['authenticated','aal','profile','expiresAt','idleExpiresAt','renewable','executionAuthorized','mode','decision']);
     return (!login || body.status === 'PASSWORD_PREVIEW') &&
       body.authenticated === true && body.aal === 'aal1' && body.profile === 'PASSWORD_ONLY_DEV_PREVIEW' &&
-      future(body.expiresAt) && body.renewable === false && body.executionAuthorized === false &&
+      boundedPreviewTime(body.expiresAt, 8 * 60 * 60 * 1000) &&
+      boundedPreviewTime(body.idleExpiresAt, 30 * 60 * 1000) &&
+      Date.parse(body.idleExpiresAt as string) <= Date.parse(body.expiresAt as string) &&
+      body.renewable === true && body.executionAuthorized === false &&
       body.mode === 'OFFLINE' && body.decision === 'NO_TRADE';
   }
   private async request(path: string, body: unknown | undefined, signal: AbortSignal): Promise<Record<string, unknown>> {
@@ -82,6 +88,14 @@ export class BffAuthAdapter implements AuthAdapter {
       keys(b, ['authenticated', 'aal', 'expiresAt', 'renewable', 'providerSessionConfirmedActive', 'executionAuthorized', 'mode', 'decision']);
       if (b.authenticated !== true || b.aal !== 'aal2' || !future(b.expiresAt) || b.renewable !== false || b.providerSessionConfirmedActive !== false || b.executionAuthorized !== false || b.mode !== 'OFFLINE' || b.decision !== 'NO_TRADE') throw new Error('CONTRACT');
       return { kind: 'complete' };
+    }, signal);
+  }
+  async activity(signal?: AbortSignal): Promise<AuthResult> {
+    if (this.source !== 'preview') return { kind: 'unavailable' };
+    return this.operation(async s => {
+      const b = await this.request(bffRoutes.previewActivity, {}, s);
+      if (!this.previewPayload(b, false)) throw new Error('CONTRACT');
+      return { kind: 'preview-complete' };
     }, signal);
   }
   async enroll(signal?: AbortSignal): Promise<AuthResult> {
