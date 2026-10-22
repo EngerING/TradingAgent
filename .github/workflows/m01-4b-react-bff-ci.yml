@@ -1,7 +1,7 @@
 name: M01.4B React BFF Integration
 on:
   push:
-    branches: [feature/m01-4b-react-bff-integration]
+    branches: [feature/m01-4b-react-bff-integration, develop]
   pull_request:
     branches: [develop]
 permissions:
