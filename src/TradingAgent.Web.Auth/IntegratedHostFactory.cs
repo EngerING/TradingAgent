@@ -25,12 +25,33 @@ public static class IntegratedHostFactory
         if (!configuration.Simulation || runtime.Purpose != DatabasePurpose.Runtime || issuer.Purpose != DatabasePurpose.SessionIssuer) throw new InvalidOperationException("M01.3A supports only explicit synthetic composition.");
         return Create(configuration, runtime, issuer, new Uri("https://tradingagent.test"), configureTestHost);
     }
-    public static WebApplication CreateHostedDevelopmentPilot(HostedPilotSettings settings, SecurityDatabase runtime, SecurityDatabase issuer, X509Certificate2 certificate)
+    public static WebApplication CreateHostedDevelopmentPilot(HostedPilotSettings settings, SecurityDatabase runtime, SecurityDatabase issuer, X509Certificate2 certificate) =>
+        CreateHostedDevelopmentPilot(settings, runtime, issuer, certificate, browserAssets: false);
+    private static WebApplication CreateHostedDevelopmentPilot(HostedPilotSettings settings, SecurityDatabase runtime, SecurityDatabase issuer, X509Certificate2 certificate, bool browserAssets)
     {
         ArgumentNullException.ThrowIfNull(settings); ArgumentNullException.ThrowIfNull(certificate);
+        if (settings.Authentication.Simulation) throw new InvalidOperationException("Hosted development pilot must use real provider configuration.");
         if (!certificate.HasPrivateKey || certificate.NotBefore.ToUniversalTime() > DateTime.UtcNow || certificate.NotAfter.ToUniversalTime() <= DateTime.UtcNow) throw new ArgumentException("Valid externally supplied development TLS certificate required.", nameof(certificate));
+        if (browserAssets)
+        {
+            var encodedSan = certificate.Extensions["2.5.29.17"];
+            if (encodedSan is null) throw new ArgumentException("Explicit loopback IP SAN required.", nameof(certificate));
+            var san = new X509SubjectAlternativeNameExtension();
+            san.CopyFrom(encodedSan);
+            if (!san.EnumerateIPAddresses().Contains(IPAddress.Loopback))
+                throw new ArgumentException("Only a loopback IP SAN is accepted.", nameof(certificate));
+        }
         return Create(settings.Authentication, runtime, issuer, settings.BrowserOrigin, builder =>
-            builder.WebHost.UseKestrel(options => options.Listen(IPAddress.Loopback, settings.BrowserOrigin.Port, listener => listener.UseHttps(certificate))));
+            builder.WebHost.UseKestrel(options => options.Listen(IPAddress.Loopback, settings.BrowserOrigin.Port, listener => listener.UseHttps(certificate))), browserAssets);
+    }
+    /// <summary>Explicit hosted development browser; no DB bootstrap or financial authority.</summary>
+    public static WebApplication CreateHostedBrowserPilot(HostedPilotSettings settings, SecurityDatabase runtime, SecurityDatabase issuer, X509Certificate2 certificate)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        if (settings.Authentication.Simulation) throw new InvalidOperationException("Hosted browser cannot use synthetic Auth.");
+        var app = CreateHostedDevelopmentPilot(settings, runtime, issuer, certificate, browserAssets: true);
+        app.MapGet("/bff/config", () => Results.Json(new { profile = "HOSTED_DEVELOPMENT_AUTH", mode = "OFFLINE", decision = "NO_TRADE", executionAuthorized = false })).AllowAnonymous();
+        return app;
     }
     // Explicit synthetic browser composition. No hosted provider can enter this factory.
     public static WebApplication CreateBrowserFixture(AuthConfiguration configuration, SecurityDatabase runtime, SecurityDatabase issuer,

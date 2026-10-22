@@ -10,6 +10,12 @@ using TradingAgent.Identity.Tests;
 using TradingAgent.React.BrowserFixture;
 using TradingAgent.Web.Browser;
 
+if (args.Length == 1 && args[0] == "--hosted-development")
+{
+    // Isolated B2 entrypoint: no fixture Auth, grants, migrations, synthetic tokens or SQL bootstrap.
+    await HostedDevelopmentRunner.RunAsync();
+    return;
+}
 if (Environment.GetEnvironmentVariable("M014B_SYNTHETIC_BROWSER_FIXTURE") != "YES") throw new InvalidOperationException("Explicit synthetic fixture opt-in required.");
 var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../.."));
 // Runtime argument is the repository root; validated marker prevents using an arbitrary assets path.

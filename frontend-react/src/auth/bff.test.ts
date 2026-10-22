@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { BffAuthAdapter } from './bff';
+import { BffAuthAdapter, configuredBff } from './bff';
 const json = (value: unknown, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'Content-Type': 'application/json' } });
 const csrf = () => json({ token: 'public-fixture-csrf' });
 const id = '55555555-5555-4555-8555-555555555555';
@@ -47,5 +47,23 @@ describe('BFF transport boundary', () => {
   it('rejects oversized responses', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ token: 'x'.repeat(20000) })));
     expect((await new BffAuthAdapter().login('fixture@example.test', 'public-fixture')).kind).toBe('unavailable');
+    // Hosted profile is accepted only on its exact HTTPS loopback origin.
+    const response = () => json({ profile: 'HOSTED_DEVELOPMENT_AUTH', mode: 'OFFLINE', decision: 'NO_TRADE', executionAuthorized: false });
+    vi.stubGlobal('location', { protocol: 'https:', hostname: '127.0.0.1', search: '', hash: '' });
+    const hostedFetch = vi.fn().mockImplementation(async () => response());
+    vi.stubGlobal('fetch', hostedFetch);
+    const hosted = await configuredBff();
+    expect(hosted?.mode).toBe('bff');
+    expect(hosted?.source).toBe('hosted');
+    expect(hostedFetch).toHaveBeenCalledTimes(1);
+    vi.stubGlobal('location', { protocol: 'https:', hostname: 'localhost', search: '', hash: '' });
+    expect(await configuredBff()).toBeUndefined();
+    vi.stubGlobal('location', { protocol: 'http:', hostname: '127.0.0.1', search: '', hash: '' });
+    expect(await configuredBff()).toBeUndefined();
+    vi.stubGlobal('location', { protocol: 'https:', hostname: '127.0.0.1', search: '?token=blocked', hash: '' });
+    expect(await configuredBff()).toBeUndefined();
+    vi.stubGlobal('location', { protocol: 'https:', hostname: '127.0.0.1', search: '', hash: '' });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ profile: 'HOSTED_DEVELOPMENT_AUTH', mode: 'OFFLINE', decision: 'NO_TRADE', executionAuthorized: true })));
+    expect(await configuredBff()).toBeUndefined();
   });
 });
