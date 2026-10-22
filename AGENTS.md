@@ -26,3 +26,11 @@ The financial components, Vue, historical SQL, approved CSS/visual assets and th
 preexisting untracked files remain protected. Only synthetic HTTP Auth and marked
 disposable PostgreSQL may run. B2 hosted Auth/configuration requires a new approval.
 No browser factor DELETE; incomplete/uncertain enrollment fails closed.
+
+M01.4B-B2 hosted React development is restricted to feature/m01-4b-b2-hosted-react-auth.
+The hosted browser profile requires HTTPS at 127.0.0.1, explicitly confirmed
+Supabase development settings and preprovisioned disposable PostgreSQL roles.
+Never use the historical interactive hosted runner as a browser bootstrap,
+never create SQL roles or grants on login, and never modify hosted Supabase
+configuration/factors without a separately approved interaction. No secrets,
+service_role or JWT reach React. OFFLINE / NO_TRADE; no merge/deployment.
