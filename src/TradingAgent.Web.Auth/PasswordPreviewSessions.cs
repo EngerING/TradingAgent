@@ -7,7 +7,7 @@ namespace TradingAgent.Web.Auth;
 /// Hosted Auth Dev AAL1-only preview session. Refresh token is kept only in BFF process memory.
 /// Never generates an app_security capability, money movement or an operational session.
 /// </summary>
-public sealed class PasswordPreviewSessions(SupabaseAuthClient provider, JwtVerifier verifier, TimeProvider clock, string allowedEmail)
+public sealed class PasswordPreviewSessions(SupabaseAuthClient provider, JwtVerifier verifier, TimeProvider clock, string allowedEmail) : IDisposable
 {
     private sealed class Entry(SessionReference reference, RefreshableCredential credential, DateTimeOffset absolute, DateTimeOffset idle)
     {
@@ -121,6 +121,12 @@ public sealed class PasswordPreviewSessions(SupabaseAuthClient provider, JwtVeri
 
     private static bool Matches(SessionReference a, SessionReference b) =>
         a.LookupHash().AsSpan().SequenceEqual(b.LookupHash());
+
+    public void Dispose()
+    {
+        mutex.Dispose();
+        GC.SuppressFinalize(this);
+    }
 }
 
 /// <summary>Absolute 8h / human-activity idle 30m, deliberately independent of JWT expiry.</summary>
