@@ -9,12 +9,21 @@ class Rejected extends Error { constructor(readonly kind: AuthKind) { super('AUT
 /** Browser owns neither provider tokens nor session references. No retries or fallback transport. */
 export class BffAuthAdapter implements AuthAdapter {
   readonly mode = 'bff' as const;
-  constructor(readonly source: 'synthetic' | 'hosted' = 'synthetic') {}
+  constructor(readonly source: 'synthetic' | 'hosted' | 'preview' = 'synthetic') {}
   private pendingUntil = 0;
   private factor: string | undefined;
   private epoch = 0;
   private active: AbortController | undefined;
   private clear() { this.pendingUntil = 0; this.factor = undefined; }
+  private previewPayload(body: Record<string, unknown>, login: boolean): boolean {
+    keys(body, login
+      ? ['status','authenticated','aal','profile','expiresAt','renewable','executionAuthorized','mode','decision']
+      : ['authenticated','aal','profile','expiresAt','renewable','executionAuthorized','mode','decision']);
+    return (!login || body.status === 'PASSWORD_PREVIEW') &&
+      body.authenticated === true && body.aal === 'aal1' && body.profile === 'PASSWORD_ONLY_DEV_PREVIEW' &&
+      future(body.expiresAt) && body.renewable === false && body.executionAuthorized === false &&
+      body.mode === 'OFFLINE' && body.decision === 'NO_TRADE';
+  }
   private async request(path: string, body: unknown | undefined, signal: AbortSignal): Promise<Record<string, unknown>> {
     const options: RequestInit = { credentials: 'same-origin', cache: 'no-store', redirect: 'error', referrerPolicy: 'no-referrer', signal };
     if (body !== undefined) {
@@ -45,6 +54,12 @@ export class BffAuthAdapter implements AuthAdapter {
   async login(email: string, password: string, signal?: AbortSignal): Promise<AuthResult> {
     return this.operation(async s => {
       this.clear(); let body;
+      if (this.source === 'preview') {
+        try { body = await this.request(bffRoutes.previewLogin, { email, password }, s); }
+        catch (e) { if (e instanceof Rejected && e.kind === 'expired') return { kind: 'invalid-credentials' }; throw e; }
+        if (!this.previewPayload(body, true)) throw new Error('CONTRACT');
+        return { kind: 'preview-complete' };
+      }
       try { body = await this.request(bffRoutes.login, { email, password }, s); }
       catch (e) { if (e instanceof Rejected && e.kind === 'expired') return { kind: 'invalid-credentials' }; throw e; }
       keys(body, ['status', 'factors', 'executionAuthorized']);
@@ -56,6 +71,11 @@ export class BffAuthAdapter implements AuthAdapter {
     }, signal);
   }
   async session(signal?: AbortSignal): Promise<AuthResult> {
+    if (this.source === 'preview') return this.operation(async s => {
+      const response = await this.request(bffRoutes.previewSession, undefined, s);
+      if (!this.previewPayload(response, false)) throw new Error('CONTRACT');
+      return { kind: 'preview-complete' };
+    }, signal);
     if (this.pendingUntil > Date.now()) return { kind: 'mfa-required' };
     return this.operation(async signal => {
       const b = await this.request(bffRoutes.session, undefined, signal);
@@ -65,6 +85,7 @@ export class BffAuthAdapter implements AuthAdapter {
     }, signal);
   }
   async enroll(signal?: AbortSignal): Promise<AuthResult> {
+    if (this.source === 'preview') return { kind: 'unavailable' };
     return this.operation(async s => {
       if (this.pendingUntil <= Date.now()) return { kind: 'expired' };
       if (this.factor) return { kind: 'mfa-required' };
@@ -76,6 +97,7 @@ export class BffAuthAdapter implements AuthAdapter {
     }, signal);
   }
   async verify(code: string, signal?: AbortSignal): Promise<AuthResult> {
+    if (this.source === 'preview') return { kind: 'unavailable' };
     const result = await this.operation(async s => {
       if (!this.factor || this.pendingUntil <= Date.now()) return { kind: 'expired' };
       if (!/^[0-9]{6}$/.test(code)) return { kind: 'invalid-code' };
@@ -95,7 +117,7 @@ export class BffAuthAdapter implements AuthAdapter {
   setPassword(password: string, signal?: AbortSignal): Promise<AuthResult> { void password; void signal; return Promise.resolve({ kind: 'unavailable' }); }
   async logout(): Promise<void> {
     this.epoch++; this.active?.abort(); this.active = undefined; this.clear();
-    const result = await this.operation(async signal => { await this.request(bffRoutes.logout, {}, signal); return { kind: 'anonymous' }; });
+    const result = await this.operation(async signal => { await this.request(this.source === 'preview' ? bffRoutes.previewLogout : bffRoutes.logout, {}, signal); return { kind: 'anonymous' }; });
     if (result.kind !== 'anonymous') throw new Error('LOGOUT_UNCONFIRMED');
   }
 }
@@ -117,6 +139,7 @@ export async function configuredBff(): Promise<AuthAdapter | undefined> {
     if (b.profile === 'SYNTHETIC_HTTP_FIXTURE' && location.hostname === 'localhost') return new BffAuthAdapter('synthetic');
     if (b.profile === 'HOSTED_LOCAL_CHECKS_ONLY' && location.hostname === '127.0.0.1') return { ...unavailableAdapter, source: 'local-checks' };
     if (b.profile === 'HOSTED_DEVELOPMENT_AUTH' && location.hostname === '127.0.0.1') return new BffAuthAdapter('hosted');
+    if (b.profile === 'HOSTED_PASSWORD_ONLY_PREVIEW' && location.hostname === '127.0.0.1') return new BffAuthAdapter('preview');
   } catch { /* Fail closed. Never select demo on a transport error. */ }
   finally { clearTimeout(timeout); }
   return undefined;

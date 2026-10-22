@@ -37,6 +37,16 @@ public sealed class LocalPilotSafetyTests
         var missingIdentity = await Assert.ThrowsAsync<AuthException>(() => enabledEndpoint.RequestDelegate!(noPreauth));
         Assert.Equal(AuthFailure.Invalid, missingIdentity.Failure);
         Assert.Throws<InvalidOperationException>(() => IntegratedHostFactory.CreateHostedBrowserPilot(settings, runtime, issuer, material.Leaf, localChecksOnly: true, allowHostedEnrollment: true));
+        var regularPaths = ((IEndpointRouteBuilder)app).DataSources.SelectMany(s => s.Endpoints).OfType<RouteEndpoint>()
+            .Select(e => e.RoutePattern.RawText).ToArray();
+        Assert.DoesNotContain("/bff/preview/login", regularPaths);
+        await using var preview = IntegratedHostFactory.CreateHostedBrowserPilot(settings, runtime, issuer, material.Leaf, passwordPreviewEmail: "fixture@fixture.invalid");
+        var previewPaths = ((IEndpointRouteBuilder)preview).DataSources.SelectMany(s => s.Endpoints).OfType<RouteEndpoint>()
+            .Select(e => e.RoutePattern.RawText).ToArray();
+        Assert.Contains("/bff/preview/login", previewPaths);
+        Assert.Contains("/bff/preview/session", previewPaths);
+        Assert.DoesNotContain("/orders", previewPaths);
+        Assert.Throws<InvalidOperationException>(() => IntegratedHostFactory.CreateHostedBrowserPilot(settings, runtime, issuer, material.Leaf, localChecksOnly: true, passwordPreviewEmail: "fixture@fixture.invalid"));
     }
     [Fact]
     public void DiagnosticOnlyWritesClosedCodesAndNeverFormatsPayloadsOrExceptions()

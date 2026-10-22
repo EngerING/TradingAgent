@@ -17,7 +17,8 @@ export function Login() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !password) return;
     const transient = password; setPassword(''); setAttempted(false);
     await operation.run(signal => auth.login(email.trim(), transient, signal), result => {
-      if (result.kind === 'mfa-required') void navigate('/mfa/enroll');
+      if (result.kind === 'preview-complete') void navigate('/preview');
+      else if (result.kind === 'mfa-required') void navigate('/mfa/enroll');
       else if (result.kind === 'mfa-recovery-required') void navigate('/mfa/recovery');
       else if (result.kind === 'denied') void navigate('/session/denied');
       else if (result.kind === 'unavailable') void navigate('/session/unavailable');

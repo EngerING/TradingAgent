@@ -10,10 +10,10 @@ public static class BrowserHost
 {
     /// <summary>Explicit hosted development composition; this method does not provision identities or database permissions.</summary>
     public static WebApplication CreateHosted(HostedPilotSettings settings, SecurityDatabase runtime, SecurityDatabase issuer,
-        X509Certificate2 certificate, string reactRoot, bool localChecksOnly = false, bool allowHostedEnrollment = false)
+        X509Certificate2 certificate, string reactRoot, bool localChecksOnly = false, bool allowHostedEnrollment = false, string? passwordPreviewEmail = null)
     {
         ArgumentNullException.ThrowIfNull(settings);
-        var app = IntegratedHostFactory.CreateHostedBrowserPilot(settings, runtime, issuer, certificate, localChecksOnly, allowHostedEnrollment);
+        var app = IntegratedHostFactory.CreateHostedBrowserPilot(settings, runtime, issuer, certificate, localChecksOnly, allowHostedEnrollment, passwordPreviewEmail);
         BrowserAssets.Map(app, reactRoot);
         return app;
     }

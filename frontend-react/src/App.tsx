@@ -7,6 +7,7 @@ import { Login } from './pages/Login';
 import { ForgotPassword, PasswordSetup } from './pages/PasswordFlows';
 import { Mfa } from './pages/Mfa';
 import { MfaRecovery } from './pages/MfaRecovery';
+import { PasswordPreview } from './pages/PasswordPreview';
 import { BlockedCallback, SessionState } from './pages/SessionState';
 export function App({ adapter, blockedCallback = false }: { adapter: AuthAdapter; blockedCallback?: boolean }) {
   const location = useLocation(); const [rejectedEntry] = useState(location.key);
@@ -18,6 +19,7 @@ export function App({ adapter, blockedCallback = false }: { adapter: AuthAdapter
     <Route path="/mfa/enroll" element={<Mfa enrollment />} />
     <Route path="/mfa/verify" element={<Mfa />} />
     <Route path="/mfa/recovery" element={<MfaRecovery />} />
+    <Route path="/preview" element={<PasswordPreview />} />
     <Route path="/session/:state" element={<SessionState />} />
     <Route path="*" element={<BlockedCallback />} />
   </Routes>}</AuthLayout></AuthContext>;
