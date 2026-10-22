@@ -4,6 +4,7 @@ export type AuthKind = 'anonymous' | 'mfa-required' | 'demo-enrollment' | 'inval
 export type AuthResult = Readonly<{ kind: AuthKind; enrollment?: Readonly<{ secret: string; uri: string }> }>;
 export interface AuthAdapter {
   readonly mode: 'demo' | 'unavailable' | 'bff';
+  readonly source?: 'synthetic' | 'hosted';
   login(email: string, password: string, signal?: AbortSignal): Promise<AuthResult>;
   session(signal?: AbortSignal): Promise<AuthResult>;
   enroll(signal?: AbortSignal): Promise<AuthResult>;
