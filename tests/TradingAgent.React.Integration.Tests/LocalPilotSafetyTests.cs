@@ -102,8 +102,8 @@ public sealed class LocalPilotSafetyTests
             container.GetRequiredService<JwtVerifier>(), sim.Clock, email);
 
         var login = await preview.LoginAsync(email, "fixture-password", CancellationToken.None);
-        Assert.Equal(TimeSpan.FromHours(8), login.Expires - sim.Clock.GetUtcNow(), TimeSpan.FromSeconds(5));
-        Assert.Equal(TimeSpan.FromMinutes(30), login.IdleExpires - sim.Clock.GetUtcNow(), TimeSpan.FromSeconds(5));
+        Assert.InRange(login.Expires - sim.Clock.GetUtcNow(), TimeSpan.FromHours(8) - TimeSpan.FromSeconds(5), TimeSpan.FromHours(8));
+        Assert.InRange(login.IdleExpires - sim.Clock.GetUtcNow(), TimeSpan.FromMinutes(30) - TimeSpan.FromSeconds(5), TimeSpan.FromMinutes(30));
         sim.Clock.Advance(TimeSpan.FromMinutes(4));
         var first = await preview.SessionAsync(login.Reference, CancellationToken.None);
         Assert.Contains("\"renewable\":true", JsonSerializer.Serialize(first));
