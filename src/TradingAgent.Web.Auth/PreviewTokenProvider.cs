@@ -27,7 +27,7 @@ public sealed class PreviewTokenProvider(AuthTransport transport, JwtVerifier ve
     }
     public async Task<PreviewTokenPair> RefreshAsync(string refreshToken, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(refreshToken) || refreshToken.Length > 4096)
+        if (string.IsNullOrWhiteSpace(refreshToken) || refreshToken.Length > 4096 || refreshToken.Any(char.IsWhiteSpace))
             throw new AuthException(AuthFailure.Invalid);
         using var response = await transport.SendAsync(HttpMethod.Post, "/auth/v1/token?grant_type=refresh_token",
             new { refresh_token = refreshToken }, null, ct).ConfigureAwait(false);
@@ -42,9 +42,9 @@ public sealed class PreviewTokenProvider(AuthTransport transport, JwtVerifier ve
             var accessToken = root.GetProperty("access_token").GetString();
             var refreshToken = root.GetProperty("refresh_token").GetString();
             if (string.IsNullOrEmpty(accessToken) || string.IsNullOrWhiteSpace(refreshToken) ||
-                refreshToken.Length is < 8 or > 4096) throw new AuthException(AuthFailure.Invalid);
+                refreshToken.Length is < 8 or > 4096 || refreshToken.Any(char.IsWhiteSpace)) throw new AuthException(AuthFailure.Invalid);
             var identity = await verifier.ValidateAsync(accessToken, ct).ConfigureAwait(false);
-            if (identity.Aal is < 1 or > 2) throw new AuthException(AuthFailure.Invalid);
+            if (identity.Aal != 1) throw new AuthException(AuthFailure.Invalid);
             var access = new AccessCredential(accessToken, identity);
             await provider.CheckUserAsync(access, ct).ConfigureAwait(false);
             return new(access, refreshToken);
@@ -55,7 +55,7 @@ public sealed class PreviewTokenProvider(AuthTransport transport, JwtVerifier ve
     public async Task CheckAsync(AccessCredential credential, CancellationToken ct)
     {
         var validated = await verifier.ValidateAsync(credential.Token, ct).ConfigureAwait(false);
-        if (validated != credential.Identity || validated.Aal is < 1 or > 2)
+        if (validated != credential.Identity || validated.Aal != 1)
             throw new AuthException(AuthFailure.Invalid);
         await provider.CheckUserAsync(credential, ct).ConfigureAwait(false);
     }

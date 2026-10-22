@@ -25,6 +25,9 @@
   "TradingAgent.React.Integration.Tests.PreviewSessionLifecycleTests.EightHourAbsoluteExpiryWinsEvenWithUserActivity",
   "TradingAgent.React.Integration.Tests.PreviewSessionLifecycleTests.ExplicitActivityRenewsIdleAndRotatesProviderRefresh",
   "TradingAgent.React.Integration.Tests.PreviewSessionLifecycleTests.PassiveSessionChecksDoNotExtendThirtyMinuteInactivity",
+  "TradingAgent.React.Integration.Tests.PreviewSessionLifecycleTests.PasswordOnlyPreviewRejectsAal2Identity",
+  "TradingAgent.React.Integration.Tests.PreviewSessionLifecycleTests.ProviderUnavailabilityRevokesAnOtherwiseValidPreview",
   "TradingAgent.React.Integration.Tests.PreviewSessionLifecycleTests.RefreshSessionSubstitutionFailsClosedAndCannotBeReplayed",
+  "TradingAgent.React.Integration.Tests.PreviewSessionLifecycleTests.RefreshWithChangedAssuranceFailsClosed",
   "TradingAgent.React.Integration.Tests.PreviewSessionLifecycleTests.RemoteLogoutFailureStillInvalidatesLocalPreviewCapability"
 ]

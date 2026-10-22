@@ -27,8 +27,11 @@ public sealed class PasswordPreviewSessions(IPreviewTokenProvider tokens, TimePr
     private readonly SemaphoreSlim gate = new(1, 1);
     private readonly string allowed = allowedEmail.Trim();
     private Slot? current;
-    private static PreviewSessionSnapshot Snapshot(Slot entry) =>
-        new(entry.AbsoluteEnd, entry.LastActivity + PreviewSessionPolicy.InactivityLimit);
+    private static PreviewSessionSnapshot Snapshot(Slot entry)
+    {
+        var idleEnd = entry.LastActivity + PreviewSessionPolicy.InactivityLimit;
+        return new(entry.AbsoluteEnd, idleEnd < entry.AbsoluteEnd ? idleEnd : entry.AbsoluteEnd);
+    }
 
     public async Task<(SessionReference Reference, PreviewSessionSnapshot Session)> LoginAsync(
         string email, string password, CancellationToken ct)
@@ -43,7 +46,7 @@ public sealed class PasswordPreviewSessions(IPreviewTokenProvider tokens, TimePr
                 throw new AuthException(AuthFailure.Conflict);
             current = null;
             var issued = await tokens.PasswordAsync(email.Trim(), password, ct).ConfigureAwait(false);
-            if (issued.Credential.Identity.Aal is < 1 or > 2) throw new AuthException(AuthFailure.Invalid);
+            if (issued.Credential.Identity.Aal != 1) throw new AuthException(AuthFailure.Invalid);
             now = clock.GetUtcNow();
             if (issued.Credential.Identity.ExpiresAt <= now) throw new AuthException(AuthFailure.Invalid);
             var saved = new Slot(SessionReference.Generate(), issued, now + PreviewSessionPolicy.MaximumLifetime, now);
@@ -77,7 +80,7 @@ public sealed class PasswordPreviewSessions(IPreviewTokenProvider tokens, TimePr
                     // Refresh token reuse, account change or cross-session substitution is forbidden.
                     if (renewed.Credential.Identity.Identity != access.Identity.Identity ||
                         renewed.Credential.Identity.ProviderSessionId != access.Identity.ProviderSessionId ||
-                        renewed.Credential.Identity.Aal is < 1 or > 2 ||
+                        renewed.Credential.Identity.Aal != 1 ||
                         renewed.Credential.Identity.ExpiresAt <= clock.GetUtcNow() ||
                         string.Equals(renewed.RefreshToken, entry.Tokens.RefreshToken, StringComparison.Ordinal))
                         throw new AuthException(AuthFailure.Invalid);
@@ -95,7 +98,12 @@ public sealed class PasswordPreviewSessions(IPreviewTokenProvider tokens, TimePr
             else
             {
                 try { await tokens.CheckAsync(access, ct).ConfigureAwait(false); }
-                catch (AuthException error) when (error.Failure == AuthFailure.Invalid) { current = null; throw; }
+                catch
+                {
+                    // An unavailable identity provider is never a reason to keep an unverified preview.
+                    current = null;
+                    throw;
+                }
             }
             now = clock.GetUtcNow();
             if (!PreviewSessionPolicy.Active(now, entry.AbsoluteEnd, entry.LastActivity))

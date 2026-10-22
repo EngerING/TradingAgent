@@ -21,11 +21,13 @@ public sealed class PreviewSessionLifecycleTests
         internal bool ChangeSession { get; set; }
         internal bool RejectRefresh { get; set; }
         internal bool FailLogout { get; set; }
+        internal bool FailCheck { get; set; }
+        internal int TokenAal { get; set; } = 1;
         internal int Refreshed { get; private set; }
         private PreviewTokenPair Token(int number, Guid? sessionOverride = null) => new(
             new AccessCredential("PUBLIC_SYNTHETIC_TEST_TOKEN_" + number,
                 new VerifiedIdentity(new IdentityKey("https://fixture.invalid/auth/v1", user),
-                    sessionOverride ?? session, 1, clock.GetUtcNow(), clock.GetUtcNow().AddHours(1), null)),
+                    sessionOverride ?? session, TokenAal, clock.GetUtcNow(), clock.GetUtcNow().AddHours(1), null)),
             "public-synthetic-refresh-" + number);
         public Task<PreviewTokenPair> PasswordAsync(string email, string password, CancellationToken ct)
         {
@@ -40,6 +42,7 @@ public sealed class PreviewSessionLifecycleTests
         }
         public Task CheckAsync(AccessCredential credential, CancellationToken ct)
         {
+            if (FailCheck) throw new AuthException(AuthFailure.Unavailable);
             if (credential.Identity.ExpiresAt <= clock.GetUtcNow()) throw new AuthException(AuthFailure.Invalid);
             return Task.CompletedTask;
         }
@@ -90,7 +93,8 @@ public sealed class PreviewSessionLifecycleTests
         for (var i = 0; i < 23; i++)
         {
             clock.Advance(TimeSpan.FromMinutes(20));
-            _ = await sessions.SessionAsync(cookie, true, CancellationToken.None);
+            var result = await sessions.SessionAsync(cookie, true, CancellationToken.None);
+            Assert.True(result.IdleExpiresAt <= result.ExpiresAt);
         }
         clock.Advance(TimeSpan.FromMinutes(20)); // Exactly 8 hours, irrespective of recent activity.
         await Assert.ThrowsAsync<AuthException>(() => sessions.SessionAsync(cookie, true, CancellationToken.None));
@@ -109,6 +113,40 @@ public sealed class PreviewSessionLifecycleTests
         await Assert.ThrowsAsync<AuthException>(() => sessions.SessionAsync(cookie, true, CancellationToken.None));
         await Assert.ThrowsAsync<AuthException>(() => sessions.SessionAsync(cookie, false, CancellationToken.None));
         Assert.Equal(1, provider.Refreshed);
+    }
+
+    [Fact]
+    public async Task ProviderUnavailabilityRevokesAnOtherwiseValidPreview()
+    {
+        var (sessions, provider, clock, cookie) = await Begin();
+        clock.Advance(TimeSpan.FromMinutes(1));
+        provider.FailCheck = true;
+        await Assert.ThrowsAsync<AuthException>(() => sessions.SessionAsync(cookie, false, CancellationToken.None));
+        provider.FailCheck = false;
+        await Assert.ThrowsAsync<AuthException>(() => sessions.SessionAsync(cookie, false, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task PasswordOnlyPreviewRejectsAal2Identity()
+    {
+        var clock = new ManualClock();
+        var provider = new FakeTokenProvider(clock) { TokenAal = 2 };
+        using var sessions = new PasswordPreviewSessions(provider, clock, "fixture@fixture.invalid");
+        await Assert.ThrowsAsync<AuthException>(() => sessions.LoginAsync("fixture@fixture.invalid", "public-fixture-password", CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task RefreshWithChangedAssuranceFailsClosed()
+    {
+        var (sessions, provider, clock, cookie) = await Begin();
+        clock.Advance(TimeSpan.FromMinutes(20));
+        _ = await sessions.SessionAsync(cookie, true, CancellationToken.None);
+        clock.Advance(TimeSpan.FromMinutes(20));
+        _ = await sessions.SessionAsync(cookie, true, CancellationToken.None);
+        provider.TokenAal = 2;
+        clock.Advance(TimeSpan.FromMinutes(19));
+        await Assert.ThrowsAsync<AuthException>(() => sessions.SessionAsync(cookie, true, CancellationToken.None));
+        await Assert.ThrowsAsync<AuthException>(() => sessions.SessionAsync(cookie, false, CancellationToken.None));
     }
 
     [Fact]
