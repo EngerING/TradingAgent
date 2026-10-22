@@ -2,6 +2,7 @@ param(
     [ValidateSet('Prepare','Trust','Verify','Run','Stop','Cleanup')][string]$Mode = 'Prepare',
     [string]$RunId,
     [switch]$EnableFreshEnrollment,
+    [switch]$PasswordOnlyPreview,
     [string]$Dotnet = './tmp/m011/dotnet/dotnet.exe',
     [string]$PostgresBin = 'C:/Program Files/PostgreSQL/17/bin'
 )
@@ -12,6 +13,7 @@ $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 if ((Get-Location).Path -cne $root) { throw 'Run from repository root.' }
 if ($Mode -eq 'Prepare' -and !$RunId) { $RunId = [guid]::NewGuid().ToString('N') }
 if ($EnableFreshEnrollment -and $Mode -cne 'Run') { throw 'Enrollment opt-in is allowed only for Run.' }
+if ($PasswordOnlyPreview -and ($Mode -cne 'Run' -or $EnableFreshEnrollment)) { throw 'Password-only preview requires Run and excludes MFA enrollment.' }
 if ($RunId -cnotmatch '^[a-f0-9]{32}$') { throw 'An exact owned RunId is required.' }
 $runs = Join-Path $root 'tmp/m014b-local-pilot/runs'
 $run = [IO.Path]::GetFullPath((Join-Path $runs $RunId))
@@ -146,7 +148,70 @@ try {
             Write-Output 'CURRENT_USER_OWNED_ROOT_INSTALLED_AFTER_LOCAL_CONFIRMATION'
         } elseif ($Mode -eq 'Run') {
             if (!(Test-Path -LiteralPath (Join-Path $run 'trust-owned.txt'))) { throw 'Trusted certificate approval is pending.' }
-            Confirm-Local "Authorize ONE local React/BFF pilot against ocwabwmzhpedyxlkjpje Auth Dev?`nOrigin: $($owner.origin)`nPassword/TOTP only in that browser. Existing unverified factor must stop flow. No DELETE, recovery or financial access. Maximum20minutes. SQL authorization is EMPTY; AAL2 cannot create an authorized application session."
+            Confirm-Local "Authorize ONE local React/BFF pilot against ocwabwmzhpedyxlkjpje Auth Dev?`nOrigin: $($owner.origin)`nPassword only in that browser if Preview is selected. Protected endpoints still require MFA. No DELETE, recovery, grants or financial access. Maximum20minutes. SQL authorization is EMPTY."
+            if ($PasswordOnlyPreview) {
+                Confirm-Local "Authorize password-only AAL1 VIEW of a local development preview? No actual trading dashboard, app_security, financial data or IBKR. No factor changes, and all protected routes still require AAL2."
+                $previewEmail=(Read-Host 'Enter the exact Supabase Auth Dev email permitted for this preview').Trim()
+                if ($previewEmail.Length -lt 3 -or $previewEmail.Length -gt 320 -or $previewEmail -notmatch '^[^\s@]+@[^\s@]+ "Authorize exactly ONE NEW TOTP enrollment if and only if Supabase reports ZERO existing factors for the signed-in identity? Existing verified or unverified factors MUST block enrollment. No deletes, resets, grants or trading. The authenticator QR and secret stay on the local browser only."
+                $name='M014B_B2_ALLOW_FRESH_ENROLLMENT'
+                $previous[$name]=[Environment]::GetEnvironmentVariable($name,'Process')
+                [Environment]::SetEnvironmentVariable($name,'APPROVED_EMPTY_FACTOR_ENROLLMENT_NO_TRADE','Process')
+            } else {
+                $name='M014B_B2_ALLOW_FRESH_ENROLLMENT'
+                $previous[$name]=[Environment]::GetEnvironmentVariable($name,'Process')
+                [Environment]::SetEnvironmentVariable($name,$null,'Process')
+            }
+            $public=Get-Content -LiteralPath (Join-Path $root 'tmp/m013b/hosted-development.public.json') -Raw | ConvertFrom-Json
+            if ($public.confirmedReference -cne 'ocwabwmzhpedyxlkjpje' -or $public.project.TrimEnd('/') -cne 'https://ocwabwmzhpedyxlkjpje.supabase.co' -or !$public.publishableKey.StartsWith('sb_publishable_')) { throw 'Exact development public configuration required.' }
+            $secret=Unprotect-Local ((Get-Content -LiteralPath (Join-Path $run 'secrets.dpapi') -Raw).Trim()) | ConvertFrom-Json
+            $settings=@{INTERACTIVE_APPROVAL='APPROVED_HOSTED_AUTH_DEV_NO_TRADE';PROJECT_REF='ocwabwmzhpedyxlkjpje';PROJECT_URL='https://ocwabwmzhpedyxlkjpje.supabase.co/';PUBLISHABLE_KEY=$public.publishableKey;ORIGIN=$owner.origin;SQL_PORT="$($owner.sqlPort)";SQL_DATABASE=$prepared.database;RUNTIME_USER=$prepared.runtimeUser;RUNTIME_PASSWORD=$secret.runtime;ISSUER_USER=$prepared.issuerUser;ISSUER_PASSWORD=$secret.issuer;TLS_PFX=(Join-Path $run 'loopback.pfx');TLS_PASSWORD=$secret.tls;REACT_DIST=(Join-Path $root 'frontend-react/dist');STOP_FILE=(Join-Path $run 'stop');DIAGNOSTIC_FILE=(Join-Path $run 'diagnostic.jsonl')}
+            foreach($key in $settings.Keys){$name='M014B_B2_'+$key;$previous[$name]=[Environment]::GetEnvironmentVariable($name,'Process');[Environment]::SetEnvironmentVariable($name,$settings[$key],'Process')}
+            Remove-Item -LiteralPath (Join-Path $run 'stop') -ErrorAction SilentlyContinue
+            $active = Join-Path $run 'runner-active'
+            $lease = [IO.File]::Open($active,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
+            $lease.Dispose()
+            try {
+                Start-OwnedPostgres
+                Write-Output "LOCAL_BFF_STARTING $($owner.origin) OFFLINE / NO_TRADE"
+                & $dotnetExe (Join-Path $PSScriptRoot 'BrowserFixture/bin/Release/net10.0/BrowserFixture.dll') --hosted-development
+                if ($LASTEXITCODE) { throw 'Hosted runner stopped; do not infer login success.' }
+            } finally { Stop-OwnedPostgres; Remove-Item -LiteralPath $active -ErrorAction SilentlyContinue }
+        } elseif ($Mode -eq 'Stop') {
+            New-Item -ItemType File -Force -Path (Join-Path $run 'stop') | Out-Null
+            Write-Output 'Owned BFF stop requested; its launcher will stop its PostgreSQL.'
+        } elseif ($Mode -eq 'Cleanup') {
+            if (Test-Path -LiteralPath (Join-Path $run 'runner-active')) { throw 'Runner has not confirmed exit; cleanup denied.' }
+            if (!(Test-Path -LiteralPath (Join-Path $run 'stop'))) { throw 'Request Stop and wait for the runner to exit before Cleanup.' }
+            & (Join-Path $pg 'pg_ctl.exe') -D $data status *> $null
+            if ($LASTEXITCODE -eq 0) { throw 'Owned cluster still running; wait for orderly shutdown.' }
+            if (Test-Path -LiteralPath (Join-Path $run 'trust-owned.txt')) {
+                if ($null -eq $prepared) { throw 'Trust ownership cannot be established.' }
+                $thumb=(Get-Content -LiteralPath (Join-Path $run 'trust-owned.txt') -Raw).Trim()
+                if ($thumb -cne $prepared.rootThumbprint) { throw 'Trust receipt mismatch.' }
+                Confirm-Local "Remove ONLY this owned CurrentUser trust root and owned disposable run?`nThumbprint: $thumb`nRunId: $RunId`nNo other certificate, database or directory will be removed."
+                $store=New-Object Security.Cryptography.X509Certificates.X509Store('Root','CurrentUser')
+                try {$store.Open('ReadWrite');foreach($cert in $store.Certificates.Find('FindByThumbprint',$thumb,$false)){$store.Remove($cert)}}finally{$store.Dispose()}
+            }
+            Assert-Owned
+            Remove-Item -LiteralPath $run -Recurse -Force
+            Write-Output 'OWNED_DISPOSABLE_RUN_REMOVED'
+        }
+    }
+} finally {
+    foreach($name in $previous.Keys){[Environment]::SetEnvironmentVariable($name,$previous[$name],'Process')}
+    $secrets=$null; $secret=$null; $settings=$null
+}
+) { throw 'Invalid preview email.' }
+                foreach ($item in @(@('M014B_B2_PASSWORD_PREVIEW','APPROVED_PASSWORD_ONLY_DEV_VIEW_NO_TRADE'),@('M014B_B2_PREVIEW_ALLOWED_EMAIL',$previewEmail))) {
+                    $previous[$item[0]]=[Environment]::GetEnvironmentVariable($item[0],'Process')
+                    [Environment]::SetEnvironmentVariable($item[0],$item[1],'Process')
+                }
+            } else {
+                foreach ($name in @('M014B_B2_PASSWORD_PREVIEW','M014B_B2_PREVIEW_ALLOWED_EMAIL')) {
+                    $previous[$name]=[Environment]::GetEnvironmentVariable($name,'Process')
+                    [Environment]::SetEnvironmentVariable($name,$null,'Process')
+                }
+            }
             if ($EnableFreshEnrollment) {
                 Confirm-Local "Authorize exactly ONE NEW TOTP enrollment if and only if Supabase reports ZERO existing factors for the signed-in identity? Existing verified or unverified factors MUST block enrollment. No deletes, resets, grants or trading. The authenticator QR and secret stay on the local browser only."
                 $name='M014B_B2_ALLOW_FRESH_ENROLLMENT'

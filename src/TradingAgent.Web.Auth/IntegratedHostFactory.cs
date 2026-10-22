@@ -27,7 +27,7 @@ public static class IntegratedHostFactory
     }
     public static WebApplication CreateHostedDevelopmentPilot(HostedPilotSettings settings, SecurityDatabase runtime, SecurityDatabase issuer, X509Certificate2 certificate) =>
         CreateHostedDevelopmentPilot(settings, runtime, issuer, certificate, browserAssets: false);
-    private static WebApplication CreateHostedDevelopmentPilot(HostedPilotSettings settings, SecurityDatabase runtime, SecurityDatabase issuer, X509Certificate2 certificate, bool browserAssets, bool localChecksOnly = false, bool allowHostedEnrollment = false)
+    private static WebApplication CreateHostedDevelopmentPilot(HostedPilotSettings settings, SecurityDatabase runtime, SecurityDatabase issuer, X509Certificate2 certificate, bool browserAssets, bool localChecksOnly = false, bool allowHostedEnrollment = false, string? passwordPreviewEmail = null)
     {
         ArgumentNullException.ThrowIfNull(settings); ArgumentNullException.ThrowIfNull(certificate);
         if (settings.Authentication.Simulation) throw new InvalidOperationException("Hosted development pilot must use real provider configuration.");
@@ -42,16 +42,17 @@ public static class IntegratedHostFactory
                 throw new ArgumentException("Only a loopback IP SAN is accepted.", nameof(certificate));
         }
         return Create(settings.Authentication, runtime, issuer, settings.BrowserOrigin, builder =>
-            builder.WebHost.UseKestrel(options => options.Listen(IPAddress.Loopback, settings.BrowserOrigin.Port, listener => listener.UseHttps(certificate))), browserAssets, localChecksOnly, allowHostedEnrollment);
+            builder.WebHost.UseKestrel(options => options.Listen(IPAddress.Loopback, settings.BrowserOrigin.Port, listener => listener.UseHttps(certificate))), browserAssets, localChecksOnly, allowHostedEnrollment, passwordPreviewEmail);
     }
     /// <summary>Explicit hosted development browser; no DB bootstrap or financial authority.</summary>
-    public static WebApplication CreateHostedBrowserPilot(HostedPilotSettings settings, SecurityDatabase runtime, SecurityDatabase issuer, X509Certificate2 certificate, bool localChecksOnly = false, bool allowHostedEnrollment = false)
+    public static WebApplication CreateHostedBrowserPilot(HostedPilotSettings settings, SecurityDatabase runtime, SecurityDatabase issuer, X509Certificate2 certificate, bool localChecksOnly = false, bool allowHostedEnrollment = false, string? passwordPreviewEmail = null)
     {
         ArgumentNullException.ThrowIfNull(settings);
+        if (passwordPreviewEmail is not null && (localChecksOnly || allowHostedEnrollment || string.IsNullOrWhiteSpace(passwordPreviewEmail))) throw new InvalidOperationException("Invalid password preview configuration.");
         if (allowHostedEnrollment && localChecksOnly) throw new InvalidOperationException("Local-only mode cannot enroll factors.");
         if (settings.Authentication.Simulation) throw new InvalidOperationException("Hosted browser cannot use synthetic Auth.");
-        var app = CreateHostedDevelopmentPilot(settings, runtime, issuer, certificate, browserAssets: true, localChecksOnly, allowHostedEnrollment);
-        app.MapGet("/bff/config", () => Results.Json(new { profile = localChecksOnly ? "HOSTED_LOCAL_CHECKS_ONLY" : "HOSTED_DEVELOPMENT_AUTH", mode = "OFFLINE", decision = "NO_TRADE", executionAuthorized = false })).AllowAnonymous();
+        var app = CreateHostedDevelopmentPilot(settings, runtime, issuer, certificate, browserAssets: true, localChecksOnly, allowHostedEnrollment, passwordPreviewEmail);
+        app.MapGet("/bff/config", () => Results.Json(new { profile = localChecksOnly ? "HOSTED_LOCAL_CHECKS_ONLY" : passwordPreviewEmail is not null ? "HOSTED_PASSWORD_ONLY_PREVIEW" : "HOSTED_DEVELOPMENT_AUTH", mode = "OFFLINE", decision = "NO_TRADE", executionAuthorized = false })).AllowAnonymous();
         return app;
     }
     // Explicit synthetic browser composition. No hosted provider can enter this factory.
@@ -70,12 +71,14 @@ public static class IntegratedHostFactory
         app.MapGet("/bff/config", () => Results.Json(new { profile = "SYNTHETIC_HTTP_FIXTURE", mode = "OFFLINE", decision = "NO_TRADE", executionAuthorized = false })).AllowAnonymous();
         return app;
     }
-    private static WebApplication Create(AuthConfiguration configuration, SecurityDatabase runtime, SecurityDatabase issuer, Uri browserOrigin, Action<WebApplicationBuilder> configureHost, bool browserAssets = false, bool localChecksOnly = false, bool allowHostedEnrollment = false)
+    private static WebApplication Create(AuthConfiguration configuration, SecurityDatabase runtime, SecurityDatabase issuer, Uri browserOrigin, Action<WebApplicationBuilder> configureHost, bool browserAssets = false, bool localChecksOnly = false, bool allowHostedEnrollment = false, string? passwordPreviewEmail = null)
     {
+        if (passwordPreviewEmail is not null && (!browserAssets || configuration.Simulation || localChecksOnly || allowHostedEnrollment || passwordPreviewEmail.Length > 320 || !passwordPreviewEmail.Contains('@'))) throw new InvalidOperationException("Password preview requires explicit hosted development composition.");
         if (runtime.Purpose != DatabasePurpose.Runtime || issuer.Purpose != DatabasePurpose.SessionIssuer) throw new ArgumentException("Separate disposable runtime and issuer credentials required.");
         var builder = WebApplication.CreateEmptyBuilder(new WebApplicationOptions { ApplicationName = typeof(IntegratedHostFactory).Assembly.GetName().Name, EnvironmentName = "Development" });
         builder.Logging.ClearProviders(); builder.Services.AddRouting();
         builder.Services.AddSupabaseAuth(configuration);
+        if (passwordPreviewEmail is not null) builder.Services.AddSingleton(sp => new PasswordPreviewSessions(sp.GetRequiredService<SupabaseAuthClient>(), sp.GetRequiredService<JwtVerifier>(), sp.GetRequiredService<TimeProvider>(), passwordPreviewEmail));
         builder.Services.AddSingleton<TemporarySessions>();
         builder.Services.AddSingleton<PilotRequestBudgets>();
         builder.Services.AddSingleton(sp => new PilotRuntime(runtime, issuer, sp.GetRequiredService<JwtVerifier>(), sp.GetRequiredService<SupabaseAuthClient>(), sp.GetRequiredService<TemporarySessions>(), sp.GetRequiredService<TimeProvider>()));
@@ -142,6 +145,7 @@ public static class IntegratedHostFactory
         app.MapGet("/health", () => Results.Json(new { status = "ok" })).AllowAnonymous();
         app.MapGet("/bff/csrf", (HttpContext context, IAntiforgery antiforgery) => Results.Json(new { token = antiforgery.GetAndStoreTokens(context).RequestToken })).AllowAnonymous();
         PilotEndpoints.Map(app, allowEnrollment: configuration.Simulation || !browserAssets || (allowHostedEnrollment && browserAssets && !localChecksOnly));
+        if (passwordPreviewEmail is not null) PasswordPreviewEndpoints.Map(app);
         return app;
     }
     private sealed class RoutingAuthorizationResultHandler : IAuthorizationMiddlewareResultHandler

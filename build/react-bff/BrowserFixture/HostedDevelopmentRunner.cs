@@ -84,7 +84,11 @@ internal static class HostedDevelopmentRunner
         if (localChecksOnly && optIn is not null)
             throw new InvalidOperationException("Enrollment is forbidden during local-only checks.");
         var allowHostedEnrollment = !localChecksOnly && optIn == "APPROVED_EMPTY_FACTOR_ENROLLMENT_NO_TRADE";
-        await using var app = BrowserHost.CreateHosted(settings, runtime, issuer, certificate, reactRoot, localChecksOnly, allowHostedEnrollment);
+        var previewConsent = Environment.GetEnvironmentVariable("M014B_B2_PASSWORD_PREVIEW");
+        if (previewConsent is not null && previewConsent != "APPROVED_PASSWORD_ONLY_DEV_VIEW_NO_TRADE") throw new InvalidOperationException("Invalid password-only preview authorization.");
+        var previewEmail = previewConsent is null ? null : Required("M014B_B2_PREVIEW_ALLOWED_EMAIL");
+        if (previewEmail is not null && (localChecksOnly || allowHostedEnrollment)) throw new InvalidOperationException("Password preview cannot coexist with MFA or local-only mode.");
+        await using var app = BrowserHost.CreateHosted(settings, runtime, issuer, certificate, reactRoot, localChecksOnly, allowHostedEnrollment, previewEmail);
         // Hosted login is separately approved and single-attempt. Diagnostic output is closed/redacted.
         // Local-checks mode skips all auth paths and never installs this login middleware.
         if (!localChecksOnly)
@@ -92,7 +96,7 @@ internal static class HostedDevelopmentRunner
             var loginAttempts = 0;
             app.Use(async (context, next) =>
             {
-                if (context.Request.Path == "/bff/auth/login" && HttpMethods.IsPost(context.Request.Method) &&
+                if ((context.Request.Path == "/bff/auth/login" || context.Request.Path == "/bff/preview/login") && HttpMethods.IsPost(context.Request.Method) &&
                     Interlocked.Increment(ref loginAttempts) != 1)
                 {
                     context.Response.StatusCode = 409;
@@ -122,7 +126,7 @@ internal static class HostedDevelopmentRunner
             }
         }
         await StateAsync("READY");
-        Console.WriteLine($"URL={settings.BrowserOrigin.AbsoluteUri} PID={Environment.ProcessId} STATE=READY {(localChecksOnly ? "LOGIN_DISABLED" : "HOSTED_DEVELOPMENT")} OFFLINE / NO_TRADE");
+        Console.WriteLine($"URL={settings.BrowserOrigin.AbsoluteUri} PID={Environment.ProcessId} STATE=READY {(localChecksOnly ? "LOGIN_DISABLED" : previewEmail is not null ? "PASSWORD_ONLY_DEV_PREVIEW" : "HOSTED_DEVELOPMENT")} OFFLINE / NO_TRADE");
         try {
             var stopFile = localChecksOnly ? Required("M014B_B2_STOP_FILE") : Environment.GetEnvironmentVariable("M014B_B2_STOP_FILE");
             while (!stop.IsCancellationRequested) {

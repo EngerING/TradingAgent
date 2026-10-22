@@ -26,6 +26,22 @@ describe('BFF transport boundary', () => {
   it('blocks recovery and invitation without network', async () => {
     const f = vi.fn(); vi.stubGlobal('fetch', f); const adapter = new BffAuthAdapter();
     expect(await adapter.recover('fixture@example.test')).toEqual({ kind: 'unavailable' }); expect(await adapter.invitation()).toEqual({ kind: 'unavailable' }); expect(f).not.toHaveBeenCalled();
+    const payload = { status: 'PASSWORD_PREVIEW', authenticated: true, aal: 'aal1',
+      profile: 'PASSWORD_ONLY_DEV_PREVIEW', expiresAt: new Date(Date.now() + 120000).toISOString(),
+      renewable: false, executionAuthorized: false, mode: 'OFFLINE', decision: 'NO_TRADE' };
+    const { status: ignored, ...session } = payload; void ignored;
+    const previewFetch = vi.fn().mockResolvedValueOnce(csrf()).mockResolvedValueOnce(json(payload))
+      .mockResolvedValueOnce(json(session)).mockResolvedValueOnce(csrf()).mockResolvedValueOnce(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', previewFetch);
+    const preview = new BffAuthAdapter('preview');
+    expect(await preview.login('fixture@example.test', 'public-fixture')).toEqual({ kind: 'preview-complete' });
+    expect(await preview.session()).toEqual({ kind: 'preview-complete' });
+    expect(await preview.enroll()).toEqual({ kind: 'unavailable' });
+    expect(await preview.verify('123456')).toEqual({ kind: 'unavailable' });
+    await preview.logout();
+    expect(previewFetch.mock.calls.map(c => c[0])).toEqual([
+      '/bff/csrf','/bff/preview/login','/bff/preview/session','/bff/csrf','/bff/preview/logout'
+    ]);
   });
   it('blocks duplicate transport while a request is pending', async () => {
     let release!: (r: Response) => void; const f = vi.fn().mockReturnValue(new Promise<Response>(resolve => { release = resolve; })); vi.stubGlobal('fetch', f);

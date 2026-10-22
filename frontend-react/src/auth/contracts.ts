@@ -1,10 +1,10 @@
 export type AuthKind = 'anonymous' | 'mfa-required' | 'demo-enrollment' | 'invalid-code' |
-  'demo-complete' | 'invalid-credentials' | 'mfa-recovery-required' | 'expired' | 'unavailable' | 'denied' |
+  'demo-complete' | 'preview-complete' | 'invalid-credentials' | 'mfa-recovery-required' | 'expired' | 'unavailable' | 'denied' |
   'demo-recovery' | 'demo-invitation' | 'demo-password-set' | 'complete' | 'enrollment' | 'conflict' | 'rate-limited';
 export type AuthResult = Readonly<{ kind: AuthKind; enrollment?: Readonly<{ secret: string; uri: string }> }>;
 export interface AuthAdapter {
   readonly mode: 'demo' | 'unavailable' | 'bff';
-  readonly source?: 'synthetic' | 'hosted' | 'local-checks';
+  readonly source?: 'synthetic' | 'hosted' | 'preview' | 'local-checks';
   login(email: string, password: string, signal?: AbortSignal): Promise<AuthResult>;
   session(signal?: AbortSignal): Promise<AuthResult>;
   enroll(signal?: AbortSignal): Promise<AuthResult>;
@@ -17,6 +17,7 @@ export interface AuthAdapter {
 
 // Existing BFF wire contracts only. No transport is enabled by M01.4A.
 export const bffRoutes = Object.freeze({ csrf: '/bff/csrf', login: '/bff/auth/login',
+  previewLogin: '/bff/preview/login', previewSession: '/bff/preview/session', previewLogout: '/bff/preview/logout',
   enroll: '/bff/auth/mfa/enroll', challenge: '/bff/auth/mfa/challenge',
   verify: '/bff/auth/mfa/verify', session: '/bff/session', logout: '/bff/auth/logout' });
 export interface BffCsrfResponse { token: string }

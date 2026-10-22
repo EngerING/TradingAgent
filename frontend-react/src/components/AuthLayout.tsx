@@ -10,6 +10,8 @@ export function AuthLayout({ children }: { children: ReactNode }) {
   const previousPath = useRef(location.pathname);
   const footer = auth.source === 'local-checks'
     ? 'Local HTTPS checks · OFFLINE / NO_TRADE · Sign-in disabled by server; no hosted requests.'
+    : auth.mode === 'bff' && auth.source === 'preview'
+    ? 'Supabase Auth Dev · password-only read-only preview · OFFLINE / NO_TRADE · no financial access.'
     : auth.mode === 'bff' && auth.source === 'hosted'
     ? 'Supabase Auth Dev via HTTPS BFF · OFFLINE / NO_TRADE · MFA and SQL authorization required; no financial access.'
     : auth.mode === 'bff'
