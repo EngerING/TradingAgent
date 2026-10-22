@@ -35,6 +35,15 @@ public static class IntegratedHostFactory
         return Create(settings.Authentication, runtime, issuer, settings.BrowserOrigin, builder =>
             builder.WebHost.UseKestrel(options => options.Listen(IPAddress.Loopback, settings.BrowserOrigin.Port, listener => listener.UseHttps(certificate))), browserAssets);
     }
+    /// <summary>Explicit hosted development browser; no DB bootstrap or financial authority.</summary>
+    public static WebApplication CreateHostedBrowserPilot(HostedPilotSettings settings, SecurityDatabase runtime, SecurityDatabase issuer, X509Certificate2 certificate)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        if (settings.Authentication.Simulation) throw new InvalidOperationException("Hosted browser cannot use synthetic Auth.");
+        var app = CreateHostedDevelopmentPilot(settings, runtime, issuer, certificate, browserAssets: true);
+        app.MapGet("/bff/config", () => Results.Json(new { profile = "HOSTED_DEVELOPMENT_AUTH", mode = "OFFLINE", decision = "NO_TRADE", executionAuthorized = false })).AllowAnonymous();
+        return app;
+    }
     // Explicit synthetic browser composition. No hosted provider can enter this factory.
     public static WebApplication CreateBrowserFixture(AuthConfiguration configuration, SecurityDatabase runtime, SecurityDatabase issuer,
         Uri origin, X509Certificate2 certificate, Action<WebApplicationBuilder> configure)
