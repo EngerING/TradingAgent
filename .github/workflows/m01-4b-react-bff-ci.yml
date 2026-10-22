@@ -48,7 +48,26 @@ jobs:
         run: |
           npm ci --ignore-scripts
           npm run verify
-          npm audit --audit-level=low --json > ../artifacts/m014b/npm-audit.json
+          # Bounded retries for a confirmed transient npm registry outage. Fail closed
+          # on vulnerabilities, malformed responses or any non-network error.
+          audit_passed=0
+          for attempt in 1 2 3; do
+            if npm audit --audit-level=low --json --fetch-retries=0 --fetch-timeout=45000 > ../artifacts/m014b/npm-audit.json 2> ../artifacts/m014b/npm-audit-stderr.tmp; then
+              audit_passed=1
+              break
+            fi
+            if ! node -e 'const fs=require("node:fs"); let report; try { report=JSON.parse(fs.readFileSync("../artifacts/m014b/npm-audit.json","utf8")); } catch {} if(report?.metadata?.vulnerabilities) process.exit(2); const message=fs.readFileSync("../artifacts/m014b/npm-audit-stderr.tmp","utf8"); if(!/(503|Service Unavailable|network timeout|ETIMEDOUT|ECONNRESET|EAI_AGAIN)/i.test(message)) process.exit(3);'; then
+              echo "npm security audit failed with a non-retryable response." >&2
+              exit 1
+            fi
+            echo "Transient npm audit registry failure, bounded retry $attempt/3."
+            sleep $((attempt * 5))
+          done
+          rm -f ../artifacts/m014b/npm-audit-stderr.tmp
+          if [ "$audit_passed" -ne 1 ]; then
+            echo "npm security audit unavailable after bounded retries; failing closed." >&2
+            exit 1
+          fi
           npm audit signatures > ../artifacts/m014b/npm-signatures.log
           npx --no-install playwright install --with-deps chromium
       - name: Release locked .NET build NuGet audit and safe enrollment regressions
