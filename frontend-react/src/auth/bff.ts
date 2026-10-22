@@ -50,7 +50,8 @@ export class BffAuthAdapter implements AuthAdapter {
       keys(body, ['status', 'factors', 'executionAuthorized']);
       if (body.status !== 'MFA_REQUIRED' || body.executionAuthorized !== false || !Array.isArray(body.factors) || body.factors.length > 10) throw new Error('CONTRACT');
       const factors = body.factors.map(v => { const f = record(v); keys(f, ['id', 'verified']); if (!uuid(f.id) || typeof f.verified !== 'boolean') throw new Error('CONTRACT'); return { id: f.id, verified: f.verified }; });
-      if (factors.length > 1 || factors.some(f => !f.verified)) return { kind: 'conflict' };
+      if (factors.length === 1 && !factors[0]!.verified) return { kind: 'mfa-recovery-required' }; // No silent removal, replacement or challenge.
+      if (factors.length > 1) return { kind: 'conflict' };
       this.factor = factors[0]?.id; this.pendingUntil = Date.now() + 300000; return { kind: 'mfa-required' };
     }, signal);
   }

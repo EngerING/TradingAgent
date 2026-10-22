@@ -16,7 +16,8 @@ describe('BFF transport boundary', () => {
   });
   it('blocks orphan enrollment without POST enrollment or DELETE', async () => {
     const f = vi.fn().mockResolvedValueOnce(csrf()).mockResolvedValueOnce(json({ status: 'MFA_REQUIRED', factors: [{ id, verified: false }], executionAuthorized: false })); vi.stubGlobal('fetch', f);
-    expect((await new BffAuthAdapter().login('fixture@example.test', 'public-fixture')).kind).toBe('conflict'); expect(f).toHaveBeenCalledTimes(2);
+    expect((await new BffAuthAdapter().login('fixture@example.test', 'public-fixture')).kind).toBe('mfa-recovery-required'); expect(f).toHaveBeenCalledTimes(2);
+    expect(f.mock.calls.map(c => c[0])).not.toContain('/bff/auth/mfa/enroll');
   });
   it('does not confuse HTTP success with an authenticated session', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ authenticated: true, aal: 'aal1' })));

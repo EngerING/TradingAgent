@@ -1,6 +1,7 @@
 param(
     [ValidateSet('Prepare','Trust','Verify','Run','Stop','Cleanup')][string]$Mode = 'Prepare',
     [string]$RunId,
+    [switch]$EnableFreshEnrollment,
     [string]$Dotnet = './tmp/m011/dotnet/dotnet.exe',
     [string]$PostgresBin = 'C:/Program Files/PostgreSQL/17/bin'
 )
@@ -10,6 +11,7 @@ if ($env:OS -ne 'Windows_NT') { throw 'Windows DPAPI and CurrentUser trust are r
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 if ((Get-Location).Path -cne $root) { throw 'Run from repository root.' }
 if ($Mode -eq 'Prepare' -and !$RunId) { $RunId = [guid]::NewGuid().ToString('N') }
+if ($EnableFreshEnrollment -and $Mode -cne 'Run') { throw 'Enrollment opt-in is allowed only for Run.' }
 if ($RunId -cnotmatch '^[a-f0-9]{32}$') { throw 'An exact owned RunId is required.' }
 $runs = Join-Path $root 'tmp/m014b-local-pilot/runs'
 $run = [IO.Path]::GetFullPath((Join-Path $runs $RunId))
@@ -144,7 +146,17 @@ try {
             Write-Output 'CURRENT_USER_OWNED_ROOT_INSTALLED_AFTER_LOCAL_CONFIRMATION'
         } elseif ($Mode -eq 'Run') {
             if (!(Test-Path -LiteralPath (Join-Path $run 'trust-owned.txt'))) { throw 'Trusted certificate approval is pending.' }
-            Confirm-Local "Authorize ONE local React/BFF pilot against ocwabwmzhpedyxlkjpje Auth Dev?`nOrigin: $($owner.origin)`nPassword/TOTP only in that browser. Existing unverified factor must stop flow. No enrollment, DELETE, recovery, grants or financial access. Maximum20minutes. SQL authorization is EMPTY; AAL2 cannot create an authorized application session."
+            Confirm-Local "Authorize ONE local React/BFF pilot against ocwabwmzhpedyxlkjpje Auth Dev?`nOrigin: $($owner.origin)`nPassword/TOTP only in that browser. Existing unverified factor must stop flow. No DELETE, recovery or financial access. Maximum20minutes. SQL authorization is EMPTY; AAL2 cannot create an authorized application session."
+            if ($EnableFreshEnrollment) {
+                Confirm-Local "Authorize exactly ONE NEW TOTP enrollment if and only if Supabase reports ZERO existing factors for the signed-in identity? Existing verified or unverified factors MUST block enrollment. No deletes, resets, grants or trading. The authenticator QR and secret stay on the local browser only."
+                $name='M014B_B2_ALLOW_FRESH_ENROLLMENT'
+                $previous[$name]=[Environment]::GetEnvironmentVariable($name,'Process')
+                [Environment]::SetEnvironmentVariable($name,'APPROVED_EMPTY_FACTOR_ENROLLMENT_NO_TRADE','Process')
+            } else {
+                $name='M014B_B2_ALLOW_FRESH_ENROLLMENT'
+                $previous[$name]=[Environment]::GetEnvironmentVariable($name,'Process')
+                [Environment]::SetEnvironmentVariable($name,$null,'Process')
+            }
             $public=Get-Content -LiteralPath (Join-Path $root 'tmp/m013b/hosted-development.public.json') -Raw | ConvertFrom-Json
             if ($public.confirmedReference -cne 'ocwabwmzhpedyxlkjpje' -or $public.project.TrimEnd('/') -cne 'https://ocwabwmzhpedyxlkjpje.supabase.co' -or !$public.publishableKey.StartsWith('sb_publishable_')) { throw 'Exact development public configuration required.' }
             $secret=Unprotect-Local ((Get-Content -LiteralPath (Join-Path $run 'secrets.dpapi') -Raw).Trim()) | ConvertFrom-Json

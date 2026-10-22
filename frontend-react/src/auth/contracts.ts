@@ -1,5 +1,5 @@
 export type AuthKind = 'anonymous' | 'mfa-required' | 'demo-enrollment' | 'invalid-code' |
-  'demo-complete' | 'invalid-credentials' | 'expired' | 'unavailable' | 'denied' |
+  'demo-complete' | 'invalid-credentials' | 'mfa-recovery-required' | 'expired' | 'unavailable' | 'denied' |
   'demo-recovery' | 'demo-invitation' | 'demo-password-set' | 'complete' | 'enrollment' | 'conflict' | 'rate-limited';
 export type AuthResult = Readonly<{ kind: AuthKind; enrollment?: Readonly<{ secret: string; uri: string }> }>;
 export interface AuthAdapter {
