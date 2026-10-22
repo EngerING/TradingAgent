@@ -49,9 +49,11 @@ internal static class HostedDevelopmentRunner
         var flags = OperatingSystem.IsWindows() ? X509KeyStorageFlags.DefaultKeySet : X509KeyStorageFlags.EphemeralKeySet;
         using var certificate = X509CertificateLoader.LoadPkcs12FromFile(
             Required("M014B_B2_TLS_PFX"), Required("M014B_B2_TLS_PASSWORD"), flags);
-        var ips = certificate.Extensions.OfType<X509SubjectAlternativeNameExtension>()
-            .SelectMany(extension => extension.EnumerateIPAddresses());
-        if (!certificate.HasPrivateKey || !ips.Contains(IPAddress.Loopback) ||
+        var encodedSan = certificate.Extensions["2.5.29.17"];
+        if (encodedSan is null) throw new InvalidOperationException("Loopback IP SAN is required.");
+        var san = new X509SubjectAlternativeNameExtension();
+        san.CopyFrom(encodedSan);
+        if (!certificate.HasPrivateKey || !san.EnumerateIPAddresses().Contains(IPAddress.Loopback) ||
             DateTime.UtcNow < certificate.NotBefore.ToUniversalTime() ||
             DateTime.UtcNow >= certificate.NotAfter.ToUniversalTime())
             throw new InvalidOperationException("Trusted, current loopback HTTPS certificate required.");
