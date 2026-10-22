@@ -13,5 +13,8 @@
   "TradingAgent.React.Integration.Tests.EnrollmentSafetyTests.RejectedCurrentIdentityCannotMutateExistingEnrollment",
   "TradingAgent.React.Integration.Tests.EnrollmentSafetyTests.RepeatedEnrollmentPreservesFirstUnverifiedFactorAndCanStillChallengeIt",
   "TradingAgent.React.Integration.Tests.EnrollmentSafetyTests.SuccessfulEnrollmentCannotBeRepeatedWhenProviderListTemporarilyOmitsIt",
-  "TradingAgent.React.Integration.Tests.EnrollmentSafetyTests.UncertainEnrollmentResponseCannotBeAutomaticallyRetried"
+  "TradingAgent.React.Integration.Tests.EnrollmentSafetyTests.UncertainEnrollmentResponseCannotBeAutomaticallyRetried",
+  "TradingAgent.React.Integration.Tests.LocalStartupTests.LocalStartupAllowsOnlyMappedAnonymousGetResources",
+  "TradingAgent.React.Integration.Tests.LocalStartupTests.LocalStartupDeniesAllAuthenticationAndSessionRoutes",
+  "TradingAgent.React.Integration.Tests.LocalStartupTests.LocalStartupCannotAuthenticateAnOldBrowserCookie"
 ]

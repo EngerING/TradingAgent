@@ -2,6 +2,19 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim();
+const integrated = 'e4e2cd9e28b4a885c744a27a2f4b4e5dc5a5d33a';
+let persistent = false;
+try { execFileSync('git',['merge-base','--is-ancestor',integrated,'HEAD']); persistent = true; } catch { /* Earlier branches retain the original guard. */ }
+if (persistent) {
+ const edits = new Set(['build/react-bff/BrowserFixture/HostedDevelopmentRunner.cs','build/react-bff/BrowserFixture/Program.cs','build/react-bff/preservation.mjs','build/react-bff/verify-results.ps1','src/TradingAgent.Web.Auth/IntegratedHostFactory.cs','src/TradingAgent.Web.Browser/BrowserHost.cs','tests/TradingAgent.React.Integration.Tests/expected-tests.json']);
+ const additions = new Set(['build/react-bff/serve-local.ps1','tests/TradingAgent.React.Integration.Tests/LocalStartupTests.cs','docs/architecture/m01-4b-b2-persistent-launcher.md']);
+ for (const row of git('diff','--name-status','--no-renames',integrated,'HEAD').split('\n').filter(Boolean)) {
+  const [status,path] = row.split('\t'); assert(status === 'M' && edits.has(path) || status === 'A' && additions.has(path), `Persistent startup exceeds scope: ${row}`);
+ }
+ const tree = ref => new Map(git('ls-tree','-r',ref).split('\n').map(line => { const [object,path] = line.split('\t'); return [path,object]; }));
+ const before = tree(integrated), after = tree('HEAD');
+ for (const [path,object] of before) if (!edits.has(path)) assert(after.get(path) === object, `Integrated baseline changed: ${path}`);
+}
 const baseline = 'efd13f6be8c3c720e24cd9921c2cf7f5b1db7bd5';
 execFileSync('git', ['merge-base', '--is-ancestor', baseline, 'HEAD']);
 const allowedEdits = new Set([

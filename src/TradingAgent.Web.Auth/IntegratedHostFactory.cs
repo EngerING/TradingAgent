@@ -27,7 +27,7 @@ public static class IntegratedHostFactory
     }
     public static WebApplication CreateHostedDevelopmentPilot(HostedPilotSettings settings, SecurityDatabase runtime, SecurityDatabase issuer, X509Certificate2 certificate) =>
         CreateHostedDevelopmentPilot(settings, runtime, issuer, certificate, browserAssets: false);
-    private static WebApplication CreateHostedDevelopmentPilot(HostedPilotSettings settings, SecurityDatabase runtime, SecurityDatabase issuer, X509Certificate2 certificate, bool browserAssets)
+    private static WebApplication CreateHostedDevelopmentPilot(HostedPilotSettings settings, SecurityDatabase runtime, SecurityDatabase issuer, X509Certificate2 certificate, bool browserAssets, bool localChecksOnly = false)
     {
         ArgumentNullException.ThrowIfNull(settings); ArgumentNullException.ThrowIfNull(certificate);
         if (settings.Authentication.Simulation) throw new InvalidOperationException("Hosted development pilot must use real provider configuration.");
@@ -42,14 +42,14 @@ public static class IntegratedHostFactory
                 throw new ArgumentException("Only a loopback IP SAN is accepted.", nameof(certificate));
         }
         return Create(settings.Authentication, runtime, issuer, settings.BrowserOrigin, builder =>
-            builder.WebHost.UseKestrel(options => options.Listen(IPAddress.Loopback, settings.BrowserOrigin.Port, listener => listener.UseHttps(certificate))), browserAssets);
+            builder.WebHost.UseKestrel(options => options.Listen(IPAddress.Loopback, settings.BrowserOrigin.Port, listener => listener.UseHttps(certificate))), browserAssets, localChecksOnly);
     }
     /// <summary>Explicit hosted development browser; no DB bootstrap or financial authority.</summary>
-    public static WebApplication CreateHostedBrowserPilot(HostedPilotSettings settings, SecurityDatabase runtime, SecurityDatabase issuer, X509Certificate2 certificate)
+    public static WebApplication CreateHostedBrowserPilot(HostedPilotSettings settings, SecurityDatabase runtime, SecurityDatabase issuer, X509Certificate2 certificate, bool localChecksOnly = false)
     {
         ArgumentNullException.ThrowIfNull(settings);
         if (settings.Authentication.Simulation) throw new InvalidOperationException("Hosted browser cannot use synthetic Auth.");
-        var app = CreateHostedDevelopmentPilot(settings, runtime, issuer, certificate, browserAssets: true);
+        var app = CreateHostedDevelopmentPilot(settings, runtime, issuer, certificate, browserAssets: true, localChecksOnly);
         app.MapGet("/bff/config", () => Results.Json(new { profile = "HOSTED_DEVELOPMENT_AUTH", mode = "OFFLINE", decision = "NO_TRADE", executionAuthorized = false })).AllowAnonymous();
         return app;
     }
@@ -69,7 +69,7 @@ public static class IntegratedHostFactory
         app.MapGet("/bff/config", () => Results.Json(new { profile = "SYNTHETIC_HTTP_FIXTURE", mode = "OFFLINE", decision = "NO_TRADE", executionAuthorized = false })).AllowAnonymous();
         return app;
     }
-    private static WebApplication Create(AuthConfiguration configuration, SecurityDatabase runtime, SecurityDatabase issuer, Uri browserOrigin, Action<WebApplicationBuilder> configureHost, bool browserAssets = false)
+    private static WebApplication Create(AuthConfiguration configuration, SecurityDatabase runtime, SecurityDatabase issuer, Uri browserOrigin, Action<WebApplicationBuilder> configureHost, bool browserAssets = false, bool localChecksOnly = false)
     {
         if (runtime.Purpose != DatabasePurpose.Runtime || issuer.Purpose != DatabasePurpose.SessionIssuer) throw new ArgumentException("Separate disposable runtime and issuer credentials required.");
         var builder = WebApplication.CreateEmptyBuilder(new WebApplicationOptions { ApplicationName = typeof(IntegratedHostFactory).Assembly.GetName().Name, EnvironmentName = "Development" });
@@ -125,13 +125,19 @@ public static class IntegratedHostFactory
         });
         app.UseStatusCodePages(async status => await HttpBoundary.ErrorAsync(status.HttpContext, status.HttpContext.Response.StatusCode));
         app.UseRouting();
+        if (localChecksOnly) app.Use(async (context, next) =>
+        {
+            if (!LocalStartupBoundary.Allowed(context)) { await HttpBoundary.ErrorAsync(context, 503); return; }
+            await next(context);
+        });
         app.Use(async (context, next) =>
         {
             var operation = context.GetEndpoint()?.Metadata.GetMetadata<PilotOperationMetadata>()?.Operation ?? PilotOperation.Session;
             if (HttpMethods.IsPost(context.Request.Method) && operation != PilotOperation.Login && !context.RequestServices.GetRequiredService<PilotRequestBudgets>().TryAdmit(operation, context.Connection.RemoteIpAddress)) throw new AuthException(AuthFailure.RateLimited);
             await next(context);
         });
-        app.UseAuthentication(); app.UseAuthorization();
+        if (!localChecksOnly) app.UseAuthentication();
+        app.UseAuthorization();
         app.MapGet("/health", () => Results.Json(new { status = "ok" })).AllowAnonymous();
         app.MapGet("/bff/csrf", (HttpContext context, IAntiforgery antiforgery) => Results.Json(new { token = antiforgery.GetAndStoreTokens(context).RequestToken })).AllowAnonymous();
         PilotEndpoints.Map(app);
@@ -143,4 +149,13 @@ public static class IntegratedHostFactory
         public Task HandleAsync(RequestDelegate next, HttpContext context, AuthorizationPolicy policy, PolicyAuthorizationResult authorizeResult) =>
             context.GetEndpoint() is not RouteEndpoint ? next(context) : handler.HandleAsync(next, context, policy, authorizeResult);
     }
+}
+
+// A server composition flag, never a request/header/browser-controlled permission.
+public static class LocalStartupBoundary
+{
+    public static bool Allowed(HttpContext context) =>
+        HttpMethods.IsGet(context.Request.Method) &&
+        (!context.Request.Path.StartsWithSegments("/bff") || context.Request.Path == "/bff/config") &&
+        context.GetEndpoint()?.Metadata.GetMetadata<IAllowAnonymous>() is not null;
 }

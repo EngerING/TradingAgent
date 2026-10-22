@@ -1,5 +1,8 @@
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography;
+using System.Text.Json;
+using TradingAgent.Identity.Tests;
 using TradingAgent.Identity.Persistence;
 using TradingAgent.Web.Auth;
 using TradingAgent.Web.Browser;
@@ -12,8 +15,9 @@ namespace TradingAgent.React.BrowserFixture;
 /// </summary>
 internal static class HostedDevelopmentRunner
 {
-    internal static async Task RunAsync()
+    internal static async Task RunAsync(bool localChecksOnly = false)
     {
+        using var observer = localChecksOnly ? new ConnectionObserver() : null;
         static string Required(string key)
         {
             var value = Environment.GetEnvironmentVariable(key);
@@ -22,7 +26,7 @@ internal static class HostedDevelopmentRunner
                 : value;
         }
 
-        if (Required("M014B_B2_INTERACTIVE_APPROVAL") != "APPROVED_HOSTED_AUTH_DEV_NO_TRADE")
+        if (Required("M014B_B2_INTERACTIVE_APPROVAL") != (localChecksOnly ? "LOCAL_STARTUP_CHECKS_ONLY" : "APPROVED_HOSTED_AUTH_DEV_NO_TRADE"))
             throw new InvalidOperationException("Hosted authentication requires explicit local approval.");
         if (Required("M014B_B2_PROJECT_REF") != "ocwabwmzhpedyxlkjpje")
             throw new InvalidOperationException("Only the confirmed Supabase Auth Dev project is allowed.");
@@ -62,18 +66,40 @@ internal static class HostedDevelopmentRunner
             // Local development authorities commonly have no OCSP. Chain and name
             // trust remain mandatory; no custom root or accept-all callback.
             chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+            chain.ChainPolicy.ApplicationPolicy.Add(new Oid("1.3.6.1.5.5.7.3.1"));
+            if (certificate.Extensions.OfType<X509EnhancedKeyUsageExtension>().SingleOrDefault()?.EnhancedKeyUsages.Cast<Oid>().Any(o => o.Value == "1.3.6.1.5.5.7.3.1") != true)
+                throw new InvalidOperationException("TLS_SERVER_AUTH_REQUIRED");
             if (!chain.Build(certificate))
                 throw new InvalidOperationException("Loopback certificate must chain to an already-trusted development CA.");
         }
 
         var reactRoot = Path.GetFullPath(Required("M014B_B2_REACT_DIST"));
-        await using var app = BrowserHost.CreateHosted(settings, runtime, issuer, certificate, reactRoot);
+        await using var app = BrowserHost.CreateHosted(settings, runtime, issuer, certificate, reactRoot, localChecksOnly);
         using var stop = new CancellationTokenSource();
         Console.CancelKeyPress += (_, args) => { args.Cancel = true; stop.Cancel(); };
         await app.StartAsync(stop.Token);
-        Console.WriteLine("B2_HOSTED_BROWSER_READY; development only; OFFLINE / NO_TRADE.");
-        try { await Task.Delay(Timeout.InfiniteTimeSpan, stop.Token); }
+        var stateFile = localChecksOnly ? Required("M014B_B2_STATE_FILE") : null;
+        using var process = System.Diagnostics.Process.GetCurrentProcess();
+        var expectedSqlAddress = new IPEndPoint(IPAddress.Loopback, port).Serialize().ToString();
+        async Task StateAsync(string state) {
+            if (stateFile is not null) {
+                var unexpectedConnections = observer!.Addresses.Count(a => a != expectedSqlAddress);
+                var temporary = stateFile + ".tmp";
+                await File.WriteAllTextAsync(temporary, JsonSerializer.Serialize(new { pid = Environment.ProcessId, startedAtUtc = process.StartTime.ToUniversalTime(), state, localChecksOnly, unexpectedConnections, sqlConnectionAttempts = observer.Addresses.Count, origin = settings.BrowserOrigin.AbsoluteUri, mode = "OFFLINE", decision = "NO_TRADE" }));
+                File.Move(temporary, stateFile, overwrite: true);
+                if (unexpectedConnections != 0) throw new InvalidOperationException("LOCAL_NETWORK_BOUNDARY_REJECTED");
+            }
+        }
+        await StateAsync("READY");
+        Console.WriteLine($"URL={settings.BrowserOrigin.AbsoluteUri} PID={Environment.ProcessId} STATE=READY {(localChecksOnly ? "LOGIN_DISABLED" : "HOSTED_DEVELOPMENT")} OFFLINE / NO_TRADE");
+        try {
+            var stopFile = localChecksOnly ? Required("M014B_B2_STOP_FILE") : null;
+            while (!stop.IsCancellationRequested) {
+                if (stopFile is not null && File.Exists(stopFile)) { stop.Cancel(); break; }
+                await Task.Delay(500, stop.Token);
+            }
+        }
         catch (OperationCanceledException) when (stop.IsCancellationRequested) { }
-        finally { await app.StopAsync(); }
+        finally { await app.StopAsync(); await StateAsync("STOPPED"); Console.WriteLine("STATE=STOPPED; LOCAL_RESOURCES_RELEASED"); }
     }
 }
