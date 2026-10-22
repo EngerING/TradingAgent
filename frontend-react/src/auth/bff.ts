@@ -111,7 +111,9 @@ export async function configuredBff(): Promise<AuthAdapter | undefined> {
     finally { await reader.cancel(); reader.releaseLock(); }
     controller.signal.throwIfAborted();
     const b = record(JSON.parse(text)); keys(b, ['profile', 'mode', 'decision', 'executionAuthorized']);
-    if (b.profile === 'SYNTHETIC_HTTP_FIXTURE' && b.mode === 'OFFLINE' && b.decision === 'NO_TRADE' && b.executionAuthorized === false) return new BffAuthAdapter();
+    if (b.mode !== 'OFFLINE' || b.decision !== 'NO_TRADE' || b.executionAuthorized !== false) return undefined;
+    if (b.profile === 'SYNTHETIC_HTTP_FIXTURE' && location.hostname === 'localhost') return new BffAuthAdapter('synthetic');
+    if (b.profile === 'HOSTED_DEVELOPMENT_AUTH' && location.hostname === '127.0.0.1') return new BffAuthAdapter('hosted');
   } catch { /* Fail closed. Never select demo on a transport error. */ }
   finally { clearTimeout(timeout); }
   return undefined;
