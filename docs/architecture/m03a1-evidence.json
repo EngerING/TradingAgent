@@ -1,0 +1,320 @@
+{
+  "schema": "trading.m03a1.concurrent_reader_evidence",
+  "schema_version": 1,
+  "inspection_date": "2026-10-23",
+  "timezone": "America/La_Paz",
+  "mode": "OFFLINE",
+  "decision": "NO_TRADE",
+  "execution_authorized": false,
+  "branch": "feature/m03a-tws-market-data-only",
+  "pull_request": "https://github.com/EngerING/TradingAgent/pull/15",
+  "draft_required": true,
+  "baseline_commit": "524c23f6629f46750a52c4b6da31c78252ffe5be",
+  "baseline_tree": "3b2e32de6bb95bdeb2c9f9bd4dc328a31e44e091",
+  "verified_code_commit": "69bfcbdb161118335169a1d6cf6c4e848969c05a",
+  "verified_code_tree": "01065da960c99cc02e7285334585a882f8b770fd",
+  "final_documentation_commit_self_reference_omitted": true,
+  "cause": "Archive constructor always acquires exclusive writer.lock; observe previously replayed every segment per quote.",
+  "architecture": "Post-COMMIT bounded latest-state publication; incremental Projection; Consumer rb-only with prefix cursor and no SQLite connection.",
+  "local_windows_results": {
+    "core_v39_offline_check": {
+      "passed": 394,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 320.362
+    },
+    "market_analyst_offline_check": {
+      "passed": 38,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 1.288
+    },
+    "m03a_offline_check": {
+      "passed": 61,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 52.687
+    },
+    "windows_processes": {
+      "schema": "trading.m03a1.windows_process_tests",
+      "schema_version": 1,
+      "platform": "win32",
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "test_ids": [
+        "__main__.ProcessTests.test_read_during_commit_and_rotation_has_no_dirty_observation",
+        "__main__.ProcessTests.test_real_writer_exclusion_and_two_independent_readers",
+        "__main__.ProcessTests.test_writer_interruption_recovery_and_reader_restart"
+      ],
+      "barrier_violations": 0,
+      "worker_sha256": "1c07f9e4b7dbd69712061ae03a8c5404351a25761918477ebf34258aca93b98c",
+      "poll_samples": 35,
+      "poll_ms_max": 40.7250999705866,
+      "poll_ms_mean": 22.473974283119396
+    },
+    "consumer_performance": {
+      "warm_polls": 25,
+      "warm_poll_ms_mean": 14.936883999034762,
+      "warm_rehashed_bytes": 0,
+      "segments": 3,
+      "new_quote_folded_rows": 1,
+      "new_quote_rehashed_bytes": 36864,
+      "new_quote_append_and_poll_ms": 151.67849999852479
+    },
+    "distinct_total": 496
+  },
+  "original_m03a_test_ids_required": 47,
+  "original_core_tests": 394,
+  "original_market_analyst_tests": 38,
+  "new_unit_tests": 14,
+  "new_process_scenarios": 3,
+  "process_evidence": {
+    "platform": "win32",
+    "writer_exclusive": true,
+    "two_independent_readers": true,
+    "paused_commit_no_dirty_quote": true,
+    "paused_rotation_fail_closed": true,
+    "writer_killed_with_pending_transaction": true,
+    "writer_and_reader_restart": true,
+    "disconnect_invalidates_quote": true,
+    "handles_released": "TemporaryDirectory cleanup succeeds after all worker handles/processes close.",
+    "barriers": "Historical unit guards unchanged. Separate controller allowlists exact fixture worker commands; children forbid socket/subprocess/.local. Reader children deny SQLite and write-open; writer SQLite/write limited to owned fixture root.",
+    "limitation": "Exercised paths and structural/API evidence, not an OS sandbox or a production latency certification."
+  },
+  "preservation": {
+    "baseline_tracked_files": 973,
+    "unchanged_baseline_files": 967,
+    "modified_baseline_files": [
+      ".github/workflows/m03a-market-data-ci.yml",
+      "build/market-data/preservation.py",
+      "build/market-data/verify-results.py",
+      "python/tests/m03a_offline_check.py",
+      "python/trading_agent/market_data/archive.py",
+      "python/trading_agent/market_data/supervisor.py"
+    ],
+    "raw_sha256_differences_outside_allowlist": 0,
+    "unchanged_manifest_sha256": "01f40530dd9741e47fb0d6820828cb19e56637e9a5f13384ba44f502cc6a97e8",
+    "protected_git_objects": {
+      "python/trading_agent/core_v3": "0c6a3c211249151582556862d610ffe29ae221a0",
+      "python/trading_agent/market_analyst": "1cdcffba113842977a881b57912be1e101eae688",
+      "frontend": "8b2101aeb2c3cd8661e95ee8ae13511e5dff09e2",
+      "src/TradingAgent.Infrastructure": "c9322ebfb7e813c71ba6098eedabf5ba8b6970dd",
+      "src/TradingAgent.Core": "e7c3f7cfa0ed45a8e6f18100c14f639c8f8c37a6",
+      "src/TradingAgent.Api": "3cb11938debcbf3f1d21001a9d6b10611f86751b",
+      "Directory.Build.props": "e8f7495b8834700231914c090846d2a2bece5c95",
+      "TradingAgent.sln": "85f076d47efc02709bc44708ac9b86e5bcc5f514",
+      "frontend-react": "5a54dbb40bcee7635f4735e07a3304ff5625ab30",
+      "src/TradingAgent.Web": "220a78a53d2dbaaee7094b156dd283ab886c7aae"
+    },
+    "preexisting_untracked_sha256": {
+      "docs/TradingAgent_Supabase_Diagnostico.ps1": "380769966da835ed8e63191ebe1330f4b47e525f0fa9b994142e2a0d2b3d7cf8",
+      "docs/architecture/core-v3-phase0-audit.md": "419d1e97b7f7017bddebd3074b1433d48702a59a274194f017129933e4314537",
+      "docs/manual/TradingAgent_Manual_Tecnico_Integral.pdf": "1f31321892f532b3d5de1bc3d574bd5f66c3af38ae634d7173b6b173c49b3944"
+    },
+    "main": "f67fa92086d10b9562df214f4e869344bf0753d8",
+    "develop": "363e40985fbd3533992c70dfbe2aa05f6774ba9f",
+    "pr11_head": "5f0fdf7b7eb175163cc40565aedd678b589116f7"
+  },
+  "mutation": {
+    "change": "Temporarily bypass writer_present lock probe",
+    "result": "Rejected: reader returned quote after writer close, expected regression failed.",
+    "failed_tests": 1,
+    "restored_consumer_sha256": "9830ae88f3d5f62170ce8da1e44b75b476998b317add9a7d64309289b3b626f6",
+    "limitation": "One sensitivity experiment, not a global mutation score."
+  },
+  "graphify": {
+    "nodes": 424,
+    "links": 1039,
+    "query": "broker paper quote market data tws",
+    "budget": 1000,
+    "found": 136,
+    "shown": 34,
+    "truncated": 102,
+    "reflect": "--if-stale no-op; lessons read",
+    "limitation": "Historical graph lacks M03-A/Core V3.9; current contracts/sources corroborated; no rebuild/install."
+  },
+  "review": {
+    "type": "Internal single-agent five-axis review; independent audit pending",
+    "secret_patterns_and_path_review": "PASS; no universal secret-detection guarantee",
+    "new_dependencies": 0,
+    "source_compile": "compile() in memory, no pycache"
+  },
+  "diff_against_audited_baseline": {
+    "added_files": 8,
+    "modified_files": 6,
+    "deleted_files": 0,
+    "renamed_files": 0,
+    "files": [
+      [
+        "M",
+        ".github/workflows/m03a-market-data-ci.yml"
+      ],
+      [
+        "A",
+        "build/market-data/concurrency-check.py"
+      ],
+      [
+        "M",
+        "build/market-data/preservation.py"
+      ],
+      [
+        "M",
+        "build/market-data/verify-results.py"
+      ],
+      [
+        "A",
+        "docs/architecture/m03a1-concurrent-reader.md"
+      ],
+      [
+        "A",
+        "python/tests/m03a_concurrency_worker.py"
+      ],
+      [
+        "M",
+        "python/tests/m03a_offline_check.py"
+      ],
+      [
+        "A",
+        "python/tests/test_m03a_consumer.py"
+      ],
+      [
+        "M",
+        "python/trading_agent/market_data/archive.py"
+      ],
+      [
+        "A",
+        "python/trading_agent/market_data/consumer.py"
+      ],
+      [
+        "A",
+        "python/trading_agent/market_data/projection.py"
+      ],
+      [
+        "A",
+        "python/trading_agent/market_data/publication.py"
+      ],
+      [
+        "M",
+        "python/trading_agent/market_data/supervisor.py"
+      ],
+      [
+        "A",
+        "docs/architecture/m03a1-evidence.json"
+      ]
+    ]
+  },
+  "file_inventory_excluding_this_evidence": [
+    {
+      "status": "M",
+      "path": ".github/workflows/m03a-market-data-ci.yml",
+      "bytes": 2347,
+      "lines": 56,
+      "sha256": "9d7f0761781808095fc189bb33bf3b780ef1713eaa690620bd42397394f6bfb8"
+    },
+    {
+      "status": "A",
+      "path": "build/market-data/concurrency-check.py",
+      "bytes": 8675,
+      "lines": 193,
+      "sha256": "b6d2b5959391671369a6a1e053a51caaf5fa8ccee3d6d41906aa498572e74d4f"
+    },
+    {
+      "status": "M",
+      "path": "build/market-data/preservation.py",
+      "bytes": 3774,
+      "lines": 63,
+      "sha256": "49ac3442081013fdde41b3825a6148553e0557e30338ed3caf0656ea8e3117bb"
+    },
+    {
+      "status": "M",
+      "path": "build/market-data/verify-results.py",
+      "bytes": 2657,
+      "lines": 39,
+      "sha256": "f6890fd55a4c0dab59fbf9a771f8930c2cef10554100f960792842b748991741"
+    },
+    {
+      "status": "A",
+      "path": "docs/architecture/m03a1-concurrent-reader.md",
+      "bytes": 11593,
+      "lines": 189,
+      "sha256": "9c42ce66d7b72222d580bacf34e8cd334653f14c467a537ca70a476f1805649a"
+    },
+    {
+      "status": "A",
+      "path": "python/tests/m03a_concurrency_worker.py",
+      "bytes": 4911,
+      "lines": 98,
+      "sha256": "1c07f9e4b7dbd69712061ae03a8c5404351a25761918477ebf34258aca93b98c"
+    },
+    {
+      "status": "M",
+      "path": "python/tests/m03a_offline_check.py",
+      "bytes": 1758,
+      "lines": 39,
+      "sha256": "94de849be98322b008ccb62c693eee42f34f449918ba552c4efae816f722d9d8"
+    },
+    {
+      "status": "A",
+      "path": "python/tests/test_m03a_consumer.py",
+      "bytes": 16193,
+      "lines": 268,
+      "sha256": "c6e7a21ea5f9c633930a269f5692a3aeb28c775e25d1a2c378b11ed9bf6e634a"
+    },
+    {
+      "status": "M",
+      "path": "python/trading_agent/market_data/archive.py",
+      "bytes": 10602,
+      "lines": 208,
+      "sha256": "78dc81e45f9a6ef7513aff24a1bb0a9b6c3583ca27808541dd97075e9ac3437f"
+    },
+    {
+      "status": "A",
+      "path": "python/trading_agent/market_data/consumer.py",
+      "bytes": 11429,
+      "lines": 223,
+      "sha256": "9830ae88f3d5f62170ce8da1e44b75b476998b317add9a7d64309289b3b626f6"
+    },
+    {
+      "status": "A",
+      "path": "python/trading_agent/market_data/projection.py",
+      "bytes": 5676,
+      "lines": 93,
+      "sha256": "9258d86b0f75370652f0c89d0cd44d25c17d09e81b7e4017060d2655e04e3887"
+    },
+    {
+      "status": "A",
+      "path": "python/trading_agent/market_data/publication.py",
+      "bytes": 5396,
+      "lines": 101,
+      "sha256": "0b14510df6dd47433c5a6fb42158b1ef341baed6de32a7bee62112a53da10666"
+    },
+    {
+      "status": "M",
+      "path": "python/trading_agent/market_data/supervisor.py",
+      "bytes": 6626,
+      "lines": 129,
+      "sha256": "5bc05f9b80d7951f78275f57a6996b7cc9479c8dceae0ef1da1e25dfc555a8b7"
+    }
+  ],
+  "ci_at_document_commit": "Pending publication; final run identities/results must be checked from GitHub artifact for final HEAD/tree.",
+  "not_executed": [
+    "Authentic TWS/IBKR connection or order",
+    "Hosted Supabase or financial PostgreSQL",
+    "Financial services, migrations, strategies or M03-B",
+    "Windows service installation",
+    "Merge, deployment, main/develop/PR11 modification"
+  ],
+  "authentic_read_prerequisites": "Trusted external host authority and genuine signed Grant V3.9 + DataPermit, exact session/environment/endpoint/clientId/accounts binding, read-only/entitlement attestation, expiry/revocation, approved capture limits and real profile157 recertification. No authority provisioned or fabricated.",
+  "risks": [
+    "Latest-state coalescing is not a per-tick delivery queue.",
+    "Concurrent publication or storage uncertainty returns UNAVAILABLE.",
+    "Retained Observation is historical; call poll and inspect freshness even on UNCHANGED.",
+    "Hash/fingerprint cache trusts host/filesystem metadata; no malicious-owner protection.",
+    "External cursor anchor required to detect restoration of an older intact prefix.",
+    "Active journal verification and hashing remain bounded linear work; no HFT claim.",
+    "Staging and four views consume existing archive quota; exhaustion stops capture.",
+    "Power-loss durability of filesystem replace is platform-dependent; restart verifies journals and starts inactive."
+  ]
+}
