@@ -7,7 +7,7 @@ import struct
 import time
 import uuid
 
-from trading_agent.core_v3.contracts import require, ContractError
+from trading_agent.core_v3.contracts import require, ContractError, content_hash
 from trading_agent.core_v3.market_observation.ibkr_adapter import IBKRReader, _Epoch
 from trading_agent.core_v3.market_observation.ibkr_protocol import Command, handshake, fields
 from trading_agent.core_v3.market_observation.contracts import Kind, Origin
@@ -26,12 +26,15 @@ class MarketReader(IBKRReader):
         require(type(config) is CollectorConfig and type(approval) is DataApproval, 'M03_READER_TYPE')
         super().__init__(config.capture, approval.capture, now=now, mono=mono)
         self.config, self.data_approval, self.stop = config, approval, stop
+        self._connection_grant = content_hash(approval.capture.grant.to_dict())
         self.calendar, self.reason, self.next_open = None, 'NOT_STARTED', None
         self.history_not_before = history_not_before
         self._pending, self._buffer, self._needed = None, bytearray(), 4
         self._rejected = b''
 
     def _verify(self):
+        require(self.data_approval.capture is self.approval and
+                content_hash(self.approval.grant.to_dict()) == self._connection_grant, 'M03_CONNECTION_BINDING')
         self.data_approval.verify(self.config, self.now())
 
     def _open(self):
@@ -158,7 +161,7 @@ class MarketReader(IBKRReader):
             code = str(exc) if isinstance(exc, ContractError) else ''
             self.reason = ('IDENTITY_OR_PERMISSION_REJECTED' if code in
                 ('OBS_ACCOUNT_MISMATCH','OBS_CAPTURE_DISABLED','OBS_APPROVAL_BINDING',
-                 'OBS_APPROVAL_EXPIRED_OR_UNVERIFIED','M03_APPROVAL_BINDING') else
+                 'OBS_APPROVAL_EXPIRED_OR_UNVERIFIED','M03_APPROVAL_BINDING','M03_CONNECTION_BINDING') else
                 'PROFILE_REJECTED' if code == 'M03_UNVERIFIED_SERVER_PROFILE' else 'DISCONNECTED')
             rejected = self._rejected
             safe = rejected.split(b'\0',1)[0] in (b'1',b'10',b'17',b'52',b'58') and rejected.endswith(b'\0')

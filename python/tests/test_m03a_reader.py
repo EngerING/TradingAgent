@@ -149,5 +149,20 @@ class ReaderTests(unittest.TestCase):
         self.assertEqual('DISCONNECTED',r.reason)
         self.assertTrue(r.closed)
 
+    def test_paper_to_live_even_with_new_valid_approval_requires_new_connection(self):
+        cfg = config(enabled=True)
+        r = self.reader(cfg=cfg)
+        receive = r.fixture.recv
+        def changed(n):
+            value = receive(n)
+            if not r.fixture.data: r.data_approval = permission(cfg,kind=SessionKind.LIVE)
+            return value
+        r.fixture.recv = changed
+        values = tuple(r.events())
+        self.assertFalse(any(e.kind is Kind.ASK for e in values))
+        self.assertTrue(any(e.kind is Kind.GAP for e in values))
+        self.assertTrue(all(e.session_kind is SessionKind.PAPER for e in values))
+        self.assertTrue(r.closed)
+
 
 if __name__ == '__main__': unittest.main()

@@ -69,6 +69,8 @@ class ArchiveTests(unittest.TestCase):
             with self.archive(directory, create=True): pass
             with self.assertRaises(ContractError):
                 Archive(Path(directory), config(enabled=True),'session-1',Origin.SOCKET,SessionKind.PAPER)
+            with self.assertRaises(ContractError):
+                Archive(Path(directory), config(enabled=True),'session-1',Origin.FIXTURE,SessionKind.LIVE)
             (Path(directory)/'unowned.txt').write_text('fixture')
             with self.assertRaises(ContractError): self.archive(directory)
 
