@@ -7,7 +7,9 @@ Esta revisión manual no se envió a terceros y no constituye aprobación indepe
 Revisar `m03a-market-data-collector.md`, `m03a-evidence.json`, el diff completo y
 los artefactos del workflow M03-A. Las fuentes protegidas deben tener el mismo
 objeto Git que la base; build/market-data/preservation.py rechaza modificaciones,
-eliminaciones o adiciones fuera de su allowlist. Los tres archivos locales
+eliminaciones o adiciones fuera de su allowlist. La única edición previa permitida
+es el dispatcher build/react-bff/preservation.mjs, para admitir esta fase sin
+omitir los checks React/backend ni relajar su contenido. Los tres archivos locales
 preexistentes no forman parte del PR.
 
 Preguntas adversariales para el auditor:

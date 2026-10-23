@@ -5,6 +5,10 @@ Alcance: 2026-10-23, America/La_Paz. Base `develop`:
 `feature/m03a-tws-market-data-only`. **OFFLINE / NO_TRADE** al entregar.
 Lectura auténtica Paper y Live: **PENDIENTE DE VALIDACIÓN SUPERVISADA**.
 No se modifica ni integra el PR #11. No hay aprobación de trading o despliegue.
+La única modificación de un archivo previo es build/react-bff/preservation.mjs:
+despacha a la allowlist M03-A desde la base integrada y mantiene las suites antiguas.
+Los primeros checks React rechazaron estas nuevas rutas como fuera del alcance
+M01.4B/M02, antes de ejecutar tests; no fue un fallo de componentes financieros.
 
 ## Arquitectura y reutilización
 

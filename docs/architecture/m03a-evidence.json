@@ -35,7 +35,7 @@
   "build": "Python source compile() in memory; no C# or frontend changes; historical .NET/frontend build not rerun locally",
   "source_preservation": {
     "baseline_tracked_files": 947,
-    "raw_sha256_differences": 0,
+    "raw_sha256_differences": 1,
     "protected_git_objects": {
       "python/trading_agent/core_v3": "0c6a3c211249151582556862d610ffe29ae221a0",
       "python/trading_agent/market_analyst": "1cdcffba113842977a881b57912be1e101eae688",
@@ -51,7 +51,8 @@
       "docs/TradingAgent_Supabase_Diagnostico.ps1": "380769966da835ed8e63191ebe1330f4b47e525f0fa9b994142e2a0d2b3d7cf8",
       "docs/architecture/core-v3-phase0-audit.md": "419d1e97b7f7017bddebd3074b1433d48702a59a274194f017129933e4314537",
       "docs/manual/TradingAgent_Manual_Tecnico_Integral.pdf": "1f31321892f532b3d5de1bc3d574bd5f66c3af38ae634d7173b6b173c49b3944"
-    }
+    },
+    "approved_infrastructure_edit": "build/react-bff/preservation.mjs"
   },
   "sdk_oracle": {
     "version": "10.50.2",
@@ -100,7 +101,15 @@
       "native bars must not be forced to an invented UTC grid",
       "bar incomplete at request remains incomplete after delayed receipt",
       "external checkpoint accepts later commits while protecting known prefix"
-    ]
+    ],
+    "ci_scope_correction": {
+      "initial_react_runs": [
+        39947999223,
+        39947999190
+      ],
+      "reason": "M01.4B/M02 path allowlist rejected M03-A additions before executing tests",
+      "change": "Dispatch integrated M03-A tree to its exact allowlist; retain all previous test suites"
+    }
   },
   "real_validation": "PENDIENTE DE VALIDACION SUPERVISADA: endpoint, Paper/Live identity, external read-only evidence, calendar, entitlements, pacing and broker-side zero-order audit",
   "ci": "Workflow prepared; final run and artifact URL reported separately after publication",
@@ -121,8 +130,8 @@
     },
     {
       "path": "build/market-data/preservation.py",
-      "bytes": 2304,
-      "sha256": "d5013e9ae9f481fdfa5f6bb6da0094700614b2520e29ff164131e05046c83c49"
+      "bytes": 2520,
+      "sha256": "22e3e346b4751ac35dc44a35163e8b9e5bf453c146350e10573a34dc2e3a91cd"
     },
     {
       "path": "build/market-data/requirements-ci.txt",
@@ -146,13 +155,13 @@
     },
     {
       "path": "docs/architecture/m03a-market-data-collector.md",
-      "bytes": 13715,
-      "sha256": "4d00ed7ec84ebf66deb6e143ad8da10e0c5b7c74d556acc355ca6c2c7fa49323"
+      "bytes": 14043,
+      "sha256": "9a70764df5101e9513f6f7a5562239d853d7f69761a7c73209c98ded541b03b6"
     },
     {
       "path": "docs/architecture/m03a-review.md",
-      "bytes": 2793,
-      "sha256": "b4dbd366675d8abe0e4adbb7fde47d847a36aaa6debfa84ea6ef0390da29ed84"
+      "bytes": 2964,
+      "sha256": "0cc33305133460f8cbdfebc53f542acd7a387dc54e84393c6e779e93d6989f40"
     },
     {
       "path": "python/tests/m03a_offline_check.py",
@@ -238,6 +247,12 @@
       "path": "python/trading_agent/market_data/wire.py",
       "bytes": 3393,
       "sha256": "177f09eb4ab3765f387d05dbc092e10458a3be67867d68ba27c94c536094a5a5"
+    },
+    {
+      "path": "build/react-bff/preservation.mjs",
+      "change": "M",
+      "bytes": 8595,
+      "sha256": "98105cbb28fff191af7fe587826cf22af2202cf2d157c8953f29eaf8492418b4"
     }
   ]
 }
