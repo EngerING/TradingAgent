@@ -23,7 +23,7 @@ class ReportingRunner(unittest.TextTestRunner):
         directory = Path(__file__).resolve().parents[2]/'tmp/m03a'
         directory.mkdir(parents=True,exist_ok=True)
         (directory/'tests.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
-        if result.testsRun < 43 or result.skipped or len(set(names)) != result.testsRun:
+        if result.testsRun < 45 or result.skipped or len(set(names)) != result.testsRun:
             raise AssertionError('M03_TEST_DISCOVERY_OR_SKIPS')
         return result
 

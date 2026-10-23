@@ -1,7 +1,7 @@
 """Bounded linked V3.9 journals. No migration or writes to protected financial stores."""
 import base64
-from dataclasses import dataclass
-from datetime import timedelta
+from dataclasses import dataclass, replace
+from datetime import datetime, timedelta, timezone
 import os
 import re
 
@@ -13,7 +13,7 @@ from trading_agent.core_v3.market_observation.validation import State, step
 from trading_agent.core_v3.market_observation.ibkr_protocol import fields
 from .contracts import Observation
 from .calendar import TradingCalendar
-from .wire import historical, TIMEFRAMES
+from .wire import historical, request_cutoff, TIMEFRAMES
 
 
 @dataclass(frozen=True, slots=True)
@@ -171,10 +171,12 @@ class Archive:
         require(minutes in (0,15,60,240), 'M03_TIMEFRAME')
         state, quote, calendar, bars, quality, contract = State(), None, None, (), (), None
         planned, seen, conflicts = {}, {}, set()
+        prefix_available = datetime.min.replace(tzinfo=timezone.utc)
         evidence = self.metadata
         for row in self.history():
             raw = row.value.event
             if max(raw.received_at, row.value.as_of) > as_of: break
+            prefix_available = max(prefix_available,raw.received_at,row.value.as_of)
             state, value = step(state, raw, self.config.capture, as_of=row.value.as_of)
             evidence = row.sha256
             if raw.kind is Kind.CONNECTED:
@@ -187,7 +189,11 @@ class Archive:
                     calendar = TradingCalendar(f[27], f[28], raw.received_at)
             if raw.kind in (Kind.GAP, Kind.DISCONNECTED) or not value.accepted: quote = None
             if raw.kind in (Kind.BID, Kind.ASK): quote = value.quote
-            if raw.diagnostic == 'HISTORY_REQUEST_PLANNED': planned[raw.wire_request_id] = raw.received_at
+            if raw.diagnostic == 'HISTORY_REQUEST_PLANNED':
+                require(contract is not None, 'M03_HISTORY_NO_CONTRACT')
+                cutoff = request_cutoff(base64.b64decode(raw.raw_frame_b64),raw.wire_request_id,contract.con_id)
+                require(cutoff <= raw.received_at, 'M03_HISTORY_REQUEST_FUTURE')
+                planned[raw.wire_request_id] = cutoff
             if minutes and raw.diagnostic == 'HISTORY_BATCH' and TIMEFRAMES.get(raw.wire_request_id) == minutes:
                 require(calendar is not None and contract is not None and raw.wire_request_id in planned,
                         'M03_HISTORY_NO_CONTRACT')
@@ -205,7 +211,7 @@ class Archive:
                         extra.append('HISTORY_CONFLICT')
                         continue
                     seen[key] = prices
-                    included.append(bar)
+                    included.append(replace(bar,available_at=prefix_available))
                 bars = tuple(included)
                 quality = tuple(sorted(set(quality+tuple(extra)+tuple(c for b in all_bars for c in b.quality))))
         reasons = list(quality)

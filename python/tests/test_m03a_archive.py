@@ -1,5 +1,6 @@
 """Durability, bounded rotation and causal M03-B views using synthetic byte streams."""
 import base64
+import hashlib
 from dataclasses import replace
 from datetime import timedelta
 from pathlib import Path
@@ -15,6 +16,7 @@ from test_m03a_contracts import AT
 from test_m03a_reader import config, permission, packets
 from trading_agent.market_data.reader import TranscriptReader
 from test_m03a_wire import batch
+from trading_agent.market_data.wire import history_request
 
 
 class ArchiveTests(unittest.TestCase):
@@ -115,6 +117,29 @@ class ArchiveTests(unittest.TestCase):
                 iterator.close()
             with self.archive(directory,checkpoint=anchor) as reopened:
                 self.assertEqual(2,len(reopened.history()))
+
+    def test_normalized_bar_availability_does_not_predate_validation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with self.archive(directory,create=True) as archive:
+                r = TranscriptReader(packets()+(batch(),),archive.config,permission(archive.config),now=lambda:AT)
+                for event in r.events():
+                    archive.append(event,as_of=AT+timedelta(seconds=30) if event.diagnostic == 'HISTORY_BATCH' else AT)
+                self.assertEqual((),archive.observe(AT+timedelta(seconds=29),15).bars)
+                self.assertEqual(AT+timedelta(seconds=30),archive.observe(AT+timedelta(seconds=30),15).bars[0].available_at)
+
+    def test_effective_request_cutoff_comes_from_original_wire(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with self.archive(directory,create=True) as archive:
+                r = TranscriptReader(packets()+(batch(),),archive.config,permission(archive.config),now=lambda:AT)
+                for event in r.events():
+                    if event.diagnostic == 'HISTORY_REQUEST_PLANNED':
+                        payload = history_request(201,12087792,15,AT-timedelta(minutes=50))[4:]
+                        event = replace(event,raw_frame_b64=base64.b64encode(payload).decode(),
+                                        raw_frame_size=len(payload),raw_frame_sha256=hashlib.sha256(payload).hexdigest())
+                    archive.append(event,as_of=AT)
+                value = archive.observe(AT,15)
+                self.assertEqual((),value.bars)
+                self.assertIn('BAR_INCOMPLETE_AT_REQUEST',value.quality)
 
 
 if __name__ == '__main__': unittest.main()

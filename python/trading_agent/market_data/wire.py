@@ -4,6 +4,7 @@ import hashlib
 import struct
 
 from trading_agent.core_v3.contracts import require, ContractError, parse_decimal, utc
+from trading_agent.core_v3.market_observation.ibkr_protocol import fields
 from .contracts import Bar
 
 TIMEFRAMES = {201:15, 202:60, 203:240}
@@ -25,6 +26,18 @@ def history_request(request_id, con_id, minutes, end):
 def cancel_history(request_id):
     require(type(request_id) is int and request_id in TIMEFRAMES, 'M03_HISTORY_COMMAND')
     return _frame([25, 1, request_id])
+
+
+def request_cutoff(payload, request_id, con_id):
+    """Use the actual serialized endpoint cutoff, never the intention's receipt clock."""
+    f = fields(payload)
+    try:
+        cutoff = datetime.strptime(f[15], '%Y%m%d-%H:%M:%S').replace(tzinfo=timezone.utc)
+        require(history_request(request_id,con_id,TIMEFRAMES[request_id],cutoff)[4:] == payload,
+                'M03_HISTORY_REQUEST_FRAME')
+        return cutoff
+    except (ValueError,IndexError,KeyError):
+        raise ContractError('M03_HISTORY_REQUEST_FRAME') from None
 
 
 def history_fields(payload):
