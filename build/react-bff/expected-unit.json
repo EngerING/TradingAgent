@@ -3,6 +3,7 @@
   "BFF transport boundary &gt; blocks orphan enrollment without POST enrollment or DELETE",
   "BFF transport boundary &gt; blocks recovery and invitation without network",
   "BFF transport boundary &gt; cancelled requests cannot leave a preliminary authenticated state",
+  "BFF transport boundary &gt; distinguishes a confirmed expired preview from a provider outage",
   "BFF transport boundary &gt; does not confuse HTTP success with an authenticated session",
   "BFF transport boundary &gt; normalizes HTTP 401",
   "BFF transport boundary &gt; normalizes HTTP 403",
@@ -18,6 +19,11 @@
   "Read-only dashboard &gt; renders verified empty financial states, segregated streams and no execution controls",
   "Read-only dashboard &gt; shows security limits in a real navigation panel without changing permissions",
   "Read-only dashboard &gt; fails closed when the BFF rejects or expires the preview session",
+  "Read-only dashboard &gt; expires on focus after a sleeping tab missed its deadline timer",
+  "Read-only dashboard &gt; does not disguise a BFF outage before the known idle deadline as an ordinary expiry",
+  "Read-only dashboard &gt; only extends the idle deadline after the BFF confirms deliberate human activity",
+  "Read-only dashboard &gt; shows the 30-minute inactivity expiry even when a background check cannot finish",
+  "Read-only dashboard &gt; shows the generic expiry at the absolute eight-hour boundary",
   "Read-only dashboard &gt; waits for confirmation and never renders dashboard content optimistically",
   "Read-only dashboard &gt; signs out through the existing BFF flow and returns to login"
 ]
