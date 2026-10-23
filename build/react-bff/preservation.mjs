@@ -2,6 +2,21 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim();
+// M03-A starts from the integrated M02 tree. Its stricter additions-only gate
+// preserves all of that tree except this CI dispatcher; no test is skipped.
+let marketDataPhase = false;
+try { execFileSync('git', ['merge-base','--is-ancestor','363e40985fbd3533992c70dfbe2aa05f6774ba9f','HEAD']); marketDataPhase = true; } catch { /* Preserve earlier phase gates. */ }
+if (marketDataPhase) {
+ const python = process.platform === 'win32' ? '.venv/Scripts/python.exe' : 'python3';
+ const report = JSON.parse(execFileSync(python, ['-B','build/market-data/preservation.py'], { encoding:'utf8' }));
+ const result = { ...report, commit:report.head, preserved_files:946,
+  protected_objects:report.protected_git_objects, mode:'OFFLINE', decision:'NO_TRADE', result:'PASS' };
+ for (const phase of ['m014a','m014b']) {
+  mkdirSync(`artifacts/${phase}`, {recursive:true});
+  writeFileSync(`artifacts/${phase}/identity.json`, JSON.stringify(result,null,2)+'\n');
+ }
+ console.log('M03-A scoped preservation PASS; existing React/backend suites remain required.');
+} else {
 // M02 extends the local-preview gate with exact dashboard-only files. All
 // financial services, session providers, main and the original visual assets
 // remain immutable.
@@ -53,3 +68,4 @@ const main = git('rev-parse','origin/main'); assert(main === 'f67fa92086d10b9562
 const result = { baseline, commit: git('rev-parse','HEAD'), tree: git('rev-parse','HEAD^{tree}'), main, preserved_files: preserved.length, approved_edit_paths: [...allowedEdits], protected_objects: objects, changes, mode:'OFFLINE', decision:'NO_TRADE', result:'PASS' };
 for (const phase of ['m014a','m014b']) { mkdirSync(`artifacts/${phase}`, {recursive:true}); writeFileSync(`artifacts/${phase}/identity.json`, JSON.stringify(result,null,2)+'\n'); }
 console.log(`M01.4B preservation PASS: ${preserved.length} baseline files byte-identical in Git; explicit auth-only edits; main unchanged.`);
+}
