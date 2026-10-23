@@ -7,7 +7,7 @@ import subprocess
 
 root = Path('tmp/m03a')
 report = {}
-for suite,expected in (('core_v39_offline_check',394),('market_analyst_offline_check',38),('m03a_offline_check',62)):
+for suite,expected in (('core_v39_offline_check',394),('market_analyst_offline_check',38),('m03a_offline_check',63)):
     payload = (root/(suite+'.log')).read_bytes()
     log = payload.decode('utf-16' if payload.startswith((b'\xff\xfe',b'\xfe\xff')) else 'utf-8-sig')
     counts = re.findall(r'Ran (\d+) tests? in ([0-9.]+)s',log)
@@ -17,7 +17,7 @@ for suite,expected in (('core_v39_offline_check',394),('market_analyst_offline_c
     assert counters and all(int(c) == 0 for c in counters), 'M03_OFFLINE_BARRIER'
     report[suite] = {'passed':int(counts[0][0]),'failed':0,'skipped':0,'seconds':float(counts[0][1])}
 tests = json.loads((root/'tests.json').read_text())
-assert tests['total'] == tests['passed'] == tests['distinct'] >= 62, 'M03_DISTINCT_TESTS'
+assert tests['total'] == tests['passed'] == tests['distinct'] >= 63, 'M03_DISTINCT_TESTS'
 assert tests['failed'] == tests['skipped'] == tests['barrier_violations'] == 0, 'M03_TEST_RESULTS'
 original = set()
 for module in ('contracts','wire','reader','archive','supervisor','adversarial','entrypoint'):

@@ -3,6 +3,8 @@ from datetime import timedelta
 from dataclasses import replace
 import ast
 import time
+import os
+import threading
 from unittest.mock import patch
 from pathlib import Path
 import tempfile
@@ -276,6 +278,42 @@ class ConsumerTests(unittest.TestCase):
                 return scan(reopened)
             with patch.object(Archive,'_scan',paused_scan):
                 with Archive(Path(directory),cfg,'session-1',Origin.FIXTURE,SessionKind.PAPER): pass
+
+    def test_readers_cannot_mistake_each_others_probe_for_a_writer(self):
+        from trading_agent.market_data.consumer import writer_present
+        with tempfile.TemporaryDirectory() as directory:
+            with self.writer(directory) as writer:
+                archive_fixtures.ArchiveTests().capture(writer)
+                reader = self.reader(writer)
+                reader.poll(AT)
+            if os.name != 'nt':
+                self.assertFalse(writer_present(Path(directory)/'writer.lock'))
+                self.assertIsNone(reader.poll(AT).observation.quote)
+                return
+            import msvcrt
+            real = msvcrt.locking
+            ready,release = threading.Event(),threading.Event()
+            first = []
+            def paused_lock(fd,mode,count):
+                result = real(fd,mode,count)
+                if mode == msvcrt.LK_NBRLCK and threading.current_thread().name == 'reader-probe':
+                    ready.set()
+                    release.wait(5)
+                return result
+            def probe():
+                try: first.append(writer_present(Path(directory)/'writer.lock'))
+                finally: ready.set()
+            with patch('msvcrt.locking',paused_lock):
+                thread = threading.Thread(target=probe,name='reader-probe')
+                thread.start()
+                try:
+                    self.assertTrue(ready.wait(5))
+                    self.assertIsNone(reader.poll(AT).observation.quote)
+                finally:
+                    release.set()
+                    thread.join(timeout=5)
+                self.assertFalse(thread.is_alive())
+                self.assertEqual([False],first)
 
 
 

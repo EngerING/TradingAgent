@@ -86,14 +86,14 @@ def fingerprint(path):
 
 
 def writer_present(path):
-    """Probe the existing exclusive writer lock, using a read-only shared lock."""
+    """Read the mandatory-locked Windows byte; POSIX uses compatible shared probes."""
     fingerprint(path)
     with path.open('rb') as stream:
         try:
             if os.name == 'nt':
-                import msvcrt
-                msvcrt.locking(stream.fileno(),msvcrt.LK_NBRLCK,1)
-                msvcrt.locking(stream.fileno(),msvcrt.LK_UNLCK,1)
+                # CRT LK_NBRLCK is exclusive too: do not let readers impersonate a
+                # writer by blocking each other's probes. No reader lock on Windows.
+                require(stream.read(1) == b'M','M03_ARCHIVE_LOCK')
             else:
                 import fcntl
                 fcntl.flock(stream.fileno(),fcntl.LOCK_SH | fcntl.LOCK_NB)

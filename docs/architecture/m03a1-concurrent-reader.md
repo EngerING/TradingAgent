@@ -115,8 +115,16 @@ y vencimiento de evidencia de calendario. Se comprueba UTC y tiempo monotónico
 transcurrido de la publicación del mismo host. Un reloj hacia atrás o ambiguo
 invalida. Un cuelgue conservando el lock no prolonga ese plazo. Desconexión/GAP,
 reinicio, cierre y FROZEN/DELAYED/UNKNOWN no generan una quote LIVE válida.
-La sonda del lock usa un handle rb y un lock compartido no bloqueante; si no hay
-escritor, lo libera inmediatamente y devuelve vista sin cotización.
+La sonda usa un handle rb. En Windows intenta leer el byte protegido por el
+lock obligatorio del escritor; no adquiere locks del lector. `_LK_NBRLCK` es
+exclusivo también y dos sondas de ese tipo podían confundirse entre sí: una
+regresión pausa una sonda y demuestra que ninguna acredita un escritor ausente.
+En POSIX se usan sondas shared compatibles entre sí. Si no hay escritor, la
+vista queda sin cotización. La detección depende de la liberación del lock por
+el sistema operativo y siempre queda acotada además por el plazo de frescura;
+no es una prueba instantánea de conectividad del proveedor.
+Fuentes: [modos CRT _locking](https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/locking),
+[locks de bytes Windows](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-lockfile).
 
 ## Costo y límites de las mediciones
 
@@ -142,7 +150,7 @@ ni una calificación de producción. Los valores exactos están en la evidencia.
 
 Las 47 pruebas M03-A originales son exigidas por sus IDs extraídos del commit
 auditado; se conservan los 394 casos Core y38 Analyst bajo sus wrappers intactos.
-Se añaden15 pruebas unitarias y3 escenarios con procesos reales en Windows:
+Se añaden16 pruebas unitarias y3 escenarios con procesos reales en Windows:
 dos lectores, exclusión de segundo escritor, commit pausado, rotación pausada,
 terminación forzada con transacción pendiente, reinicio y cierre de handles.
 El reader worker deniega apertura para escritura y toda conexión SQLite.
