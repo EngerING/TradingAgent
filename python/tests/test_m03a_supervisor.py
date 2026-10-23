@@ -25,7 +25,7 @@ class SupervisorTests(unittest.TestCase):
             reader = TranscriptReader(payloads or packets(),*args,**kw)
             readers.append(reader)
             return reader
-        supervisor = Supervisor(archive,permission(cfg),reader_factory=factory,now=lambda:AT,
+        supervisor = Supervisor(archive,permission(cfg),reader_factory=factory,now=lambda:AT,mono=lambda:0,
                                 wait=wait or (lambda seconds:False))
         return archive,supervisor,readers
 

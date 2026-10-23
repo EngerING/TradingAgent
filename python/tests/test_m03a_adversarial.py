@@ -24,7 +24,7 @@ from test_core_v39_protocol import frame
 class AdversarialTests(unittest.TestCase):
     def reader(self, data, **kw):
         cfg = config(enabled=True)
-        return TranscriptReader(data,cfg,permission(cfg),now=lambda:AT,**kw)
+        return TranscriptReader(data,cfg,permission(cfg),now=lambda:AT,mono=lambda:0,**kw)
 
     def test_invalid_quote_sides_never_appear_in_consumer(self):
         cases = (packets()[:4], packets()[:4]+(frame(1,6,101,1,'-1',0,0)[4:],),

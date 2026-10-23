@@ -43,7 +43,7 @@ def packets(accounts='DU123', hours='20261023:0000-20261024:0000', feed=1):
 class ReaderTests(unittest.TestCase):
     def reader(self, payloads=None, cfg=None, auth=None):
         cfg = cfg or config(enabled=True)
-        return TranscriptReader(payloads or packets(), cfg, auth or permission(cfg), now=lambda:AT)
+        return TranscriptReader(payloads or packets(), cfg, auth or permission(cfg), now=lambda:AT,mono=lambda:0)
 
     def test_paper_and_live_read_only_with_full_identity(self):
         for kind in SessionKind:
@@ -125,7 +125,7 @@ class ReaderTests(unittest.TestCase):
     def test_expiry_inside_blocking_receive_rejects_and_closes(self):
         cfg = config(enabled=True)
         clock = [AT]
-        r = TranscriptReader(packets(),cfg,permission(cfg),now=lambda:clock[0])
+        r = TranscriptReader(packets(),cfg,permission(cfg),now=lambda:clock[0],mono=lambda:0)
         receive = r.fixture.recv
         def late(n):
             data = receive(n)

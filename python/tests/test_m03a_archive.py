@@ -21,7 +21,7 @@ from trading_agent.market_data.wire import history_request
 
 class ArchiveTests(unittest.TestCase):
     def capture(self, archive):
-        reader = TranscriptReader(packets(), archive.config, permission(archive.config), now=lambda:AT)
+        reader = TranscriptReader(packets(), archive.config, permission(archive.config), now=lambda:AT,mono=lambda:0)
         iterator = reader.events()
         try:
             for event in iterator:
@@ -84,7 +84,7 @@ class ArchiveTests(unittest.TestCase):
     def test_duplicate_conflict_and_checkpoint_reject_rollback(self):
         with tempfile.TemporaryDirectory() as directory:
             with self.archive(directory, create=True) as archive:
-                r = TranscriptReader(packets(),archive.config,permission(archive.config),now=lambda:AT)
+                r = TranscriptReader(packets(),archive.config,permission(archive.config),now=lambda:AT,mono=lambda:0)
                 iterator = r.events()
                 event = next(iterator)
                 row = archive.append(event, as_of=AT)
@@ -100,7 +100,7 @@ class ArchiveTests(unittest.TestCase):
             with self.archive(directory, create=True) as archive:
                 for index, payload in enumerate((batch(),batch(),batch().replace(b'1.15\0',b'1.16\0'))):
                     if index: archive.rotate(AT)
-                    r = TranscriptReader(packets()+(payload,),archive.config,permission(archive.config),now=lambda:AT)
+                    r = TranscriptReader(packets()+(payload,),archive.config,permission(archive.config),now=lambda:AT,mono=lambda:0)
                     for event in r.events(): archive.append(event,as_of=AT)
                     view = archive.observe(AT,15)
                     if index == 1: self.assertIn('HISTORY_DUPLICATE',view.quality)
@@ -111,7 +111,7 @@ class ArchiveTests(unittest.TestCase):
     def test_checkpoint_anchors_prefix_while_later_commits_remain_valid(self):
         with tempfile.TemporaryDirectory() as directory:
             with self.archive(directory,create=True) as archive:
-                r = TranscriptReader(packets(),archive.config,permission(archive.config),now=lambda:AT)
+                r = TranscriptReader(packets(),archive.config,permission(archive.config),now=lambda:AT,mono=lambda:0)
                 iterator = r.events()
                 archive.append(next(iterator),as_of=AT)
                 anchor = archive.checkpoint()
@@ -123,7 +123,7 @@ class ArchiveTests(unittest.TestCase):
     def test_normalized_bar_availability_does_not_predate_validation(self):
         with tempfile.TemporaryDirectory() as directory:
             with self.archive(directory,create=True) as archive:
-                r = TranscriptReader(packets()+(batch(),),archive.config,permission(archive.config),now=lambda:AT)
+                r = TranscriptReader(packets()+(batch(),),archive.config,permission(archive.config),now=lambda:AT,mono=lambda:0)
                 for event in r.events():
                     archive.append(event,as_of=AT+timedelta(seconds=30) if event.diagnostic == 'HISTORY_BATCH' else AT)
                 self.assertEqual((),archive.observe(AT+timedelta(seconds=29),15).bars)
@@ -132,7 +132,7 @@ class ArchiveTests(unittest.TestCase):
     def test_effective_request_cutoff_comes_from_original_wire(self):
         with tempfile.TemporaryDirectory() as directory:
             with self.archive(directory,create=True) as archive:
-                r = TranscriptReader(packets()+(batch(),),archive.config,permission(archive.config),now=lambda:AT)
+                r = TranscriptReader(packets()+(batch(),),archive.config,permission(archive.config),now=lambda:AT,mono=lambda:0)
                 for event in r.events():
                     if event.diagnostic == 'HISTORY_REQUEST_PLANNED':
                         payload = history_request(201,12087792,15,AT-timedelta(minutes=50))[4:]
