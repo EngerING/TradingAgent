@@ -8,7 +8,7 @@
   "execution_authorized": false,
   "baseline_commit": "363e40985fbd3533992c70dfbe2aa05f6774ba9f",
   "baseline_tree": "0633052d41f9acb69ee922404a8c35898b842fdd",
-  "verified_code_commit": "f785719e3ca20e1540fb8274757296c3283d9d99",
+  "verified_code_commit": "cc675c77c6316069643d532b63942c24679c5dc7",
   "branch": "feature/m03a-tws-market-data-only",
   "final_documentation_commit_self_reference_omitted": true,
   "local_results": {
@@ -25,13 +25,13 @@
       "seconds": 1.22
     },
     "m03a_offline_check": {
-      "passed": 43,
+      "passed": 47,
       "failed": 0,
       "skipped": 0,
-      "seconds": 16.775
+      "seconds": 22.11
     }
   },
-  "distinct_tests_total": 475,
+  "distinct_tests_total": 479,
   "build": "Python source compile() in memory; no C# or frontend changes; historical .NET/frontend build not rerun locally",
   "source_preservation": {
     "baseline_tracked_files": 947,
@@ -100,7 +100,11 @@
     "reproduced_regressions": [
       "native bars must not be forced to an invented UTC grid",
       "bar incomplete at request remains incomplete after delayed receipt",
-      "external checkpoint accepts later commits while protecting known prefix"
+      "external checkpoint accepts later commits while protecting known prefix",
+      "normalized bar availability includes validation and causal prefix",
+      "effective historical cutoff is decoded from original wire request",
+      "even a new valid Paper/Live approval requires a new connection binding",
+      "connectivity callbacks while TCP remains open use bounded reconnect and full preflight"
     ],
     "ci_scope_correction": {
       "initial_react_runs": [
@@ -122,131 +126,156 @@
     "deployment",
     "automatic Windows service"
   ],
-  "new_file_inventory_excluding_self": [
+  "file_inventory_excluding_this_evidence": [
     {
       "path": ".github/workflows/m03a-market-data-ci.yml",
       "bytes": 2155,
-      "sha256": "85bbcdedd51ca94059c10f2ff562c0132162df720ae2d8a7d0c601e94474bcc1"
+      "sha256": "85bbcdedd51ca94059c10f2ff562c0132162df720ae2d8a7d0c601e94474bcc1",
+      "change": "A"
     },
     {
       "path": "build/market-data/preservation.py",
       "bytes": 2520,
-      "sha256": "22e3e346b4751ac35dc44a35163e8b9e5bf453c146350e10573a34dc2e3a91cd"
+      "sha256": "22e3e346b4751ac35dc44a35163e8b9e5bf453c146350e10573a34dc2e3a91cd",
+      "change": "A"
     },
     {
       "path": "build/market-data/requirements-ci.txt",
-      "bytes": 265,
-      "sha256": "c59bd6f51b470610054546158ec4f659b69bcfc942df65834f230b9b7b1377a9"
+      "bytes": 268,
+      "sha256": "cddcb6c7ec95dc2c459540305bab63d34ad85f26270c674e224d998609c779a4",
+      "change": "A"
     },
     {
       "path": "build/market-data/run-approved.ps1",
       "bytes": 1873,
-      "sha256": "a00f0b95ff0be4baa05a283f3a3062a537136958d41c6cdb24a32d9fe2c97286"
+      "sha256": "a00f0b95ff0be4baa05a283f3a3062a537136958d41c6cdb24a32d9fe2c97286",
+      "change": "A"
     },
     {
       "path": "build/market-data/sdk-oracle.py",
       "bytes": 1260,
-      "sha256": "8a34bee0a18e2b2340d2c989aec5da16a1094b6c2f4f60be70001c90d6f37876"
+      "sha256": "8a34bee0a18e2b2340d2c989aec5da16a1094b6c2f4f60be70001c90d6f37876",
+      "change": "A"
     },
     {
       "path": "build/market-data/verify-results.py",
       "bytes": 1306,
-      "sha256": "360a5457d6407c73339148c4b1b7d31088288d18baa8f9b0bd70e8b07fabf040"
+      "sha256": "78bd61610bd025c5be2d36b2be0384b372da759c7bf03b353f35537a9020b71a",
+      "change": "A"
     },
     {
       "path": "docs/architecture/m03a-market-data-collector.md",
-      "bytes": 14043,
-      "sha256": "9a70764df5101e9513f6f7a5562239d853d7f69761a7c73209c98ded541b03b6"
+      "bytes": 14521,
+      "sha256": "9c6fe3e5ee6b60067aeaf60b0684db6d56e1f3cabab77b8015ec1afff9d89d11",
+      "change": "A"
     },
     {
       "path": "docs/architecture/m03a-review.md",
       "bytes": 2964,
-      "sha256": "0cc33305133460f8cbdfebc53f542acd7a387dc54e84393c6e779e93d6989f40"
+      "sha256": "0cc33305133460f8cbdfebc53f542acd7a387dc54e84393c6e779e93d6989f40",
+      "change": "A"
     },
     {
       "path": "python/tests/m03a_offline_check.py",
       "bytes": 1652,
-      "sha256": "4a9d9a5194ecd76d98279c6c07d25dbeb8bf89fac6ab9e89dd37c140a3195466"
+      "sha256": "72b4cb3d399debbdcb86e8e858452219cfbe66cb5a75e66db042c777f0132907",
+      "change": "A"
     },
     {
       "path": "python/tests/test_m03a_adversarial.py",
       "bytes": 6314,
-      "sha256": "b3b16a6bbc60714e3343aa9d1fdf4080857ae2f1d34f16e3516799abcea671d8"
+      "sha256": "b3b16a6bbc60714e3343aa9d1fdf4080857ae2f1d34f16e3516799abcea671d8",
+      "change": "A"
     },
     {
       "path": "python/tests/test_m03a_archive.py",
-      "bytes": 6415,
-      "sha256": "596f3f3bec9a7cce4a0cb9ca727b2615e92212faa78afa1df992b7a6131db566"
+      "bytes": 8286,
+      "sha256": "9b84ac5475860f12cd971baa5be86689a8904b2690ffeb579d15da96b1af7ec6",
+      "change": "A"
     },
     {
       "path": "python/tests/test_m03a_contracts.py",
       "bytes": 2575,
-      "sha256": "7382787d8c47e65b301e05b993e0225f515c153339c72b220c88b767e7413fde"
+      "sha256": "7382787d8c47e65b301e05b993e0225f515c153339c72b220c88b767e7413fde",
+      "change": "A"
     },
     {
       "path": "python/tests/test_m03a_entrypoint.py",
       "bytes": 1347,
-      "sha256": "b7d1ac665272deee71c81f6783e6d68dc9f9648222821e9a95fb7a388edeb56b"
+      "sha256": "b7d1ac665272deee71c81f6783e6d68dc9f9648222821e9a95fb7a388edeb56b",
+      "change": "A"
     },
     {
       "path": "python/tests/test_m03a_reader.py",
-      "bytes": 7370,
-      "sha256": "e6af410e0186a8e809acc650b76f218dd12fbbbf1f7a5d44b4b2b07378cb35a6"
+      "bytes": 8045,
+      "sha256": "a09082bee5f076d4f1fd96241e58ec877c93617c4b9f0746f8e9b490d15461de",
+      "change": "A"
     },
     {
       "path": "python/tests/test_m03a_supervisor.py",
-      "bytes": 4295,
-      "sha256": "fa8b03004b9c7053509e76921a2095aaf319d1a13ce910f42e45315f5af52650"
+      "bytes": 4791,
+      "sha256": "56e5b78ca4d586b6aed7ca22285354026c8b819929345e759e97a98aebca1ffa",
+      "change": "A"
     },
     {
       "path": "python/tests/test_m03a_wire.py",
       "bytes": 3847,
-      "sha256": "92d52105ecdedc6a0949483303483d1f946827c86e79ed48bae40bec657533f6"
+      "sha256": "92d52105ecdedc6a0949483303483d1f946827c86e79ed48bae40bec657533f6",
+      "change": "A"
     },
     {
       "path": "python/trading_agent/market_data/__init__.py",
       "bytes": 89,
-      "sha256": "9e847cbfeec3e57f6592a32762bcc3c06b8897311c5252090dd861eb011c7b0e"
+      "sha256": "9e847cbfeec3e57f6592a32762bcc3c06b8897311c5252090dd861eb011c7b0e",
+      "change": "A"
     },
     {
       "path": "python/trading_agent/market_data/__main__.py",
       "bytes": 3077,
-      "sha256": "15e5a6df630ecd7e1c69f0d3f860bb35c9d71ce47375114f8fce9af3b8e12d90"
+      "sha256": "15e5a6df630ecd7e1c69f0d3f860bb35c9d71ce47375114f8fce9af3b8e12d90",
+      "change": "A"
     },
     {
       "path": "python/trading_agent/market_data/archive.py",
-      "bytes": 13075,
-      "sha256": "eb2b3c1ef5a961328de0150c5274a452c03f6d82fb8476b3d57af14e74811d96"
+      "bytes": 13587,
+      "sha256": "4347c236cada12501799ae12a4659a3c2e8ac64abddba5519829a8e89b5f28ed",
+      "change": "A"
     },
     {
       "path": "python/trading_agent/market_data/authorization.py",
       "bytes": 2232,
-      "sha256": "c0eff7b8178f9d69a512b2b4b7ec1991eba43754dd7622c21e9fe9ea43f3b350"
+      "sha256": "c0eff7b8178f9d69a512b2b4b7ec1991eba43754dd7622c21e9fe9ea43f3b350",
+      "change": "A"
     },
     {
       "path": "python/trading_agent/market_data/calendar.py",
       "bytes": 2665,
-      "sha256": "3b41203993c2e8a939f8b062733aa0104ee98baf449502a9a467b8dc4b507539"
+      "sha256": "3b41203993c2e8a939f8b062733aa0104ee98baf449502a9a467b8dc4b507539",
+      "change": "A"
     },
     {
       "path": "python/trading_agent/market_data/contracts.py",
       "bytes": 4120,
-      "sha256": "3cf093e269fbeb245df82f90d1361c566d8950b99e13ae077f7b620fbaaf599c"
+      "sha256": "3cf093e269fbeb245df82f90d1361c566d8950b99e13ae077f7b620fbaaf599c",
+      "change": "A"
     },
     {
       "path": "python/trading_agent/market_data/reader.py",
-      "bytes": 9994,
-      "sha256": "77c7d030fe3f8ea4abd1e665c6fa6ff86e5e70b6f7bc45891d5e44f55a86d2e9"
+      "bytes": 10491,
+      "sha256": "6d8ed795e08a6f6937f0eef6e04b7d859286b1f73b97ec250e2d67a2b4f46fa7",
+      "change": "A"
     },
     {
       "path": "python/trading_agent/market_data/supervisor.py",
       "bytes": 6239,
-      "sha256": "e5ee3caab35afce11637f1672500b1ccd66b5ed51995af16d398cc3cbdb7a5a2"
+      "sha256": "e5ee3caab35afce11637f1672500b1ccd66b5ed51995af16d398cc3cbdb7a5a2",
+      "change": "A"
     },
     {
       "path": "python/trading_agent/market_data/wire.py",
-      "bytes": 3393,
-      "sha256": "177f09eb4ab3765f387d05dbc092e10458a3be67867d68ba27c94c536094a5a5"
+      "bytes": 4007,
+      "sha256": "e126f2ab179e504321b797b899ccbda521dd89ec36cbcc5a1172280a216a7956",
+      "change": "A"
     },
     {
       "path": "build/react-bff/preservation.mjs",

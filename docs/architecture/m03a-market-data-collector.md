@@ -62,6 +62,8 @@ grant y todos los límites de CollectorConfig, con scope cerrado a quotes,
 calendario e histórico MIDPOINT 15/60/240. Ambos permisos se verifican antes del
 socket, las solicitudes y durante/después de recibir. Revocación detiene lectura.
 Las cancelaciones propias de datos siguen permitidas durante limpieza.
+El grant queda fijado a la conexión: incluso otra aprobación firmada válida para
+Live no puede reemplazar una conexión Paper activa; exige una época nueva.
 
 La lista total de opcodes de salida es71,17,49,9,59,1,2,20,25. Los dos nuevos son
 reqHistoricalData y cancelHistoricalData; no existe encoder por nombre arbitrario.
@@ -84,6 +86,8 @@ tamaño, liquidez ni spread MIDPOINT. Los límites temporal y de cierre se verif
 contra la solicitud y la recepción; una respuesta tardía no convierte una barra
 parcial en definitiva. Se excluyen barras sin calendario, incompletas o recortadas
 por una interrupción. No se impone una rejilla UTC distinta de la barra nativa.
+El cutoff se extrae del mensaje original enviado; available_at de la barra
+normalizada incluye la validación y disponibilidad acumulada de su prefijo.
 Discontinuidades y duplicados se declaran; conflictos de OHLC conservados en la
 historia excluyen la barra afectada. No se rellenan ni reordenan datos.
 
@@ -104,6 +108,8 @@ verifica la cadena y, antes de rotar, se agrega COLLECTOR_RESTART_GAP si faltaba
 cierre. Un proceso caído no puede escribir su propia caída en ese momento.
 No se prometen ticks no recibidos ni continuidad con TWS cerrada, PC suspendido o
 red caída. La rotación puede perder ticks, identificados mediante discontinuidad.
+Los callbacks1100/1101/1102/1300/2103/2108 también fuerzan reconexión acotada,
+aunque TCP siga abierto. Identidad, permisos o perfil rechazados detienen el flujo.
 
 ## Custodia y cuotas
 
