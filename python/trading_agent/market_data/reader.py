@@ -29,6 +29,7 @@ class MarketReader(IBKRReader):
         self.calendar, self.reason, self.next_open = None, 'NOT_STARTED', None
         self.history_not_before = history_not_before
         self._pending, self._buffer, self._needed = None, bytearray(), 4
+        self._rejected = b''
 
     def _verify(self):
         self.data_approval.verify(self.config, self.now())
@@ -47,10 +48,11 @@ class MarketReader(IBKRReader):
             chunk = self._socket.recv(self._needed-len(self._buffer))
         except socket.timeout:
             return None
-        self._verify()  # A blocking read may outlive permission.
-        require(self.mono() < deadline, 'M03_DEADLINE')
         require(bool(chunk), 'M03_CONNECTION_CLOSED')
         self._buffer.extend(chunk)
+        self._rejected = bytes(self._buffer[4:])
+        self._verify()  # A blocking read may outlive permission; retain a redacted digest.
+        require(self.mono() < deadline, 'M03_DEADLINE')
         if len(self._buffer) == 4 and self._needed == 4:
             size = struct.unpack('!I', self._buffer)[0]
             require(0 < size <= self.policy.max_frame_bytes, 'M03_FRAME_BUDGET')
@@ -73,10 +75,14 @@ class MarketReader(IBKRReader):
 
     def events(self):
         self._verify()  # No endpoint discovery or socket construction without both approvals.
+        if self.stop():
+            self.close()
+            return
         epoch = _Epoch(self.approval.grant.session_id, 'm03-'+uuid.uuid4().hex, self.origin,
                        self.approval.grant.session_kind, self.now, self.mono, self.approval)
         deadline = self.mono()+self.policy.max_duration_seconds*10**9
         next_history = self.history_not_before or self.now()
+        next_history_mono = self.mono()
         remaining = list(TIMEFRAMES)
         count, ready = 0, False
         try:
@@ -103,7 +109,7 @@ class MarketReader(IBKRReader):
                         yield epoch.raw(Kind.GAP, diagnostic=self.reason)
                         count += 1
                         break
-                    if remaining and self._pending is None and self.now() >= next_history:
+                    if remaining and self._pending is None and self.now() >= next_history and self.mono() >= next_history_mono:
                         req = remaining.pop(0)
                         request = history_request(req, epoch.contract.con_id, TIMEFRAMES[req], self.now())
                         # Persist intention first; after a crash it conservatively consumes pacing budget.
@@ -118,6 +124,7 @@ class MarketReader(IBKRReader):
                         self._requests += 1
                         self._pending = req
                         next_history = self.now()+timedelta(seconds=20)
+                        next_history_mono = self.mono()+20*10**9
                 payload = self._receive(deadline)
                 if payload is None: continue
                 if payload.split(b'\0',1)[0] == b'17':
@@ -147,9 +154,18 @@ class MarketReader(IBKRReader):
             if self.reason == 'NOT_STARTED':
                 self.reason = 'STOPPED' if self.stop() else 'CAPTURE_BOUNDARY'
             yield epoch.raw(Kind.GAP, diagnostic=self.reason)
-        except (OSError, ContractError):
-            self.reason = 'CONNECTION_OR_PERMISSION_REJECTED'
-            yield epoch.raw(Kind.GAP, diagnostic=self.reason)
+        except (OSError, ContractError) as exc:
+            code = str(exc) if isinstance(exc, ContractError) else ''
+            self.reason = ('IDENTITY_OR_PERMISSION_REJECTED' if code in
+                ('OBS_ACCOUNT_MISMATCH','OBS_CAPTURE_DISABLED','OBS_APPROVAL_BINDING',
+                 'OBS_APPROVAL_EXPIRED_OR_UNVERIFIED','M03_APPROVAL_BINDING') else
+                'PROFILE_REJECTED' if code == 'M03_UNVERIFIED_SERVER_PROFILE' else 'DISCONNECTED')
+            rejected = self._rejected
+            safe = rejected.split(b'\0',1)[0] in (b'1',b'10',b'17',b'52',b'58') and rejected.endswith(b'\0')
+            yield epoch.raw(Kind.GAP, diagnostic=self.reason,
+                raw_frame_b64=base64.b64encode(rejected).decode() if safe else '',
+                raw_frame_sha256=hashlib.sha256(rejected).hexdigest() if rejected else None,
+                raw_frame_size=len(rejected), redacted=bool(rejected) and not safe)
         finally:
             self.close()
         yield epoch.raw(Kind.DISCONNECTED)

@@ -38,7 +38,7 @@ def history_fields(payload):
         raise ContractError('M03_HISTORY_LAYOUT') from None
 
 
-def historical(payload, minutes, received_at, calendar):
+def historical(payload, minutes, received_at, calendar, *, request_end=None):
     f = history_fields(payload)
     require(TIMEFRAMES[int(f[1])] == minutes, 'M03_HISTORY_REQUEST')
     received_at = utc(received_at)
@@ -54,14 +54,16 @@ def historical(payload, minutes, received_at, calendar):
         if previous is not None and opened != previous+timedelta(minutes=minutes):
             reasons.append('HISTORY_DISCONTINUITY')
         previous = opened
+        if request_end is not None:
+            require(request_end-timedelta(days=1) <= opened < request_end, 'M03_HISTORY_RANGE')
         nominal = opened+timedelta(minutes=minutes)
         interval = calendar.interval(opened)
         effective = min(nominal, interval[1]) if interval else nominal
         quality = []
         if nominal > received_at: quality.append('BAR_INCOMPLETE')
+        if request_end is not None and nominal > request_end: quality.append('BAR_INCOMPLETE_AT_REQUEST')
         if interval is None: quality.append('BAR_CALENDAR_UNAVAILABLE')
         if effective != nominal: quality.append('BAR_SESSION_BOUNDARY')
-        if opened.timestamp() % (minutes*60): quality.append('BAR_OFF_UTC_GRID')
         prices = tuple(parse_decimal(v) for v in p[1:5])
         bars.append(Bar(p[0], opened, effective, received_at, minutes, *prices, not quality,
                         tuple(quality), hashlib.sha256(payload).hexdigest()))

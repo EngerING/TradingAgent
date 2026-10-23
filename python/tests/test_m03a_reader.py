@@ -102,5 +102,52 @@ class ReaderTests(unittest.TestCase):
         self.assertTrue(r.closed)
         self.assertEqual(2, r.sent_opcodes[-1])
 
+    def test_three_native_timeframes_are_paced_and_matched(self):
+        cfg = config(enabled=True)
+        clock = [AT]
+        r = TranscriptReader(packets()+(batch(),batch(60),batch(240)),cfg,permission(cfg),
+            now=lambda:clock[0],mono=lambda:int((clock[0]-AT).total_seconds()*10**9))
+        receive = r.fixture.recv
+        def paced(n):
+            for req, offset in ((202,20),(203,40)):
+                if r.fixture.data[4:].startswith(('17\0'+str(req)+'\0').encode()) and clock[0] < AT+timedelta(seconds=offset):
+                    clock[0] = AT+timedelta(seconds=offset)
+                    import socket
+                    raise socket.timeout()
+            return receive(n)
+        r.fixture.recv = paced
+        events = tuple(r.events())
+        requests = [e for e in events if e.diagnostic == 'HISTORY_REQUEST_PLANNED']
+        self.assertEqual([201,202,203],[e.wire_request_id for e in requests])
+        self.assertEqual([0,20,40],[int((e.received_at-AT).total_seconds()) for e in requests])
+        self.assertEqual([201,202,203],[e.wire_request_id for e in events if e.diagnostic == 'HISTORY_BATCH'])
+
+    def test_expiry_inside_blocking_receive_rejects_and_closes(self):
+        cfg = config(enabled=True)
+        clock = [AT]
+        r = TranscriptReader(packets(),cfg,permission(cfg),now=lambda:clock[0])
+        receive = r.fixture.recv
+        def late(n):
+            data = receive(n)
+            if not r.fixture.data: clock[0] = AT+timedelta(minutes=3)
+            return data
+        r.fixture.recv = late
+        events = tuple(r.events())
+        self.assertFalse(any(e.kind is Kind.ASK for e in events))
+        self.assertTrue(any(e.kind is Kind.GAP and e.raw_frame_sha256 for e in events))
+        self.assertTrue(r.closed)
+
+    def test_unverified_server_and_disconnected_endpoint(self):
+        r = self.reader()
+        r.fixture.data = bytearray(frame(180,'fixture'))
+        events = tuple(r.events())
+        self.assertEqual('PROFILE_REJECTED',r.reason)
+        self.assertEqual((),r.sent_opcodes)
+        r = self.reader()
+        with patch.object(r,'_open',side_effect=OSError('fixture')):
+            events = tuple(r.events())
+        self.assertEqual('DISCONNECTED',r.reason)
+        self.assertTrue(r.closed)
+
 
 if __name__ == '__main__': unittest.main()

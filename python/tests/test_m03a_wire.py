@@ -42,6 +42,15 @@ class WireTests(unittest.TestCase):
         for blob in (batch(count=2), batch().replace(b'1.2\0', b'0.2\0'), b'17\0'+b'x'*20000):
             with self.assertRaises(ContractError): historical(blob, 15, AT, cal)
 
+    def test_native_off_utc_grid_and_incomplete_at_request_cutoff(self):
+        cal = TradingCalendar('UTC','20261023:0000-20261024:0000',AT)
+        shifted = batch(timestamp=str(int((AT-timedelta(minutes=47)).timestamp())))
+        bars,_ = historical(shifted,15,AT,cal,request_end=AT)
+        self.assertTrue(bars[0].complete)
+        partial = batch(timestamp=str(int((AT-timedelta(minutes=5)).timestamp())))
+        bars,_ = historical(partial,15,AT+timedelta(minutes=20),cal,request_end=AT)
+        self.assertFalse(bars[0].complete)
+
     def test_history_sdk_oracle_offline(self):
         from ibapi.client import EClient
         from ibapi.wrapper import EWrapper

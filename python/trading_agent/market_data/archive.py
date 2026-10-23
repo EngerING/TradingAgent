@@ -1,10 +1,8 @@
 """Bounded linked V3.9 journals. No migration or writes to protected financial stores."""
 import base64
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from datetime import timedelta
-import json
 import os
-from pathlib import Path
 import re
 
 from trading_agent.core_v3.contracts import require, content_hash, canonical_bytes, utc, ContractError
@@ -22,6 +20,7 @@ from .wire import historical, TIMEFRAMES
 class ArchiveCheckpoint:
     metadata_sha256: str
     segments: int
+    sequence: int
     sha256: str
 
 
@@ -58,7 +57,13 @@ class Archive:
             if checkpoint is not None:
                 require(type(checkpoint) is ArchiveCheckpoint and checkpoint.metadata_sha256 == self.metadata and
                         0 <= checkpoint.segments <= len(self.segments), 'M03_CHECKPOINT')
-                digest = self.metadata if not checkpoint.segments else self._head(self.segments[checkpoint.segments-1])
+                digest = self.metadata
+                if checkpoint.segments:
+                    with self._journal(self.segments[checkpoint.segments-1]) as journal:
+                        rows = journal.history()
+                        require(type(checkpoint.sequence) is int and 0 <= checkpoint.sequence <= len(rows), 'M03_CHECKPOINT')
+                        digest = rows[checkpoint.sequence-1].sha256 if checkpoint.sequence else journal.metadata
+                else: require(checkpoint.sequence == 0, 'M03_CHECKPOINT')
                 require(digest == checkpoint.sha256, 'M03_CHECKPOINT')
         except BaseException as exc:
             self.close()
@@ -108,8 +113,11 @@ class Archive:
 
     def checkpoint(self):
         self.history()
-        return ArchiveCheckpoint(self.metadata, len(self.segments),
-            self.current.checkpoint().sha256 if self.current else self._head(self.segments[-1]) if self.segments else self.metadata)
+        if not self.segments: return ArchiveCheckpoint(self.metadata,0,0,self.metadata)
+        if self.current is not None: head = self.current.checkpoint()
+        else:
+            with self._journal(self.segments[-1]) as journal: head = journal.checkpoint()
+        return ArchiveCheckpoint(self.metadata,len(self.segments),head.sequence,head.sha256)
 
     def rotate(self, now):
         self._storage()
@@ -139,6 +147,9 @@ class Archive:
     def append(self, event, *, as_of):
         require(type(event) is RawEvent, 'M03_EVENT_TYPE')
         if self.current is None: self.rotate(as_of)
+        if not self.current.history():
+            require(event.kind is Kind.CONNECTED and not any(r.value.event.connection_id == event.connection_id
+                    for r in self.history()), 'M03_NEW_EPOCH_REQUIRED')
         require(len(self.current.history()) < self.config.capture.max_events-1, 'M03_SEGMENT_EVENTS')
         # Reserve worst-case main/rollback growth before accepting another record.
         self._storage()
@@ -159,6 +170,7 @@ class Archive:
         as_of = utc(as_of)
         require(minutes in (0,15,60,240), 'M03_TIMEFRAME')
         state, quote, calendar, bars, quality, contract = State(), None, None, (), (), None
+        planned, seen, conflicts = {}, {}, set()
         evidence = self.metadata
         for row in self.history():
             raw = row.value.event
@@ -167,6 +179,7 @@ class Archive:
             evidence = row.sha256
             if raw.kind is Kind.CONNECTED:
                 quote, bars, calendar, contract = None, (), None, None
+                planned = {}
             if raw.kind is Kind.CONTRACT and value.accepted:
                 contract = raw.contract
                 if raw.raw_frame_b64:
@@ -174,11 +187,27 @@ class Archive:
                     calendar = TradingCalendar(f[27], f[28], raw.received_at)
             if raw.kind in (Kind.GAP, Kind.DISCONNECTED) or not value.accepted: quote = None
             if raw.kind in (Kind.BID, Kind.ASK): quote = value.quote
+            if raw.diagnostic == 'HISTORY_REQUEST_PLANNED': planned[raw.wire_request_id] = raw.received_at
             if minutes and raw.diagnostic == 'HISTORY_BATCH' and TIMEFRAMES.get(raw.wire_request_id) == minutes:
-                require(calendar is not None and contract is not None, 'M03_HISTORY_NO_CONTRACT')
-                all_bars, quality = historical(base64.b64decode(raw.raw_frame_b64), minutes, raw.received_at, calendar)
-                bars = tuple(b for b in all_bars if b.complete)
-                quality = tuple(sorted(set(quality+tuple(c for b in all_bars for c in b.quality))))
+                require(calendar is not None and contract is not None and raw.wire_request_id in planned,
+                        'M03_HISTORY_NO_CONTRACT')
+                all_bars, quality = historical(base64.b64decode(raw.raw_frame_b64), minutes, raw.received_at, calendar,
+                    request_end=planned[raw.wire_request_id])
+                included, extra = [], []
+                for bar in all_bars:
+                    if not bar.complete: continue
+                    key = (contract.con_id,minutes,bar.opened_at)
+                    prices = (bar.open,bar.high,bar.low,bar.close)
+                    if key in seen:
+                        extra.append('HISTORY_DUPLICATE' if seen[key] == prices else 'HISTORY_CONFLICT')
+                        if seen[key] != prices: conflicts.add(key)
+                    if key in conflicts:
+                        extra.append('HISTORY_CONFLICT')
+                        continue
+                    seen[key] = prices
+                    included.append(bar)
+                bars = tuple(included)
+                quality = tuple(sorted(set(quality+tuple(extra)+tuple(c for b in all_bars for c in b.quality))))
         reasons = list(quality)
         if not self._active or not state.connected:
             quote = None
@@ -193,11 +222,12 @@ class Archive:
         if quote and quote.source_age_us is None: reasons.append('SOURCE_TIME_NOT_PROVIDED')
         if not quote and not minutes: reasons.append('QUOTE_UNAVAILABLE')
         if minutes and not bars: reasons.append('BARS_UNAVAILABLE')
+        if minutes: reasons.append('HISTORICAL_FEED_TYPE_NOT_CONFIRMED')
         available = bool(bars) if minutes else quote is not None
         freshness = 'STALE' if minutes and bars else 'FRESH' if available and state.data_type is DataType.LIVE else 'STALE' if available else 'UNAVAILABLE'
         from trading_agent.core_v3.market_observation.contracts import Origin
         return Observation('EUR/USD',contract,self.origin,self.environment,state.connection,as_of,minutes,
-            None if minutes else quote,bars if minutes else (),state.data_type,freshness,
+            None if minutes else quote,bars if minutes else (),DataType.UNKNOWN if minutes else state.data_type,freshness,
             tuple(sorted(set(reasons))),evidence,'IBKR_DATA_ONLY' if self.origin is Origin.SOCKET else 'OFFLINE')
 
     def close(self):

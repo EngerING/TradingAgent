@@ -37,7 +37,7 @@ class ContractTests(unittest.TestCase):
         self.assertEqual('OPEN', cal.state(AT+timedelta(hours=2)))
 
     def test_invalid_empty_overlap_unknown_zone_and_stale_calendar(self):
-        for zone, text in (('Unknown/Zone', '20261023:CLOSED'), ('UTC', ''),
+        for zone, text in (('Unknown/Zone', '20261023:CLOSED'), ('EST', '20261023:CLOSED'), ('UTC', ''),
                 ('UTC', '20261023:0900-20261023:1300,1200-20261023:1700')):
             with self.assertRaises(ContractError): TradingCalendar(zone, text, AT)
         cal = TradingCalendar('UTC', '20261023:0000-20261024:0000', AT)

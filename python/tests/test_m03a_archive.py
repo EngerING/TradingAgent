@@ -14,6 +14,7 @@ from trading_agent.market_data.archive import Archive
 from test_m03a_contracts import AT
 from test_m03a_reader import config, permission, packets
 from trading_agent.market_data.reader import TranscriptReader
+from test_m03a_wire import batch
 
 
 class ArchiveTests(unittest.TestCase):
@@ -89,6 +90,31 @@ class ArchiveTests(unittest.TestCase):
                 checkpoint = archive.checkpoint()
             wrong = replace(checkpoint, sha256='0'*64)
             with self.assertRaises(ContractError): self.archive(directory, checkpoint=wrong)
+
+    def test_history_duplicate_and_conflict_across_connections_are_explicit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with self.archive(directory, create=True) as archive:
+                for index, payload in enumerate((batch(),batch(),batch().replace(b'1.15\0',b'1.16\0'))):
+                    if index: archive.rotate(AT)
+                    r = TranscriptReader(packets()+(payload,),archive.config,permission(archive.config),now=lambda:AT)
+                    for event in r.events(): archive.append(event,as_of=AT)
+                    view = archive.observe(AT,15)
+                    if index == 1: self.assertIn('HISTORY_DUPLICATE',view.quality)
+                    if index == 2:
+                        self.assertIn('HISTORY_CONFLICT',view.quality)
+                        self.assertEqual((),view.bars)
+
+    def test_checkpoint_anchors_prefix_while_later_commits_remain_valid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with self.archive(directory,create=True) as archive:
+                r = TranscriptReader(packets(),archive.config,permission(archive.config),now=lambda:AT)
+                iterator = r.events()
+                archive.append(next(iterator),as_of=AT)
+                anchor = archive.checkpoint()
+                archive.append(next(iterator),as_of=AT)
+                iterator.close()
+            with self.archive(directory,checkpoint=anchor) as reopened:
+                self.assertEqual(2,len(reopened.history()))
 
 
 if __name__ == '__main__': unittest.main()

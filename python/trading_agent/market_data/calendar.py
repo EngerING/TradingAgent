@@ -9,6 +9,7 @@ class TradingCalendar:
     def __init__(self, zone, hours, received_at):
         require(type(zone) is str and 0 < len(zone) <= 80 and type(hours) is str and
                 0 < len(hours) <= 4096, 'M03_CALENDAR_MISSING')
+        require(zone == 'UTC' or '/' in zone, 'M03_CALENDAR_ZONE_UNCERTAIN')
         self.received_at = utc(received_at)
         try:
             self.zone = ZoneInfo(zone)
