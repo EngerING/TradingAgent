@@ -1,7 +1,9 @@
 export type AuthKind = 'anonymous' | 'mfa-required' | 'demo-enrollment' | 'invalid-code' |
   'demo-complete' | 'preview-complete' | 'invalid-credentials' | 'mfa-recovery-required' | 'expired' | 'unavailable' | 'denied' |
   'demo-recovery' | 'demo-invitation' | 'demo-password-set' | 'complete' | 'enrollment' | 'conflict' | 'rate-limited';
-export type AuthResult = Readonly<{ kind: AuthKind; enrollment?: Readonly<{ secret: string; uri: string }> }>;
+export type AuthResult = Readonly<{ kind: AuthKind; enrollment?: Readonly<{ secret: string; uri: string }>;
+  /** BFF-confirmed, read-only deadlines for local password preview presentation only. */
+  expiresAt?: string; idleExpiresAt?: string }>;
 export interface AuthAdapter {
   readonly mode: 'demo' | 'unavailable' | 'bff';
   readonly source?: 'synthetic' | 'hosted' | 'preview' | 'local-checks';

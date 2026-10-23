@@ -1,7 +1,7 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../App';
 import { unavailableAdapter } from '../auth/contracts';
 import type { AuthAdapter, AuthResult } from '../auth/contracts';
@@ -15,6 +15,7 @@ function preview(result: AuthResult = { kind: 'preview-complete' }): AuthAdapter
 function mount(adapter: AuthAdapter) {
   render(<MemoryRouter initialEntries={['/preview']}><App adapter={adapter} /></MemoryRouter>);
 }
+afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
 
 describe('Read-only dashboard', () => {
   it('renders verified empty financial states, segregated streams and no execution controls', async () => {
@@ -66,5 +67,80 @@ describe('Read-only dashboard', () => {
     await user.click(screen.getByRole('button', { name: 'Sign out' }));
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Welcome back' })).toBeVisible());
     expect(adapter.logout).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the 30-minute inactivity expiry even when a background check cannot finish', async () => {
+    vi.useFakeTimers();
+    const now = Date.now();
+    const adapter = preview({ kind: 'preview-complete', expiresAt: new Date(now + 8 * 3600000).toISOString(),
+      idleExpiresAt: new Date(now + 30 * 60000).toISOString() });
+    mount(adapter);
+    await act(async () => { await Promise.resolve(); });
+    expect(screen.getByRole('heading', { name: 'A clearer view of every decision.' })).toBeVisible();
+    await act(async () => { await vi.advanceTimersByTimeAsync(30 * 60000); });
+    expect(screen.getByRole('heading', { name: 'Your session expired due to inactivity' })).toBeVisible();
+    expect(screen.queryByText('Account capital')).not.toBeInTheDocument();
+    expect(adapter.activity).not.toHaveBeenCalled(); // Passive GET never extends the deadline.
+  });
+
+  it('expires on focus after a sleeping tab missed its deadline timer', async () => {
+    vi.useFakeTimers();
+    const now = Date.now();
+    const adapter = preview({ kind: 'preview-complete', expiresAt: new Date(now + 8 * 3600000).toISOString(),
+      idleExpiresAt: new Date(now + 30 * 60000).toISOString() });
+    mount(adapter);
+    await act(async () => { await Promise.resolve(); });
+    vi.setSystemTime(now + 31 * 60000); // Simulate sleep: advance the wall clock, not scheduled timers.
+    await act(async () => { fireEvent(window, new Event('focus')); await Promise.resolve(); });
+    expect(screen.getByRole('heading', { name: 'Your session expired due to inactivity' })).toBeVisible();
+    expect(adapter.session).toHaveBeenCalledTimes(1); // No renewal or session recheck is needed to deny display.
+  });
+
+  it('only extends the idle deadline after the BFF confirms deliberate human activity', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(document, 'hasFocus').mockReturnValue(true);
+    const now = Date.now();
+    let current: AuthResult = { kind: 'preview-complete', expiresAt: new Date(now + 8 * 3600000).toISOString(),
+      idleExpiresAt: new Date(now + 30 * 60000).toISOString() };
+    const adapter = preview(current);
+    adapter.session = vi.fn().mockImplementation(async () => current);
+    adapter.activity = vi.fn().mockImplementation(async () => {
+      current = { kind: 'preview-complete', expiresAt: new Date(now + 8 * 3600000).toISOString(),
+        idleExpiresAt: new Date(now + 40 * 60000).toISOString() };
+      return current;
+    });
+    mount(adapter);
+    await act(async () => { await Promise.resolve(); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(10 * 60000); });
+    await act(async () => { fireEvent.pointerDown(document); await Promise.resolve(); });
+    expect(adapter.activity).toHaveBeenCalledTimes(1);
+    await act(async () => { await vi.advanceTimersByTimeAsync(21 * 60000); });
+    expect(screen.getByRole('heading', { name: 'A clearer view of every decision.' })).toBeVisible();
+    await act(async () => { await vi.advanceTimersByTimeAsync(9 * 60000); });
+    expect(screen.getByRole('heading', { name: 'Your session expired due to inactivity' })).toBeVisible();
+  });
+
+  it('does not disguise a BFF outage before the known idle deadline as an ordinary expiry', async () => {
+    const now = Date.now();
+    const adapter = preview({ kind: 'preview-complete', expiresAt: new Date(now + 8 * 3600000).toISOString(),
+      idleExpiresAt: new Date(now + 30 * 60000).toISOString() });
+    adapter.session = vi.fn().mockResolvedValueOnce({ kind: 'preview-complete', expiresAt: new Date(now + 8 * 3600000).toISOString(),
+      idleExpiresAt: new Date(now + 30 * 60000).toISOString() }).mockResolvedValueOnce({ kind: 'unavailable' });
+    mount(adapter);
+    await screen.findByRole('heading', { name: 'A clearer view of every decision.' });
+    fireEvent(window, new Event('focus'));
+    expect(await screen.findByRole('heading', { name: 'We’ll be right back' })).toBeVisible();
+    expect(screen.queryByText('Account capital')).not.toBeInTheDocument();
+  });
+
+  it('shows the generic expiry at the absolute eight-hour boundary', async () => {
+    vi.useFakeTimers();
+    const now = Date.now();
+    const deadline = new Date(now + 8 * 3600000).toISOString();
+    const adapter = preview({ kind: 'preview-complete', expiresAt: deadline, idleExpiresAt: deadline });
+    mount(adapter);
+    await act(async () => { await Promise.resolve(); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(8 * 3600000); });
+    expect(screen.getByRole('heading', { name: 'Your session has expired' })).toBeVisible();
   });
 });

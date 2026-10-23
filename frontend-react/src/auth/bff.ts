@@ -76,7 +76,7 @@ export class BffAuthAdapter implements AuthAdapter {
     if (this.source === 'preview') return this.operation(async s => {
       const response = await this.request(bffRoutes.previewSession, undefined, s);
       if (!this.previewPayload(response)) throw new Error('CONTRACT');
-      return { kind: 'preview-complete' };
+      return { kind: 'preview-complete', expiresAt: response.expiresAt as string, idleExpiresAt: response.idleExpiresAt as string };
     }, signal);
     if (this.pendingUntil > Date.now()) return { kind: 'mfa-required' };
     return this.operation(async signal => {
@@ -91,7 +91,7 @@ export class BffAuthAdapter implements AuthAdapter {
     return this.operation(async s => {
       const state = await this.request(bffRoutes.previewActivity, {}, s);
       if (!this.previewPayload(state)) throw new Error('CONTRACT');
-      return { kind: 'preview-complete' };
+      return { kind: 'preview-complete', expiresAt: state.expiresAt as string, idleExpiresAt: state.idleExpiresAt as string };
     }, signal);
   }
   async enroll(signal?: AbortSignal): Promise<AuthResult> {

@@ -5,6 +5,7 @@ import { Heading } from '../components/FormControls';
 import { Icon } from '../components/Icons';
 const states: Record<string, { title: string; subtitle: string }> = {
   expired: { title: 'Your session has expired', subtitle: 'Sign in again to continue securely.' },
+  idle: { title: 'Your session expired due to inactivity', subtitle: 'You were signed out after 30 minutes without activity. Sign in again to continue.' },
   denied: { title: 'Access is restricted', subtitle: 'This workspace is available to invited members with the appropriate permissions.' },
   unavailable: { title: 'We’ll be right back', subtitle: 'Authentication is temporarily unavailable. No account changes have been made.' },
   progress: { title: 'Checking your session', subtitle: 'Authentication in progress. No trading access is granted.' },
