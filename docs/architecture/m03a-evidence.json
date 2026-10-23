@@ -1,0 +1,243 @@
+{
+  "schema": "trading.m03a.delivery_evidence",
+  "schema_version": 1,
+  "inspection_date": "2026-10-23",
+  "timezone": "America/La_Paz",
+  "mode": "OFFLINE",
+  "decision": "NO_TRADE",
+  "execution_authorized": false,
+  "baseline_commit": "363e40985fbd3533992c70dfbe2aa05f6774ba9f",
+  "baseline_tree": "0633052d41f9acb69ee922404a8c35898b842fdd",
+  "verified_code_commit": "f785719e3ca20e1540fb8274757296c3283d9d99",
+  "branch": "feature/m03a-tws-market-data-only",
+  "final_documentation_commit_self_reference_omitted": true,
+  "local_results": {
+    "core_v39_offline_check": {
+      "passed": 394,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 620.58
+    },
+    "market_analyst_offline_check": {
+      "passed": 38,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 1.22
+    },
+    "m03a_offline_check": {
+      "passed": 43,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 16.775
+    }
+  },
+  "distinct_tests_total": 475,
+  "build": "Python source compile() in memory; no C# or frontend changes; historical .NET/frontend build not rerun locally",
+  "source_preservation": {
+    "baseline_tracked_files": 947,
+    "raw_sha256_differences": 0,
+    "protected_git_objects": {
+      "python/trading_agent/core_v3": "0c6a3c211249151582556862d610ffe29ae221a0",
+      "python/trading_agent/market_analyst": "1cdcffba113842977a881b57912be1e101eae688",
+      "frontend": "8b2101aeb2c3cd8661e95ee8ae13511e5dff09e2",
+      "src/TradingAgent.Infrastructure": "c9322ebfb7e813c71ba6098eedabf5ba8b6970dd",
+      "src/TradingAgent.Core": "e7c3f7cfa0ed45a8e6f18100c14f639c8f8c37a6",
+      "src/TradingAgent.Api": "3cb11938debcbf3f1d21001a9d6b10611f86751b",
+      "Directory.Build.props": "e8f7495b8834700231914c090846d2a2bece5c95",
+      "TradingAgent.sln": "85f076d47efc02709bc44708ac9b86e5bcc5f514"
+    },
+    "main": "f67fa92086d10b9562df214f4e869344bf0753d8",
+    "preexisting_untracked_sha256": {
+      "docs/TradingAgent_Supabase_Diagnostico.ps1": "380769966da835ed8e63191ebe1330f4b47e525f0fa9b994142e2a0d2b3d7cf8",
+      "docs/architecture/core-v3-phase0-audit.md": "419d1e97b7f7017bddebd3074b1433d48702a59a274194f017129933e4314537",
+      "docs/manual/TradingAgent_Manual_Tecnico_Integral.pdf": "1f31321892f532b3d5de1bc3d574bd5f66c3af38ae634d7173b6b173c49b3944"
+    }
+  },
+  "sdk_oracle": {
+    "version": "10.50.2",
+    "runtime_imported_by_product": false,
+    "download_url": "https://interactivebrokers.github.io/downloads/twsapi_macunix.1050.02.zip",
+    "archive_sha256": "673129e5cba58c4d77bc40647265f84ea42f605eccf88fa4c1221d62d12454f3",
+    "new_outbound_opcodes": [
+      20,
+      25
+    ],
+    "existing_read_opcodes": [
+      71,
+      17,
+      49,
+      9,
+      59,
+      1,
+      2
+    ],
+    "server_profile": 157,
+    "real_server_certified": false
+  },
+  "security": {
+    "secret_patterns_and_new_source_review": "PASS; known pattern scan is not universal detection",
+    "real_authority_provisioned": false,
+    "real_tws_connections": 0,
+    "authentic_subscriptions": 0,
+    "financial_orders": 0,
+    "financial_database_connections": 0,
+    "operational_migrations": 0,
+    "windows_services_installed": 0,
+    "supabase_or_ai_connections": 0,
+    "private_directories_inspected": false,
+    "automated_test_origin": "SYNTHETIC_TEST_FIXTURE",
+    "test_barrier_scope": "Unchanged V3.8/V3.4 process audit hooks: sockets, subprocesses, .local and SQLite outside canonical OS temporary directories; not production sandbox"
+  },
+  "review": {
+    "type": "Internal single-agent five-axis review; independent audit pending",
+    "graphify_query": "broker paper quote market data tws",
+    "graph_nodes": 424,
+    "found": 136,
+    "shown": 34,
+    "truncated": 102,
+    "graph_limit": "Historical; current sources corroborated",
+    "reproduced_regressions": [
+      "native bars must not be forced to an invented UTC grid",
+      "bar incomplete at request remains incomplete after delayed receipt",
+      "external checkpoint accepts later commits while protecting known prefix"
+    ]
+  },
+  "real_validation": "PENDIENTE DE VALIDACION SUPERVISADA: endpoint, Paper/Live identity, external read-only evidence, calendar, entitlements, pacing and broker-side zero-order audit",
+  "ci": "Workflow prepared; final run and artifact URL reported separately after publication",
+  "not_executed": [
+    "Real TWS/Paper/Live",
+    "Financial services/DBs/AI",
+    "M03-B indicators or strategies",
+    "PR11 integration",
+    "merge",
+    "deployment",
+    "automatic Windows service"
+  ],
+  "new_file_inventory_excluding_self": [
+    {
+      "path": ".github/workflows/m03a-market-data-ci.yml",
+      "bytes": 2155,
+      "sha256": "85bbcdedd51ca94059c10f2ff562c0132162df720ae2d8a7d0c601e94474bcc1"
+    },
+    {
+      "path": "build/market-data/preservation.py",
+      "bytes": 2304,
+      "sha256": "d5013e9ae9f481fdfa5f6bb6da0094700614b2520e29ff164131e05046c83c49"
+    },
+    {
+      "path": "build/market-data/requirements-ci.txt",
+      "bytes": 265,
+      "sha256": "c59bd6f51b470610054546158ec4f659b69bcfc942df65834f230b9b7b1377a9"
+    },
+    {
+      "path": "build/market-data/run-approved.ps1",
+      "bytes": 1873,
+      "sha256": "a00f0b95ff0be4baa05a283f3a3062a537136958d41c6cdb24a32d9fe2c97286"
+    },
+    {
+      "path": "build/market-data/sdk-oracle.py",
+      "bytes": 1260,
+      "sha256": "8a34bee0a18e2b2340d2c989aec5da16a1094b6c2f4f60be70001c90d6f37876"
+    },
+    {
+      "path": "build/market-data/verify-results.py",
+      "bytes": 1306,
+      "sha256": "360a5457d6407c73339148c4b1b7d31088288d18baa8f9b0bd70e8b07fabf040"
+    },
+    {
+      "path": "docs/architecture/m03a-market-data-collector.md",
+      "bytes": 13715,
+      "sha256": "4d00ed7ec84ebf66deb6e143ad8da10e0c5b7c74d556acc355ca6c2c7fa49323"
+    },
+    {
+      "path": "docs/architecture/m03a-review.md",
+      "bytes": 2793,
+      "sha256": "b4dbd366675d8abe0e4adbb7fde47d847a36aaa6debfa84ea6ef0390da29ed84"
+    },
+    {
+      "path": "python/tests/m03a_offline_check.py",
+      "bytes": 1652,
+      "sha256": "4a9d9a5194ecd76d98279c6c07d25dbeb8bf89fac6ab9e89dd37c140a3195466"
+    },
+    {
+      "path": "python/tests/test_m03a_adversarial.py",
+      "bytes": 6314,
+      "sha256": "b3b16a6bbc60714e3343aa9d1fdf4080857ae2f1d34f16e3516799abcea671d8"
+    },
+    {
+      "path": "python/tests/test_m03a_archive.py",
+      "bytes": 6415,
+      "sha256": "596f3f3bec9a7cce4a0cb9ca727b2615e92212faa78afa1df992b7a6131db566"
+    },
+    {
+      "path": "python/tests/test_m03a_contracts.py",
+      "bytes": 2575,
+      "sha256": "7382787d8c47e65b301e05b993e0225f515c153339c72b220c88b767e7413fde"
+    },
+    {
+      "path": "python/tests/test_m03a_entrypoint.py",
+      "bytes": 1347,
+      "sha256": "b7d1ac665272deee71c81f6783e6d68dc9f9648222821e9a95fb7a388edeb56b"
+    },
+    {
+      "path": "python/tests/test_m03a_reader.py",
+      "bytes": 7370,
+      "sha256": "e6af410e0186a8e809acc650b76f218dd12fbbbf1f7a5d44b4b2b07378cb35a6"
+    },
+    {
+      "path": "python/tests/test_m03a_supervisor.py",
+      "bytes": 4295,
+      "sha256": "fa8b03004b9c7053509e76921a2095aaf319d1a13ce910f42e45315f5af52650"
+    },
+    {
+      "path": "python/tests/test_m03a_wire.py",
+      "bytes": 3847,
+      "sha256": "92d52105ecdedc6a0949483303483d1f946827c86e79ed48bae40bec657533f6"
+    },
+    {
+      "path": "python/trading_agent/market_data/__init__.py",
+      "bytes": 89,
+      "sha256": "9e847cbfeec3e57f6592a32762bcc3c06b8897311c5252090dd861eb011c7b0e"
+    },
+    {
+      "path": "python/trading_agent/market_data/__main__.py",
+      "bytes": 3077,
+      "sha256": "15e5a6df630ecd7e1c69f0d3f860bb35c9d71ce47375114f8fce9af3b8e12d90"
+    },
+    {
+      "path": "python/trading_agent/market_data/archive.py",
+      "bytes": 13075,
+      "sha256": "eb2b3c1ef5a961328de0150c5274a452c03f6d82fb8476b3d57af14e74811d96"
+    },
+    {
+      "path": "python/trading_agent/market_data/authorization.py",
+      "bytes": 2232,
+      "sha256": "c0eff7b8178f9d69a512b2b4b7ec1991eba43754dd7622c21e9fe9ea43f3b350"
+    },
+    {
+      "path": "python/trading_agent/market_data/calendar.py",
+      "bytes": 2665,
+      "sha256": "3b41203993c2e8a939f8b062733aa0104ee98baf449502a9a467b8dc4b507539"
+    },
+    {
+      "path": "python/trading_agent/market_data/contracts.py",
+      "bytes": 4120,
+      "sha256": "3cf093e269fbeb245df82f90d1361c566d8950b99e13ae077f7b620fbaaf599c"
+    },
+    {
+      "path": "python/trading_agent/market_data/reader.py",
+      "bytes": 9994,
+      "sha256": "77c7d030fe3f8ea4abd1e665c6fa6ff86e5e70b6f7bc45891d5e44f55a86d2e9"
+    },
+    {
+      "path": "python/trading_agent/market_data/supervisor.py",
+      "bytes": 6239,
+      "sha256": "e5ee3caab35afce11637f1672500b1ccd66b5ed51995af16d398cc3cbdb7a5a2"
+    },
+    {
+      "path": "python/trading_agent/market_data/wire.py",
+      "bytes": 3393,
+      "sha256": "177f09eb4ab3765f387d05dbc092e10458a3be67867d68ba27c94c536094a5a5"
+    }
+  ]
+}
