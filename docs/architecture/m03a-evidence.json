@@ -8,7 +8,7 @@
   "execution_authorized": false,
   "baseline_commit": "363e40985fbd3533992c70dfbe2aa05f6774ba9f",
   "baseline_tree": "0633052d41f9acb69ee922404a8c35898b842fdd",
-  "verified_code_commit": "cc675c77c6316069643d532b63942c24679c5dc7",
+  "verified_code_commit": "6c4a6efb63e3d3f83288c313884ec9a9411a2a18",
   "branch": "feature/m03a-tws-market-data-only",
   "final_documentation_commit_self_reference_omitted": true,
   "local_results": {
@@ -28,7 +28,7 @@
       "passed": 47,
       "failed": 0,
       "skipped": 0,
-      "seconds": 22.11
+      "seconds": 21.911
     }
   },
   "distinct_tests_total": 479,
@@ -113,6 +113,13 @@
       ],
       "reason": "M01.4B/M02 path allowlist rejected M03-A additions before executing tests",
       "change": "Dispatch integrated M03-A tree to its exact allowlist; retain all previous test suites"
+    },
+    "fixture_clock_correction": {
+      "failed_ci_run": 39948321007,
+      "case": "test_commit_before_view_and_stale_quote",
+      "cause": "Frozen synthetic UTC combined with real monotonic time exceeded the unchanged 500ms clock-discontinuity policy under slow IO",
+      "fix": "Both clocks explicitly simulated in new M03-A fixtures; no product validation or historical test changed",
+      "targeted_repetition": "Same existing case passed with 550ms injected per commit; 4.972s, V3.8 barriers0; not counted as a new distinct case"
     }
   },
   "real_validation": "PENDIENTE DE VALIDACION SUPERVISADA: endpoint, Paper/Live identity, external read-only evidence, calendar, entitlements, pacing and broker-side zero-order audit",
@@ -165,8 +172,8 @@
     },
     {
       "path": "docs/architecture/m03a-market-data-collector.md",
-      "bytes": 14521,
-      "sha256": "9c6fe3e5ee6b60067aeaf60b0684db6d56e1f3cabab77b8015ec1afff9d89d11",
+      "bytes": 14921,
+      "sha256": "48e48c227af55ee47e88ac799ce32c41f3bcbc321b4aa7992a5431b6a2b961b4",
       "change": "A"
     },
     {
@@ -183,14 +190,14 @@
     },
     {
       "path": "python/tests/test_m03a_adversarial.py",
-      "bytes": 6314,
-      "sha256": "b3b16a6bbc60714e3343aa9d1fdf4080857ae2f1d34f16e3516799abcea671d8",
+      "bytes": 6328,
+      "sha256": "eb124a1ac40443c81ae45206073c53fbfee05a3761150fffaaa488fe720d21fb",
       "change": "A"
     },
     {
       "path": "python/tests/test_m03a_archive.py",
-      "bytes": 8286,
-      "sha256": "9b84ac5475860f12cd971baa5be86689a8904b2690ffeb579d15da96b1af7ec6",
+      "bytes": 8370,
+      "sha256": "7f612807f1cf0666cbe6801094452e33ba4a961772f3867f0085ab385dd4d7ef",
       "change": "A"
     },
     {
@@ -207,14 +214,14 @@
     },
     {
       "path": "python/tests/test_m03a_reader.py",
-      "bytes": 8045,
-      "sha256": "a09082bee5f076d4f1fd96241e58ec877c93617c4b9f0746f8e9b490d15461de",
+      "bytes": 8073,
+      "sha256": "8ef1ffb25c285847c95cd1d90fedad858cbe13b381ba64bc6daae70cee9dbe92",
       "change": "A"
     },
     {
       "path": "python/tests/test_m03a_supervisor.py",
-      "bytes": 4791,
-      "sha256": "56e5b78ca4d586b6aed7ca22285354026c8b819929345e759e97a98aebca1ffa",
+      "bytes": 4805,
+      "sha256": "7d20f5fc56e0d8af2daaa1728dfaf1687d29d17d44ff9f841a0982e45b4a5bcd",
       "change": "A"
     },
     {

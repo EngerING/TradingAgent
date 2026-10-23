@@ -178,6 +178,11 @@ Comandos offline desde raíz:
 ```
 
 El último comando solo muestra OFFLINE / NO_TRADE. No abre socket ni lee permisos.
+Resultados locales:394 Core V3.9,38 Market Analyst y47 M03-A;479 casos distintos,
+cero fallos/omisiones y barreras en cero. Una corrida Windows detectó una fixture
+con UTC fijo y monotónico real: se corrigieron solo los relojes simulados, sin
+cambiar tolerancias del producto. El mismo caso volvió a pasar con550ms de demora
+por commit. Es repetición de un caso existente, no otro caso distinto.
 Para una prueba auténtica se necesita una autorización específica posterior:
 
 1. En TWS/IB Gateway verificar localmente sesión, entorno, API de solo lectura y
