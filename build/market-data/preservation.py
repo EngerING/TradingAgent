@@ -3,6 +3,14 @@ import json
 from pathlib import Path
 import subprocess
 
+# The integrated M03-A.2 baseline preserves this entire earlier phase. Its own
+# exact allowlist adds only sibling backfill files and this dispatch branch.
+if subprocess.run(['git','merge-base','--is-ancestor',
+        'b7129313f216b24184c54f519fbc761c151bc101','HEAD'],stdout=subprocess.DEVNULL).returncode==0:
+    import runpy
+    runpy.run_path('build/historical-backfill/preservation.py',run_name='__main__')
+    raise SystemExit(0)
+
 BASE = '363e40985fbd3533992c70dfbe2aa05f6774ba9f'
 MAIN = 'f67fa92086d10b9562df214f4e869344bf0753d8'
 CORRECTION_BASE = '524c23f6629f46750a52c4b6da31c78252ffe5be'

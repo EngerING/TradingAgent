@@ -1,0 +1,336 @@
+{
+  "schema": "trading.m03a2.historical_backfill_evidence",
+  "schema_version": 1,
+  "inspection_date": "2026-10-23",
+  "timezone": "America/La_Paz",
+  "mode": "OFFLINE",
+  "decision": "NO_TRADE",
+  "branch": "feature/m03a2-historical-backfill",
+  "baseline_commit": "b7129313f216b24184c54f519fbc761c151bc101",
+  "baseline_tree": "6bb2d8b2866e9372e32acae9a0d31df15e3b3551",
+  "verified_code_and_test_commit": "10e0a5bc88dd7930cdb18f704c98db34ee658e1d",
+  "final_documentation_commit_self_reference_omitted": true,
+  "preservation": {
+    "baseline_files": 984,
+    "raw_sha256_unchanged": 983,
+    "only_changed_baseline_path": "build/market-data/preservation.py",
+    "reason": "Dispatch the existing CI gate to the exact M03-A.2 baseline and allowlist; preserve all product sources and previous tests.",
+    "raw_baseline_manifest_sha256": "06d46c59254ac899a6780ea5ec1af2d323dbc45241939becb20d6dfdb92f2c6b",
+    "protected_git_objects": {
+      "python/trading_agent/core_v3": "0c6a3c211249151582556862d610ffe29ae221a0",
+      "python/trading_agent/market_analyst": "1cdcffba113842977a881b57912be1e101eae688",
+      "python/trading_agent/market_data/contracts.py": "f743c05cfb128b3d5fa98b5d8c388e73880f53b9",
+      "python/trading_agent/market_data/projection.py": "2a6e0f4d6dc50a7f11a86ddb64ea0c82cd279b1f",
+      "src/TradingAgent.Infrastructure": "c9322ebfb7e813c71ba6098eedabf5ba8b6970dd",
+      "src/TradingAgent.Core": "e7c3f7cfa0ed45a8e6f18100c14f639c8f8c37a6",
+      "src/TradingAgent.Api": "3cb11938debcbf3f1d21001a9d6b10611f86751b",
+      "frontend": "8b2101aeb2c3cd8661e95ee8ae13511e5dff09e2",
+      "frontend-react": "5a54dbb40bcee7635f4735e07a3304ff5625ab30",
+      "src/TradingAgent.Web": "220a78a53d2dbaaee7094b156dd283ab886c7aae",
+      "src/TradingAgent.Web.Auth": "ad7d084ad922071a26c526dc32e65b55aaf91f25",
+      "Directory.Build.props": "e8f7495b8834700231914c090846d2a2bece5c95",
+      "TradingAgent.sln": "85f076d47efc02709bc44708ac9b86e5bcc5f514"
+    },
+    "preexisting_untracked_files": {
+      "docs/TradingAgent_Supabase_Diagnostico.ps1": "380769966da835ed8e63191ebe1330f4b47e525f0fa9b994142e2a0d2b3d7cf8",
+      "docs/architecture/core-v3-phase0-audit.md": "419d1e97b7f7017bddebd3074b1433d48702a59a274194f017129933e4314537",
+      "docs/manual/TradingAgent_Manual_Tecnico_Integral.pdf": "1f31321892f532b3d5de1bc3d574bd5f66c3af38ae634d7173b6b173c49b3944"
+    },
+    "main": "f67fa92086d10b9562df214f4e869344bf0753d8",
+    "develop": "b7129313f216b24184c54f519fbc761c151bc101"
+  },
+  "local_tests": {
+    "preserved": {
+      "core_v39_offline_check": {
+        "passed": 394,
+        "failed": 0,
+        "skipped": 0,
+        "seconds": 390.38
+      },
+      "market_analyst_offline_check": {
+        "passed": 38,
+        "failed": 0,
+        "skipped": 0,
+        "seconds": 1.357
+      },
+      "m03a_offline_check": {
+        "passed": 72,
+        "failed": 0,
+        "skipped": 0,
+        "seconds": 136.595
+      },
+      "windows_processes": {
+        "schema": "trading.m03a1.windows_process_tests",
+        "schema_version": 1,
+        "platform": "win32",
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "test_ids": [
+          "__main__.ProcessTests.test_read_during_commit_and_rotation_has_no_dirty_observation",
+          "__main__.ProcessTests.test_real_writer_exclusion_and_two_independent_readers",
+          "__main__.ProcessTests.test_writer_interruption_recovery_and_reader_restart"
+        ],
+        "barrier_violations": 0,
+        "worker_sha256": "85995225e1fb10ffb2e54706028b78125638b72bfe7b0bcde8a9155d003c9967",
+        "poll_samples": 35,
+        "poll_ms_max": 58.19190002512187,
+        "poll_ms_mean": 25.184585729480855
+      },
+      "consumer_performance": {
+        "warm_polls": 25,
+        "warm_poll_ms_mean": 55.58561199810356,
+        "warm_rehashed_bytes": 0,
+        "segments": 3,
+        "new_quote_folded_rows": 1,
+        "new_quote_rehashed_bytes": 36864,
+        "new_quote_append_and_poll_ms": 232.28150000795722
+      },
+      "distinct_total": 507
+    },
+    "new_units": {
+      "total": 42,
+      "passed": 42,
+      "failed": 0,
+      "skipped": 0,
+      "test_ids": [
+        "test_m03a2_backfill.BackfillTests.test_conflicting_duplicate_excluded",
+        "test_m03a2_backfill.BackfillTests.test_consumer_cutoff_blocks_late_received_friday",
+        "test_m03a2_backfill.BackfillTests.test_consumer_pages_and_explicit_insufficient",
+        "test_m03a2_backfill.BackfillTests.test_contracts_closed_disabled_and_observation_unchanged",
+        "test_m03a2_backfill.BackfillTests.test_exact_duplicate_is_idempotent",
+        "test_m03a2_backfill.BackfillTests.test_frame_bounds",
+        "test_m03a2_backfill.BackfillTests.test_future_bar_rejected",
+        "test_m03a2_backfill.BackfillTests.test_missing_bar_partial",
+        "test_m03a2_backfill.BackfillTests.test_out_of_order_rejected",
+        "test_m03a2_backfill.BackfillTests.test_paper_live_and_spec_binding",
+        "test_m03a2_backfill.BackfillTests.test_permission_denial_before_socket",
+        "test_m03a2_backfill.BackfillTests.test_publication_failure_releases_writer",
+        "test_m03a2_backfill.BackfillTests.test_request_limit_rejects_unfinishable_spec",
+        "test_m03a2_backfill.BackfillTests.test_restart_skips_completed_windows",
+        "test_m03a2_backfill.BackfillTests.test_single_writer_exclusion",
+        "test_m03a2_backfill.BackfillTests.test_unknown_calendar_never_complete",
+        "test_m03a2_backfill.BackfillTests.test_week_closed_complete_paged_and_no_quote_request",
+        "test_m03a2_backfill.BackfillTests.test_week_open_is_history_only",
+        "test_m03a2_backfill.BackfillTests.test_week_plan_is_ten_bounded_requests",
+        "test_m03a2_backfill.BackfillTests.test_wire_literal_midpoint_only",
+        "test_m03a2_protocol.ProtocolTests.test_connection_unavailable_publishes_no_data_without_inventing_connected_event",
+        "test_m03a2_protocol.ProtocolTests.test_default_entrypoint_has_no_socket_or_filesystem_inputs",
+        "test_m03a2_protocol.ProtocolTests.test_quote_and_trading_commands_have_no_transport_path",
+        "test_m03a2_protocol.ProtocolTests.test_rejected_clock_plan_cannot_authorize_later_batch",
+        "test_m03a2_protocol.ProtocolTests.test_rejected_sequence_plan_cannot_authorize_later_batch",
+        "test_m03a2_protocol.ProtocolTests.test_sdk_10502_history_oracle_all_segment_sizes_without_connection",
+        "test_m03a2_recovery.RecoveryTests.test_consumer_never_opens_sqlite_or_writes",
+        "test_m03a2_recovery.RecoveryTests.test_corrupt_immutable_page_is_rejected",
+        "test_m03a2_recovery.RecoveryTests.test_cursor_cannot_change_query_or_cutoff",
+        "test_m03a2_recovery.RecoveryTests.test_existing_data_permit_is_not_historical_authority",
+        "test_m03a2_recovery.RecoveryTests.test_expired_permission_stops_without_historical_send",
+        "test_m03a2_recovery.RecoveryTests.test_overlapping_interval_reuses_completed_day",
+        "test_m03a2_recovery.RecoveryTests.test_provider_permission_denial_is_redacted_and_unavailable",
+        "test_m03a2_recovery.RecoveryTests.test_recovery_after_committed_batch_publication_failure",
+        "test_m03a2_recovery.RecoveryTests.test_recovery_before_append_does_not_invent_completed_interval",
+        "test_m03a2_recovery.RecoveryTests.test_restart_cooldown_conserves_ambiguous_planned_request",
+        "test_m03a2_recovery.RecoveryTests.test_short_default_deadline_cannot_claim_weekly_capacity",
+        "test_m03a2_recovery.RecoveryTests.test_snapshot_survives_later_publication_and_is_explicitly_causal",
+        "test_m03a2_recovery.RecoveryTests.test_wrong_connected_account_is_not_accepted_as_environment",
+        "test_m03a2_review.BackfillReviewTests.test_extra_off_grid_bar_rejects_frame_even_with_all_expected_slots",
+        "test_m03a2_review.BackfillReviewTests.test_mutated_manifest_pointer_requires_original_immutable_generation",
+        "test_m03a2_review.BackfillReviewTests.test_previous_local_closed_day_cannot_verify_entire_utc_day"
+      ],
+      "distinct": 42,
+      "barrier_violations": 0
+    },
+    "new_windows_processes": {
+      "schema": "trading.m03a2.windows_process_tests",
+      "schema_version": 1,
+      "platform": "win32",
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "test_ids": [
+        "__main__.ProcessTests.test_terminated_writer_after_commit_replays_without_repeating_capture",
+        "__main__.ProcessTests.test_two_json_readers_during_atomic_publication_and_writer_exclusion"
+      ],
+      "barrier_violations": 0,
+      "child_barrier_violations": 0,
+      "worker_sha256": "1dab857457eec9e2d0d4da00c04816bc77466f6922aec3b1511605782e3dc47c"
+    },
+    "distinct_total": 551,
+    "failed": 0,
+    "skipped": 0
+  },
+  "full_new_unit_seconds": 134.828,
+  "strengthened_assertions_rerun": {
+    "tests": 2,
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 3.995,
+    "scope": "Paper/Live identity and io.open read-only Consumer; no product change after full run."
+  },
+  "internal_review": {
+    "type": "Fresh-context internal adversarial review; not independent audit",
+    "fixed_red_regressions": [
+      "Incomplete local calendar date coverage across UTC boundary",
+      "Extra off-grid bar despite complete expected slots",
+      "Mutated latest manifest without matching immutable generation",
+      "Connection failure before first CONNECTED must publish unavailable without a fabricated durable event"
+    ],
+    "mutation": {
+      "mutation": "disable immutable manifest binding",
+      "detected": true,
+      "restored_sha256": "d20ec5231d42059f311b68a6c0bb26c5786f36d0e16749103bae5005fd5ec646"
+    },
+    "external_review_package_requested": false
+  },
+  "graphify": {
+    "nodes": 424,
+    "links": 1039,
+    "query": "broker paper quote market data tws",
+    "budget": 700,
+    "found": 136,
+    "shown": 24,
+    "truncated": 112,
+    "reflect_if_stale": "no-op",
+    "limit": "Historical graph has no M03-A.2; checked current sources; no rebuild."
+  },
+  "diff_expectation": {
+    "additions": 19,
+    "modifications": 1,
+    "deletions": 0,
+    "renames": 0
+  },
+  "file_inventory_excluding_this_evidence": [
+    {
+      "path": ".github/workflows/m03a2-historical-backfill-ci.yml",
+      "bytes": 2749,
+      "sha256": "faa4997800061fe6384d1fb0ca95585c561c2bd713f312a86461b7374f3bea57"
+    },
+    {
+      "path": "build/historical-backfill/concurrency-check.py",
+      "bytes": 7320,
+      "sha256": "83853af632874f79eb0123275efd149481e0a7a9c7ba392c6c71602ed960b9ec"
+    },
+    {
+      "path": "build/historical-backfill/preservation.py",
+      "bytes": 2702,
+      "sha256": "02bf1905390f5f42d8a6ea14575f117431431fdb084d7c21a33830bac05a32fa"
+    },
+    {
+      "path": "build/historical-backfill/run-approved.ps1",
+      "bytes": 1774,
+      "sha256": "f845d503a538b7f89d2be388f0445b799a4cefb22e6af8000a6f06e05d440a2a"
+    },
+    {
+      "path": "build/historical-backfill/verify-results.py",
+      "bytes": 1895,
+      "sha256": "c8e7a2f0ca29706a1e65b1c69d6a8423b277c07c405ce3a9af22244e580440a7"
+    },
+    {
+      "path": "build/market-data/preservation.py",
+      "bytes": 5226,
+      "sha256": "44975f3ad4193a12ed317ed5d31fc5fe1b0e4a754cefe115c9b33ccd2bc87f50"
+    },
+    {
+      "path": "docs/architecture/m03a2-historical-backfill.md",
+      "bytes": 13543,
+      "sha256": "8ed1c8575da59bd699a919b19f446d25bed65aedd4d67f8be7a48b44645ca886"
+    },
+    {
+      "path": "python/tests/m03a2_concurrency_worker.py",
+      "bytes": 5716,
+      "sha256": "1dab857457eec9e2d0d4da00c04816bc77466f6922aec3b1511605782e3dc47c"
+    },
+    {
+      "path": "python/tests/m03a2_offline_check.py",
+      "bytes": 1470,
+      "sha256": "54da5b7217985444094ce4c805dc52154323651e14a90c711e1275b158e0a376"
+    },
+    {
+      "path": "python/tests/test_m03a2_backfill.py",
+      "bytes": 12356,
+      "sha256": "38d00958b381e6060ab70cd55f543605685a386bba3485685907b709fe67c5eb"
+    },
+    {
+      "path": "python/tests/test_m03a2_protocol.py",
+      "bytes": 5288,
+      "sha256": "a825cf25586f44bb6417159a9c1f20561a7ec686dbdab41adadf2afe5552009e"
+    },
+    {
+      "path": "python/tests/test_m03a2_recovery.py",
+      "bytes": 8386,
+      "sha256": "7f0d9b9986c758d8e7564c16c6107059dbed415d6182546b2781479ac754106f"
+    },
+    {
+      "path": "python/tests/test_m03a2_review.py",
+      "bytes": 3119,
+      "sha256": "0134115f4aa2b903870d51c1027bb19e8741d93167f92524d1dc7c185225898e"
+    },
+    {
+      "path": "python/trading_agent/market_data/backfill/__init__.py",
+      "bytes": 81,
+      "sha256": "de9da63803a9c8b9d8e6d594842ade52854b3abf7bee22056cc89d3876914891"
+    },
+    {
+      "path": "python/trading_agent/market_data/backfill/__main__.py",
+      "bytes": 3197,
+      "sha256": "dac4a28c8217a41540fef36db0c3bc83d3fbe6069d1bc9899fda26aae37f2bb8"
+    },
+    {
+      "path": "python/trading_agent/market_data/backfill/contracts.py",
+      "bytes": 7607,
+      "sha256": "77127a5d21a1d41b1ddd7ad403ed4fa2a5cf4f6d52269278936483a8017a561d"
+    },
+    {
+      "path": "python/trading_agent/market_data/backfill/reader.py",
+      "bytes": 9504,
+      "sha256": "e008203fba4592c2f7d222bc99b1b876cbf55168454e94c4b947a3f57a410c3a"
+    },
+    {
+      "path": "python/trading_agent/market_data/backfill/store.py",
+      "bytes": 16777,
+      "sha256": "d20ec5231d42059f311b68a6c0bb26c5786f36d0e16749103bae5005fd5ec646"
+    },
+    {
+      "path": "python/trading_agent/market_data/backfill/wire.py",
+      "bytes": 3349,
+      "sha256": "93c9a60d49ff6b0ee6683fe1b97765e6ad6cd4eea057cbb9f39939fe372137ab"
+    }
+  ],
+  "secret_review": {
+    "known_private_key_token_jwt_account_patterns": "PASS",
+    "sensitive_path_review": "PASS",
+    "credentials_provisioned": false,
+    "limit": "Pattern and content review, not a universal detection guarantee; private directories not inspected."
+  },
+  "ci": {
+    "workflow": ".github/workflows/m03a2-historical-backfill-ci.yml",
+    "runner": "windows-2025",
+    "python": "3.13.5",
+    "required_distinct_tests": 551,
+    "status_at_recording": "NOT_YET_PUSHED",
+    "final_results_location": "GitHub Actions artifacts and Draft PR description; no remote success claimed by this local evidence."
+  },
+  "limits": [
+    "Initial explicit range 1-7 complete UTC days; 15/60/240 minute MIDPOINT only",
+    "Legacy wire 157 and bounded frames; native TWS alignment and real protocol not recertified",
+    "Finite observed calendar required; unknown historical calendar stays partial",
+    "Single pending request; local pacing 20s; restart cooldown 600s; no automatic reconnect",
+    "16 requests/grant, 30 lifetime plans, 2048 retained samples, 16 MiB own storage, no automatic deletion",
+    "Hash does not authenticate provider or prevent whole valid backup rollback without external anchor",
+    "Consumer sufficiency is count and completeness, not indicator or economic approval",
+    "Structural and exercised-path barriers are not an OS sandbox or defense against host owner"
+  ],
+  "not_executed": [
+    "Authentic IBKR/TWS/Gateway connection or data capture",
+    "Supabase/AI/operational PostgreSQL/service activation",
+    "Financial execution, risk changes or trading permission",
+    "Merge, deployment or M03-B"
+  ],
+  "official_sources": [
+    "https://www.interactivebrokers.com/docs/tws-api/doc/md/historical-bars",
+    "https://interactivebrokers.github.io/tws-api/historical_limitations.html"
+  ]
+}
