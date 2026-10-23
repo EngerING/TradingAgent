@@ -2,16 +2,26 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim();
-// Local pilot keeps an exact-path allowlist. The preview refresh fix adds only the fixed HTML route mapper and its isolated route test; all financial components remain immutable.
+// M02 extends the local-preview gate with exact dashboard-only files. All
+// financial services, session providers, main and the original visual assets
+// remain immutable.
+const dashboardAdditions = new Set([
+ 'frontend-react/src/dashboard/ReadOnlyDashboard.tsx',
+ 'frontend-react/src/dashboard/ReadOnlyDashboard.test.tsx',
+ 'frontend-react/src/dashboard/dashboard.css',
+ 'docs/architecture/m02-dashboard-readonly.md'
+]);
 const localBase = 'e4e2cd9e28b4a885c744a27a2f4b4e5dc5a5d33a';
 let localPilot = false;
 try { execFileSync('git', ['merge-base','--is-ancestor',localBase,'HEAD']); localPilot = true; } catch { /* Earlier B1/B2 history keeps its original checks. */ }
 if (localPilot) {
  const edits = new Set(['build/react-bff/BrowserFixture/HostedDevelopmentRunner.cs','build/react-bff/BrowserFixture/Program.cs','build/react-bff/preservation.mjs','build/react-bff/check.ps1','build/react-bff/verify-results.ps1','src/TradingAgent.Web.Auth/BoundaryLog.cs','src/TradingAgent.Web.Auth/IntegratedHostFactory.cs','src/TradingAgent.Web.Auth/PilotEndpoints.cs','tests/TradingAgent.React.Integration.Tests/TradingAgent.React.Integration.Tests.csproj','tests/TradingAgent.React.Integration.Tests/expected-tests.json','src/TradingAgent.Web.Browser/BrowserHost.cs','src/TradingAgent.Web.Browser/BrowserAssets.cs','frontend-react/src/auth/bff.ts','frontend-react/src/auth/contracts.ts','frontend-react/src/components/AuthLayout.tsx','frontend-react/src/auth/bff.test.ts','frontend-react/src/App.tsx','frontend-react/src/pages/Login.tsx','frontend-react/integration/bff.spec.ts','tests/TradingAgent.React.Integration.Tests/EnrollmentSafetyTests.cs']);
  const additions = new Set(['build/react-bff/BrowserFixture/LocalPilotPreparation.cs','build/react-bff/BrowserFixture/LocalPilotDiagnostic.cs','build/react-bff/local-pilot.ps1','tests/TradingAgent.React.Integration.Tests/LocalPilotSafetyTests.cs','docs/architecture/m01-4b-b2-local-pilot.md','build/react-bff/serve-local.ps1','tests/TradingAgent.React.Integration.Tests/LocalStartupTests.cs','docs/architecture/m01-4b-b2-persistent-launcher.md','docs/architecture/m01-4b-b3-real-login.md','docs/architecture/m01-4b-b4-totp-recovery.md','frontend-react/src/pages/MfaRecovery.tsx','src/TradingAgent.Web.Auth/PasswordPreviewSessions.cs','src/TradingAgent.Web.Auth/PasswordPreviewEndpoints.cs','frontend-react/src/pages/PasswordPreview.tsx','docs/architecture/m01-4b-b5-password-only.md','docs/architecture/m01-4b-b6-durable-sessions.md','src/TradingAgent.Web.Auth/PreviewTokenProvider.cs','tests/TradingAgent.React.Integration.Tests/PreviewSessionLifecycleTests.cs','tests/TradingAgent.React.Integration.Tests/BrowserSpaRouteTests.cs']);
+ edits.add('frontend-react/scripts/verify-results.mjs');
+ edits.add('build/react-bff/expected-unit.json');
  for (const row of git('diff','--name-status','--no-renames',localBase,'HEAD').split('\n').filter(Boolean)) {
   const [status,path] = row.split('\t');
-  assert(status === 'M' && edits.has(path) || status === 'A' && additions.has(path), `Local pilot exceeds scope: ${row}`);
+  assert(status === 'M' && edits.has(path) || status === 'A' && (additions.has(path) || dashboardAdditions.has(path)), `Local pilot exceeds scope: ${row}`);
  }
  for (const path of git('ls-tree','-r','--name-only',localBase).split('\n').filter(p => !edits.has(p)))
   assert(git('rev-parse',`${localBase}:${path}`) === git('rev-parse',`HEAD:${path}`), `Integrated baseline changed: ${path}`);
@@ -27,10 +37,11 @@ const allowedEdits = new Set([
  'frontend-react/src/main.tsx', 'frontend-react/src/App.tsx', 'frontend-react/src/auth/contracts.ts', 'frontend-react/src/components/AuthLayout.tsx',
  'frontend-react/src/pages/Login.tsx', 'frontend-react/src/pages/Mfa.tsx', 'frontend-react/src/pages/SessionState.tsx', 'frontend-react/src/pages/PasswordFlows.tsx'
 ]);
+allowedEdits.add('frontend-react/scripts/verify-results.mjs');
 const changes = git('diff', '--name-status', '--no-renames', baseline, 'HEAD').split('\n').filter(Boolean);
 for (const row of changes) {
  const [status, path] = row.split('\t');
- assert(status === 'M' && allowedEdits.has(path) || status === 'A' && /^(src\/TradingAgent.Web.Browser\/|tests\/TradingAgent.React.Integration.Tests\/|build\/react-bff\/|frontend-react\/(integration\/|playwright.integration.config.ts$|src\/auth\/(?:bff(?:.test)?.ts|session-ui.test.tsx)$|src\/components\/EnrollmentQr.tsx$|src\/pages\/MfaRecovery.tsx$|src\/pages\/PasswordPreview.tsx$)|src\/TradingAgent.Web.Auth\/(?:PasswordPreview(?:Sessions|Endpoints)|PreviewTokenProvider).cs$|docs\/architecture\/m01-4b-[\w-]+\.(md|json)$|\.github\/workflows\/m01-4b-react-bff-ci.yml$)/.test(path), `Unapproved diff: ${row}`);
+ assert(status === 'M' && allowedEdits.has(path) || status === 'A' && (dashboardAdditions.has(path) || /^(src\/TradingAgent.Web.Browser\/|tests\/TradingAgent.React.Integration.Tests\/|build\/react-bff\/|frontend-react\/(integration\/|playwright.integration.config.ts$|src\/auth\/(?:bff(?:.test)?.ts|session-ui.test.tsx)$|src\/components\/EnrollmentQr.tsx$|src\/pages\/MfaRecovery.tsx$|src\/pages\/PasswordPreview.tsx$)|src\/TradingAgent.Web.Auth\/(?:PasswordPreview(?:Sessions|Endpoints)|PreviewTokenProvider).cs$|docs\/architecture\/m01-4b-[\w-]+\.(md|json)$|\.github\/workflows\/m01-4b-react-bff-ci.yml$)/.test(path)), `Unapproved diff: ${row}`);
  assert(!/(^|\/)(node_modules|dist|\.local|\.env|bin|obj|test-results|playwright-report)(\/|$)|\.(pfx|p12|pem|crt|key|exe|dll|zip|db|sqlite)$/i.test(path), `Sensitive path: ${path}`);
 }
 // Every baseline file outside the explicit edit list is compared by Git blob, including tests and visual assets.

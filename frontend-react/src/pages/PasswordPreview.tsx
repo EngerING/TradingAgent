@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../auth/context';
-import { Heading, Notice } from '../components/FormControls';
+import { ReadOnlyDashboard } from '../dashboard/ReadOnlyDashboard';
 
 /** AAL1 session for local development only: never a trading capability. */
 export function PasswordPreview() {
@@ -45,14 +45,9 @@ export function PasswordPreview() {
       document.removeEventListener('pointerdown', activity); document.removeEventListener('keydown', activity);
     };
   }, [auth, navigate]);
-  return <><Heading title={confirmed ? 'TradingAgent development access' : 'Checking access'} subtitle="Password verified by Supabase Auth Dev." />
-    {confirmed && <><p className="support-copy">Authenticated for the local read-only preview. The operational TradingAgent dashboard is not connected in this React milestone.</p>
-      <p className="support-copy">Session: up to 8 hours; 30 minutes without activity. Token renewal happens only on the server. A tab left open does not reset inactivity.</p>
-      <p className="support-copy">OFFLINE / NO_TRADE. No account balances, orders, financial data, trading permissions or automation.</p></>}
-    <button type="button" className="primary-button" onClick={() => {
+  return <ReadOnlyDashboard ready={confirmed} error={error} onSignOut={() => {
       signingOut.current = true;
       void auth.logout().then(() => navigate('/', { replace: true }))
         .catch(() => setError('Sign-out could not be confirmed. Close this tab and stop the local pilot.'));
-    }}>Sign out</button><Notice text={error} error />
-  </>;
+    }} />;
 }
