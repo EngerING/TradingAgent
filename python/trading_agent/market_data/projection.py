@@ -25,6 +25,7 @@ class Projection:
         raw = row.value.event
         self.available = max(self.available,raw.received_at,row.value.as_of)
         self.state, value = step(self.state,raw,self.config.capture,as_of=row.value.as_of)
+        require(value == row.value,'M03_VERDICT_MISMATCH')
         self.evidence, self.folded = row.sha256, self.folded+1
         if raw.kind is Kind.CONNECTED:
             self.quote, self.calendar, self.contract = None, None, None
@@ -36,6 +37,12 @@ class Projection:
                 self.calendar = TradingCalendar(f[27],f[28],raw.received_at)
         if raw.kind in (Kind.GAP,Kind.DISCONNECTED) or not value.accepted: self.quote = None
         if raw.kind in (Kind.BID,Kind.ASK): self.quote = value.quote
+        if raw.diagnostic in ('HISTORY_REQUEST_PLANNED','HISTORY_BATCH') and not value.accepted:
+            minutes = TIMEFRAMES.get(raw.wire_request_id)
+            self.planned.pop(raw.wire_request_id,None)
+            if minutes:
+                self._reject_history(minutes,('HISTORY_EVENT_REJECTED',)+value.reasons)
+            return
         if raw.diagnostic == 'HISTORY_REQUEST_PLANNED':
             require(self.contract is not None,'M03_HISTORY_NO_CONTRACT')
             cutoff = request_cutoff(base64.b64decode(raw.raw_frame_b64),raw.wire_request_id,self.contract.con_id)
@@ -43,8 +50,10 @@ class Projection:
             self.planned[raw.wire_request_id] = cutoff
         if raw.diagnostic == 'HISTORY_BATCH':
             minutes = TIMEFRAMES.get(raw.wire_request_id)
-            require(minutes and self.calendar is not None and self.contract is not None and
-                    raw.wire_request_id in self.planned,'M03_HISTORY_NO_CONTRACT')
+            require(minutes and self.calendar is not None and self.contract is not None,'M03_HISTORY_NO_CONTRACT')
+            if raw.wire_request_id not in self.planned:
+                self._reject_history(minutes,('HISTORY_REQUEST_UNVERIFIED',))
+                return
             all_bars, quality = historical(base64.b64decode(raw.raw_frame_b64),minutes,raw.received_at,
                 self.calendar,request_end=self.planned[raw.wire_request_id])
             included, extra = [], []
@@ -63,6 +72,10 @@ class Projection:
                 included.append(replace(bar,available_at=self.available))
             self.bars[minutes] = tuple(included)
             self.quality[minutes] = tuple(sorted(set(quality+tuple(extra)+tuple(c for b in all_bars for c in b.quality))))
+
+    def _reject_history(self, minutes, reasons):
+        self.bars.pop(minutes,None)
+        self.quality[minutes] = tuple(sorted(set(self.quality.get(minutes,())+reasons)))
 
     def observe(self, as_of, minutes=0, *, active=False):
         as_of = utc(as_of)

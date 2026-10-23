@@ -197,13 +197,13 @@ class Archive:
         self._publisher.publish(max(utc(as_of),self._projection.available))
 
     def close(self):
-        if self.current is not None:
-            self.current.close()
-            self.current = None
-        self._active = False
-        if self._lock is not None:
-            self._lock.close()
-            self._lock = None
+        journal, self.current = self.current, None
+        try:
+            if journal is not None: journal.close()
+        finally:
+            self._active = False
+            lock, self._lock = self._lock, None
+            if lock is not None: lock.close()
 
     def __enter__(self): return self
     def __exit__(self, *args): self.close()

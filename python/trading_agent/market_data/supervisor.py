@@ -32,6 +32,21 @@ class Supervisor:
     def stop(self): self._stop.set()
 
     def run(self):
+        try:
+            self._run()
+        except (OSError,ContractError):
+            self._finish('STORAGE_FAILURE',self.health.committed)
+        except BaseException:
+            self._finish('STORAGE_FAILURE',self.health.committed)
+            raise
+        finally:
+            if self.health.code == 'STORAGE_FAILURE':
+                self.latest = None
+                self.archive.close()
+        # Cleanup may replace an early STOPPED result with STORAGE_FAILURE.
+        return self.health
+
+    def _run(self):
         cfg, committed, failures = self.archive.config, 0, 0
         code, reader = 'DISABLED', None
         if not cfg.enabled: return self._finish(code, committed)
@@ -50,7 +65,11 @@ class Supervisor:
                     history_not_before=cooldown,stop=lambda:self._stop.is_set() or self.mono() >= deadline)
                 require(type(reader) in (MarketReader,TranscriptReader) and reader.origin is self.archive.origin,
                         'M03_TRANSPORT_ORIGIN')
-                self.archive.rotate(self.now())
+                try:
+                    self.archive.rotate(self.now())
+                except (OSError,ContractError):
+                    self.latest = None
+                    return self._finish('STORAGE_FAILURE',committed)
                 iterator = reader.events()
                 try:
                     for event in iterator:
@@ -60,7 +79,6 @@ class Supervisor:
                             self.latest = self.archive.observe(self.now())
                         except (OSError,ContractError):
                             self.latest = None
-                            self.archive.close()
                             return self._finish('STORAGE_FAILURE',committed)
                         self.health = Health('CAPTURING',committed,len(self.archive.segments))
                 finally:
@@ -120,8 +138,8 @@ class Supervisor:
                     self.latest = self.archive.observe(self.now())
                 except (OSError,ContractError):
                     self.latest = None
-                    self.archive.close()
                     code = 'STORAGE_FAILURE'
+                    self._finish(code,committed)
         return self._finish(code,committed)
 
     def _finish(self, code, committed):
