@@ -1,4 +1,5 @@
 [
+  "TradingAgent.React.Integration.Tests.BrowserSpaRouteTests.ExplicitPreviewDeepLinksSurviveFullReloadWithoutFallbackForProtectedRoutes",
   "TradingAgent.React.Integration.Tests.EnrollmentSafetyTests.ASecondFactorAppearingConcurrentlyStopsChallengeWithoutMutation",
   "TradingAgent.React.Integration.Tests.EnrollmentSafetyTests.AnotherLoginCannotRetryAnEnrollmentWhoseResponseWasLost",
   "TradingAgent.React.Integration.Tests.EnrollmentSafetyTests.ExistingOwnFactorsBlockEnrollmentWithoutDeletingOrReplacing(count: 1, verified: False)",

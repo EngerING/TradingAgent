@@ -21,7 +21,7 @@ internal static class BrowserAssets
             if (Path.GetExtension(file) is not (".js" or ".css" or ".svg" or ".woff" or ".woff2") || !types.TryGetContentType(file, out var contentType)) throw new ArgumentException("Unexpected asset type.", nameof(root));
             app.MapGet("/" + relative, () => Results.File(file, contentType, enableRangeProcessing: false)).AllowAnonymous();
         }
-        foreach (var route in new[] { "/", "/login", "/forgot-password", "/reset-password", "/invitation", "/mfa/enroll", "/mfa/verify", "/session/expired", "/session/denied", "/session/unavailable", "/session/progress", "/session/complete" })
+        foreach (var route in new[] { "/", "/login", "/forgot-password", "/reset-password", "/invitation", "/mfa/enroll", "/mfa/verify", "/mfa/recovery", "/preview", "/session/expired", "/session/denied", "/session/unavailable", "/session/progress", "/session/complete" })
             app.MapGet(route, () => Results.File(Path.Combine(directory, "index.html"), "text/html", enableRangeProcessing: false)).AllowAnonymous();
     }
 }
