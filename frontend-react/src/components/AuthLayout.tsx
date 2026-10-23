@@ -23,6 +23,10 @@ export function AuthLayout({ children }: { children: ReactNode }) {
     if (previousPath.current !== location.pathname) document.querySelector<HTMLElement>('.form-panel h1')?.focus({ preventScroll: true });
     previousPath.current = location.pathname;
   }, [location.pathname]);
+  // Only the BFF-validated password preview gets the module-2 shell. Other
+  // identities, MFA routes and production-unavailable states retain AuthLayout.
+  if (location.pathname === '/preview' && auth.mode === 'bff' && auth.source === 'preview')
+    return <div className="dash-route"><a className="skip-link" href="#dashboard-content">Skip to dashboard</a>{children}</div>;
   return <main className="auth-page">
     <a className="skip-link" href="#auth-content">Skip to sign in</a>
     <div className="auth-card">

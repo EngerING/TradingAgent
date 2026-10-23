@@ -14,5 +14,10 @@
   "BFF transport boundary &gt; rejects oversized responses",
   "BFF transport boundary &gt; uses same-origin cookies CSRF and never accepts a partial login",
   "coalesces interval and focus checks while a valid session read is pending",
-  "failed logout from an error screen remains explicitly unconfirmed without unhandled rejection"
+  "failed logout from an error screen remains explicitly unconfirmed without unhandled rejection",
+  "Read-only dashboard &gt; renders verified empty financial states, segregated streams and no execution controls",
+  "Read-only dashboard &gt; shows security limits in a real navigation panel without changing permissions",
+  "Read-only dashboard &gt; fails closed when the BFF rejects or expires the preview session",
+  "Read-only dashboard &gt; waits for confirmation and never renders dashboard content optimistically",
+  "Read-only dashboard &gt; signs out through the existing BFF flow and returns to login"
 ]
