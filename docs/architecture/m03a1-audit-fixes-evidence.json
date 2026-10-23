@@ -1,0 +1,163 @@
+{
+  "schema": "trading.m03a1.final_audit_fixes",
+  "schema_version": 1,
+  "mode": "OFFLINE",
+  "decision": "NO_TRADE",
+  "audit_baseline": "8faa5869d50e0f8753d2745e7d4524fd06caa4cc",
+  "branch": "feature/m03a-tws-market-data-only",
+  "pr": 15,
+  "draft_required": true,
+  "final_commit_self_reference_omitted": true,
+  "scope": "REJECTED_HISTORY_PROJECTION_AND_STORAGE_FAILURE_CLEANUP",
+  "reproductions": {
+    "initial_cases": 8,
+    "initial_failures": 8,
+    "initial_seconds": 16.593,
+    "unexpected_exception_cases": 1,
+    "unexpected_exception_failures": 1,
+    "unexpected_exception_seconds": 0.08,
+    "offline_barrier_violations": 0
+  },
+  "mutation": {
+    "mutation": "invert historical accepted gate",
+    "detected": true,
+    "restored_sha256": "0326a7b5ed8e075a5451f8a63eec3d539b36050abeebb54e30ae555822a16cbd"
+  },
+  "preservation": {
+    "baseline_tracked": 981,
+    "raw_sha256_unchanged": 975,
+    "modified_paths": [
+      "build/market-data/preservation.py",
+      "build/market-data/verify-results.py",
+      "python/tests/m03a_offline_check.py",
+      "python/trading_agent/market_data/archive.py",
+      "python/trading_agent/market_data/projection.py",
+      "python/trading_agent/market_data/supervisor.py"
+    ],
+    "added_paths": [
+      "python/tests/test_m03a_audit_fixes.py",
+      "docs/architecture/m03a1-audit-fixes.md",
+      "docs/architecture/m03a1-audit-fixes-evidence.json"
+    ],
+    "deleted_paths": [],
+    "protected_git_objects": {
+      "python/trading_agent/core_v3": "0c6a3c211249151582556862d610ffe29ae221a0",
+      "python/trading_agent/market_analyst": "1cdcffba113842977a881b57912be1e101eae688",
+      "frontend": "8b2101aeb2c3cd8661e95ee8ae13511e5dff09e2",
+      "src/TradingAgent.Infrastructure": "c9322ebfb7e813c71ba6098eedabf5ba8b6970dd",
+      "src/TradingAgent.Core": "e7c3f7cfa0ed45a8e6f18100c14f639c8f8c37a6",
+      "src/TradingAgent.Api": "3cb11938debcbf3f1d21001a9d6b10611f86751b",
+      "Directory.Build.props": "e8f7495b8834700231914c090846d2a2bece5c95",
+      "TradingAgent.sln": "85f076d47efc02709bc44708ac9b86e5bcc5f514",
+      "frontend-react": "5a54dbb40bcee7635f4735e07a3304ff5625ab30",
+      "src/TradingAgent.Web": "220a78a53d2dbaaee7094b156dd283ab886c7aae"
+    },
+    "untracked_preexisting": {
+      "docs/TradingAgent_Supabase_Diagnostico.ps1": "380769966da835ed8e63191ebe1330f4b47e525f0fa9b994142e2a0d2b3d7cf8",
+      "docs/architecture/core-v3-phase0-audit.md": "419d1e97b7f7017bddebd3074b1433d48702a59a274194f017129933e4314537",
+      "docs/manual/TradingAgent_Manual_Tecnico_Integral.pdf": "1f31321892f532b3d5de1bc3d574bd5f66c3af38ae634d7173b6b173c49b3944"
+    },
+    "main": "f67fa92086d10b9562df214f4e869344bf0753d8",
+    "develop": "363e40985fbd3533992c70dfbe2aa05f6774ba9f",
+    "prior_m03a_test_files_modified": 0,
+    "workflow_modified": false
+  },
+  "checks": {
+    "local_results_pending": true,
+    "expected_distinct_total": 507,
+    "original_m03a_ids_required": 63,
+    "new_regressions": 9,
+    "windows_process_tests": 3,
+    "local_at_recording": {
+      "m03a_offline": {
+        "passed": 72,
+        "failed": 0,
+        "skipped": 0,
+        "seconds": 195.804,
+        "barrier_violations": 0
+      },
+      "market_analyst": {
+        "passed": 38,
+        "failed": 0,
+        "skipped": 0,
+        "seconds": 1.389,
+        "barrier_violations": 0
+      },
+      "windows_processes": {
+        "schema": "trading.m03a1.windows_process_tests",
+        "schema_version": 1,
+        "platform": "win32",
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "test_ids": [
+          "__main__.ProcessTests.test_read_during_commit_and_rotation_has_no_dirty_observation",
+          "__main__.ProcessTests.test_real_writer_exclusion_and_two_independent_readers",
+          "__main__.ProcessTests.test_writer_interruption_recovery_and_reader_restart"
+        ],
+        "barrier_violations": 0,
+        "worker_sha256": "1c07f9e4b7dbd69712061ae03a8c5404351a25761918477ebf34258aca93b98c",
+        "poll_samples": 35,
+        "poll_ms_max": 109.51109998859465,
+        "poll_ms_mean": 24.768785703262047
+      },
+      "core_v39": "Full rerun in progress when this evidence was recorded; final verified result supplied by CI artifact and delivery."
+    }
+  },
+  "ci": {
+    "workflow": ".github/workflows/m03a-market-data-ci.yml",
+    "runner": "windows-2025",
+    "publication_status": "Not run yet; final run identity, results and links supplied in PR and delivery after publication.",
+    "artifact": "m03a-offline-evidence",
+    "retention_days": 14
+  },
+  "secret_review": {
+    "known_patterns": "PASS",
+    "sensitive_new_paths": "PASS",
+    "manual_source_review": "PASS",
+    "limitations": "Pattern scan and content review; no universal secret-detection guarantee."
+  },
+  "review": {
+    "type": "Internal adversarial agent review; not independent audit",
+    "additional_reproduced_issue": "Unexpected publisher RuntimeError retained journal and lock; fixed with cleanup and rethrow."
+  },
+  "graphify": {
+    "historical_nodes": 424,
+    "historical_links": 1039,
+    "query": "broker paper quote market data tws",
+    "budget": 700,
+    "found": 136,
+    "shown": 24,
+    "truncated": 112,
+    "reflect_if_stale": "no-op",
+    "rebuild": false,
+    "limit": "Historical graph lacks M03-A; current sources corroborated."
+  },
+  "not_executed": [
+    "TWS/IBKR connection or authentic capture",
+    "Supabase or AI connections",
+    "Operational database or financial service",
+    "Migration",
+    "Merge",
+    "Deployment",
+    "M03-B"
+  ],
+  "limitations": [
+    "Fixtures and guarded Windows processes are not a production sandbox.",
+    "No real broker compatibility or market latency claim.",
+    "Unexpected exceptions propagate after storage health and cleanup.",
+    "Independent audit remains required."
+  ],
+  "new_file_sha256_excluding_evidence": {
+    "build/market-data/preservation.py": "bfdc83390fe518f8109fbc81bd842ab1a84d26179a82312c7939c313a2ba5031",
+    "build/market-data/verify-results.py": "ede1e01cca89d9f7df7c8b5af69bf8328486fb6158762b9eb293c7cbd5feb191",
+    "python/tests/m03a_offline_check.py": "7c2945ce9145e8b00405a6acbbf2d68d7e8d21959a73a3b03b3757f1a9657591",
+    "python/trading_agent/market_data/archive.py": "45b90fdbdd66b6ab4adb0ed22b85011bcb2bdb9ce72eb985029cf539bc197684",
+    "python/trading_agent/market_data/projection.py": "0326a7b5ed8e075a5451f8a63eec3d539b36050abeebb54e30ae555822a16cbd",
+    "python/trading_agent/market_data/supervisor.py": "e7c00645dff0edd04fc7546537964093e3cb168a90c645a4f4365a940cb0b854",
+    "python/tests/test_m03a_audit_fixes.py": "cf6ec57cde2ef0f6af6f9b0f65b253d58f57935aaf390ad195a25e446b0a1777",
+    "docs/architecture/m03a1-audit-fixes.md": "e657cf3d685ee394edc15275378ed3dd55349bab5f35efa0c8b8d9ec5027abcd"
+  },
+  "verified_code_commit": "b121c569867e5f12febb65644aa0c56770e86f15"
+}
