@@ -60,6 +60,7 @@ class Supervisor:
                             self.latest = self.archive.observe(self.now())
                         except (OSError,ContractError):
                             self.latest = None
+                            self.archive.close()
                             return self._finish('STORAGE_FAILURE',committed)
                         self.health = Health('CAPTURING',committed,len(self.archive.segments))
                 finally:
@@ -114,8 +115,13 @@ class Supervisor:
             if reader is not None: reader.close()
             if self.latest is not None:
                 # No quote remains current after shutdown or during backoff.
-                self.archive._active = False
-                self.latest = self.archive.observe(self.now())
+                try:
+                    self.archive.invalidate(self.now())
+                    self.latest = self.archive.observe(self.now())
+                except (OSError,ContractError):
+                    self.latest = None
+                    self.archive.close()
+                    code = 'STORAGE_FAILURE'
         return self._finish(code,committed)
 
     def _finish(self, code, committed):

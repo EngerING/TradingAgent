@@ -1,19 +1,15 @@
 """Bounded linked V3.9 journals. No migration or writes to protected financial stores."""
-import base64
-from dataclasses import dataclass, replace
-from datetime import datetime, timedelta, timezone
+from dataclasses import dataclass
+from datetime import timedelta
 import os
 import re
 
 from trading_agent.core_v3.contracts import require, content_hash, canonical_bytes, utc, ContractError
 from trading_agent.core_v3.historical_ingestion.files import safe_path, read_local
-from trading_agent.core_v3.market_observation.contracts import RawEvent, Kind, DataType
+from trading_agent.core_v3.market_observation.contracts import RawEvent, Kind
 from trading_agent.core_v3.market_observation.journal import Journal
-from trading_agent.core_v3.market_observation.validation import State, step
-from trading_agent.core_v3.market_observation.ibkr_protocol import fields
-from .contracts import Observation
-from .calendar import TradingCalendar
-from .wire import historical, request_cutoff, TIMEFRAMES
+from .projection import Projection
+from .publication import Publisher, PUBLIC_FILES
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,6 +26,7 @@ class Archive:
         require(self.root.is_dir(), 'M03_ARCHIVE_DIRECTORY')
         self.config, self.session_id, self.origin, self.environment = config, session_id, origin, environment
         self._lock, self.current, self.segments, self._active = None, None, [], False
+        self._publisher = None
         self._root_identity = Journal._identity(self.root)
         identity = {'schema':'trading.m03a.archive', 'schema_version':1, 'config':config.to_dict(),
                     'session_id':session_id, 'origin':origin.value, 'environment':environment.value}
@@ -53,7 +50,9 @@ class Archive:
                 import fcntl
                 fcntl.flock(self._lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
             self._scan()
-            self.history()
+            rows = self.history()
+            self._projection = Projection(config,origin,environment,self.metadata)
+            for row in rows: self._projection.feed(row)
             if checkpoint is not None:
                 require(type(checkpoint) is ArchiveCheckpoint and checkpoint.metadata_sha256 == self.metadata and
                         0 <= checkpoint.segments <= len(self.segments), 'M03_CHECKPOINT')
@@ -65,6 +64,8 @@ class Archive:
                         digest = rows[checkpoint.sequence-1].sha256 if checkpoint.sequence else journal.metadata
                 else: require(checkpoint.sequence == 0, 'M03_CHECKPOINT')
                 require(digest == checkpoint.sha256, 'M03_CHECKPOINT')
+            self._publisher = Publisher(self)
+            self._publisher.publish(self._projection.available)
         except BaseException as exc:
             self.close()
             if isinstance(exc, OSError): raise ContractError('M03_ARCHIVE_LOCK_OR_IO') from None
@@ -82,7 +83,7 @@ class Archive:
 
     def _scan(self):
         self._storage()
-        files = [p.name for p in self.root.iterdir() if p.name not in ('identity.json','writer.lock')]
+        files = [p.name for p in self.root.iterdir() if p.name not in {'identity.json','writer.lock'} | PUBLIC_FILES]
         names = sorted(n for n in files if not n.endswith('-journal'))
         require(all(n in names or n.removesuffix('-journal') in names for n in files), 'M03_ARCHIVE_FILES')
         require(len(names) <= self.config.max_segments and all(
@@ -120,6 +121,7 @@ class Archive:
         return ArchiveCheckpoint(self.metadata,len(self.segments),head.sequence,head.sha256)
 
     def rotate(self, now):
+        require(self._lock is not None,'M03_WRITER_CLOSED')
         self._storage()
         require(len(self.segments) < self.config.max_segments, 'M03_SEGMENT_BUDGET')
         if self.current is None and self.segments:
@@ -133,7 +135,9 @@ class Archive:
                     utc(now), last.monotonic_ns, self.origin, self.environment,
                     diagnostic='COLLECTOR_RESTART_GAP', host_attestation_sha256=last.host_attestation_sha256,
                     capture_grant_sha256=last.capture_grant_sha256)
-                self.current.append(gap, as_of=now)
+                row = self.current.append(gap, as_of=now)
+                self._projection.feed(row)
+                if self._publisher: self._publisher.segments = self._publisher.segments[:-1]
             previous = self.current.checkpoint().sha256
             self.current.close()
             self.current = None
@@ -143,22 +147,29 @@ class Archive:
         self.segments.append(name)
         self._active = False
         self._storage()
+        self._publisher.publish(max(utc(now),self._projection.available))
 
     def append(self, event, *, as_of):
+        require(self._lock is not None,'M03_WRITER_CLOSED')
         require(type(event) is RawEvent, 'M03_EVENT_TYPE')
         if self.current is None: self.rotate(as_of)
-        if not self.current.history():
+        rows = self.current.history()
+        if not rows:
             require(event.kind is Kind.CONNECTED and not any(r.value.event.connection_id == event.connection_id
                     for r in self.history()), 'M03_NEW_EPOCH_REQUIRED')
-        require(len(self.current.history()) < self.config.capture.max_events-1, 'M03_SEGMENT_EVENTS')
+        require(len(rows) < self.config.capture.max_events-1, 'M03_SEGMENT_EVENTS')
         # Reserve worst-case main/rollback growth before accepting another record.
         self._storage()
         total = sum(p.stat().st_size for p in self.root.iterdir())
         require(total+3*131072 <= self.config.max_total_bytes, 'M03_ARCHIVE_DISK_BUDGET')
+        before = len(rows)
         row = self.current.append(event, as_of=as_of)
         self._storage()
-        if event.kind is Kind.CONNECTED: self._active = True
-        if event.kind in (Kind.GAP, Kind.DISCONNECTED): self._active = False
+        if row.sequence > before:
+            self._projection.feed(row)
+            if event.kind is Kind.CONNECTED: self._active = True
+            if event.kind in (Kind.GAP, Kind.DISCONNECTED): self._active = False
+            self._publisher.publish(max(utc(as_of),self._projection.available))
         return row
 
     def history_not_before(self):
@@ -169,72 +180,20 @@ class Archive:
     def observe(self, as_of, minutes=0):
         as_of = utc(as_of)
         require(minutes in (0,15,60,240), 'M03_TIMEFRAME')
-        state, quote, calendar, bars, quality, contract = State(), None, None, (), (), None
-        planned, seen, conflicts = {}, {}, set()
-        prefix_available = datetime.min.replace(tzinfo=timezone.utc)
-        evidence = self.metadata
-        for row in self.history():
-            raw = row.value.event
-            if max(raw.received_at, row.value.as_of) > as_of: break
-            prefix_available = max(prefix_available,raw.received_at,row.value.as_of)
-            state, value = step(state, raw, self.config.capture, as_of=row.value.as_of)
-            evidence = row.sha256
-            if raw.kind is Kind.CONNECTED:
-                quote, bars, calendar, contract = None, (), None, None
-                planned = {}
-            if raw.kind is Kind.CONTRACT and value.accepted:
-                contract = raw.contract
-                if raw.raw_frame_b64:
-                    f = fields(base64.b64decode(raw.raw_frame_b64))
-                    calendar = TradingCalendar(f[27], f[28], raw.received_at)
-            if raw.kind in (Kind.GAP, Kind.DISCONNECTED) or not value.accepted: quote = None
-            if raw.kind in (Kind.BID, Kind.ASK): quote = value.quote
-            if raw.diagnostic == 'HISTORY_REQUEST_PLANNED':
-                require(contract is not None, 'M03_HISTORY_NO_CONTRACT')
-                cutoff = request_cutoff(base64.b64decode(raw.raw_frame_b64),raw.wire_request_id,contract.con_id)
-                require(cutoff <= raw.received_at, 'M03_HISTORY_REQUEST_FUTURE')
-                planned[raw.wire_request_id] = cutoff
-            if minutes and raw.diagnostic == 'HISTORY_BATCH' and TIMEFRAMES.get(raw.wire_request_id) == minutes:
-                require(calendar is not None and contract is not None and raw.wire_request_id in planned,
-                        'M03_HISTORY_NO_CONTRACT')
-                all_bars, quality = historical(base64.b64decode(raw.raw_frame_b64), minutes, raw.received_at, calendar,
-                    request_end=planned[raw.wire_request_id])
-                included, extra = [], []
-                for bar in all_bars:
-                    if not bar.complete: continue
-                    key = (contract.con_id,minutes,bar.opened_at)
-                    prices = (bar.open,bar.high,bar.low,bar.close)
-                    if key in seen:
-                        extra.append('HISTORY_DUPLICATE' if seen[key] == prices else 'HISTORY_CONFLICT')
-                        if seen[key] != prices: conflicts.add(key)
-                    if key in conflicts:
-                        extra.append('HISTORY_CONFLICT')
-                        continue
-                    seen[key] = prices
-                    included.append(replace(bar,available_at=prefix_available))
-                bars = tuple(included)
-                quality = tuple(sorted(set(quality+tuple(extra)+tuple(c for b in all_bars for c in b.quality))))
-        reasons = list(quality)
-        if not self._active or not state.connected:
-            quote = None
-            reasons.append('DISCONNECTED_OR_RESTARTED')
-        if quote and max((as_of-t).total_seconds()*1000 for t in (quote.bid_received_at,quote.ask_received_at)) > self.config.capture.side_max_age_ms:
-            quote = None
-            reasons.append('SIDE_RECEIPT_STALE')
-        if calendar is None or calendar.state(as_of) != 'OPEN':
-            quote = None
-            reasons.append('MARKET_CLOSED_OR_CALENDAR_UNKNOWN')
-        if state.data_type is not DataType.LIVE: reasons.append('FEED_NOT_LIVE')
-        if quote and quote.source_age_us is None: reasons.append('SOURCE_TIME_NOT_PROVIDED')
-        if not quote and not minutes: reasons.append('QUOTE_UNAVAILABLE')
-        if minutes and not bars: reasons.append('BARS_UNAVAILABLE')
-        if minutes: reasons.append('HISTORICAL_FEED_TYPE_NOT_CONFIRMED')
-        available = bool(bars) if minutes else quote is not None
-        freshness = 'STALE' if minutes and bars else 'FRESH' if available and state.data_type is DataType.LIVE else 'STALE' if available else 'UNAVAILABLE'
-        from trading_agent.core_v3.market_observation.contracts import Origin
-        return Observation('EUR/USD',contract,self.origin,self.environment,state.connection,as_of,minutes,
-            None if minutes else quote,bars if minutes else (),DataType.UNKNOWN if minutes else state.data_type,freshness,
-            tuple(sorted(set(reasons))),evidence,'IBKR_DATA_ONLY' if self.origin is Origin.SOCKET else 'OFFLINE')
+        projection = self._projection
+        if as_of < projection.available:
+            # Historical cutoffs are explicit replay, never the live polling path.
+            projection = Projection(self.config,self.origin,self.environment,self.metadata)
+            for row in self.history():
+                if max(row.value.event.received_at,row.value.as_of) > as_of: break
+                projection.feed(row)
+        self._storage()
+        self._publisher.verify_files()
+        return projection.observe(as_of,minutes,active=self._active)
+
+    def invalidate(self, as_of):
+        self._active = False
+        self._publisher.publish(max(utc(as_of),self._projection.available))
 
     def close(self):
         if self.current is not None:

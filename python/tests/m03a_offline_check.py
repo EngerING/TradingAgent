@@ -19,11 +19,12 @@ class ReportingRunner(unittest.TextTestRunner):
         report = {'schema':'trading.m03a.offline_tests','schema_version':1,
                   'total':result.testsRun,'passed':result.testsRun-len(result.failures)-len(result.errors)-len(result.skipped),
                   'failed':len(result.failures)+len(result.errors),'skipped':len(result.skipped),
-                  'distinct':len(set(names)),'test_ids':names,'barrier_violations':len(VIOLATIONS)}
+                  'distinct':len(set(names)),'test_ids':names,'barrier_violations':len(VIOLATIONS),
+                  'consumer_performance':getattr(sys.modules.get('test_m03a_consumer'),'PERFORMANCE',{})}
         directory = Path(__file__).resolve().parents[2]/'tmp/m03a'
         directory.mkdir(parents=True,exist_ok=True)
         (directory/'tests.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
-        if result.testsRun < 47 or result.skipped or len(set(names)) != result.testsRun:
+        if result.testsRun < 61 or result.skipped or len(set(names)) != result.testsRun:
             raise AssertionError('M03_TEST_DISCOVERY_OR_SKIPS')
         return result
 
