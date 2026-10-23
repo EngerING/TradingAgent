@@ -8,7 +8,7 @@ $counters = $document.SelectSingleNode('/t:TestRun/t:ResultSummary/t:Counters',$
 $results = @($document.SelectNodes('/t:TestRun/t:Results/t:UnitTestResult',$ns))
 $definitions = @($document.SelectNodes('/t:TestRun/t:TestDefinitions/t:UnitTest',$ns))
 $expectedTests = Get-Content -LiteralPath $Expected -Raw | ConvertFrom-Json
-if ($expectedTests.Count -ne 31 -or ($expectedTests | Select-Object -Unique).Count -ne $expectedTests.Count) { throw 'Invalid expected test manifest.' }
+if ($expectedTests.Count -ne 32 -or ($expectedTests | Select-Object -Unique).Count -ne $expectedTests.Count) { throw 'Invalid expected test manifest.' }
 if ($counters.total -ne $expectedTests.Count -or $counters.executed -ne $expectedTests.Count -or $counters.passed -ne $expectedTests.Count -or
     $results.Count -ne $expectedTests.Count -or $definitions.Count -ne $expectedTests.Count) { throw 'Missing or undiscovered tests.' }
 foreach ($attribute in $counters.Attributes) {
