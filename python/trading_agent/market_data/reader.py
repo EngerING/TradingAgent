@@ -145,7 +145,9 @@ class MarketReader(IBKRReader):
                 yield raw
                 count += 1
                 if raw.kind is Kind.GAP:
-                    self.reason = 'SESSION_OR_FEED_INVALID'
+                    self.reason = 'DISCONNECTED' if raw.diagnostic in (
+                        'IBKR_ERROR_1100','IBKR_ERROR_1101','IBKR_ERROR_1102','IBKR_ERROR_1300',
+                        'IBKR_ERROR_2103','IBKR_ERROR_2108') else 'SESSION_OR_FEED_INVALID'
                     break
                 if epoch.accounts and epoch.ended and not ready:
                     require(self.calendar is not None, 'M03_CALENDAR_MISSING')

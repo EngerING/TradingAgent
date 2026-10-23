@@ -13,6 +13,7 @@ from trading_agent.market_data.supervisor import Supervisor
 from test_m03a_contracts import AT
 from test_m03a_reader import config, permission, packets
 from test_m03a_wire import batch
+from test_core_v39_protocol import frame
 
 
 class SupervisorTests(unittest.TestCase):
@@ -59,6 +60,14 @@ class SupervisorTests(unittest.TestCase):
                 self.assertIsNone(s.latest)
                 self.assertTrue(readers[0].closed)
                 self.assertEqual((),archive.history())
+
+    def test_connectivity_callback_reconnects_even_when_tcp_did_not_close(self):
+        with tempfile.TemporaryDirectory() as directory:
+            archive,s,readers = self.run_fixture(directory,payloads=packets()+(frame(4,2,-1,1100,'fixture')[4:],))
+            with archive:
+                self.assertEqual('RETRY_BUDGET',s.run().code)
+                self.assertEqual(2,len(readers))
+                self.assertTrue(all(r.closed for r in readers))
 
     def test_offline_default_never_creates_transport(self):
         with tempfile.TemporaryDirectory() as directory:
