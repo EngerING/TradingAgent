@@ -10,19 +10,41 @@ export function PasswordPreview() {
   const lastActivityReport = useRef(0); const signingOut = useRef(false);
   useEffect(() => {
     if (auth.source !== 'preview') { void navigate('/', { replace: true }); return; }
-    let active = true; let running = false;
-    const expired = (kind: string) => {
+    let active = true; let running = false; let confirmedDeadline = 0;
+    let deadlineRoute = '/session/expired';
+    let deadlineTimer: ReturnType<typeof setTimeout> | undefined;
+    const leave = (path: string) => {
       if (!active) return;
-      if (kind === 'expired') void navigate('/session/expired', { replace: true });
-      else if (kind !== 'conflict') void navigate('/session/unavailable', { replace: true });
+      active = false; setConfirmed(false);
+      if (deadlineTimer) clearTimeout(deadlineTimer);
+      void navigate(path, { replace: true });
+    };
+    const expired = (kind: string) => {
+      if (kind === 'conflict') return;
+      // The BFF owns authorization. A previously verified deadline can only
+      // DENY browser display, never extend or create an authenticated session.
+      if (confirmedDeadline && Date.now() >= confirmedDeadline) leave(deadlineRoute);
+      else leave(kind === 'expired' ? '/session/expired' : '/session/unavailable');
+    };
+    const rememberDeadline = (result: Awaited<ReturnType<typeof auth.session>>) => {
+      const absolute = Date.parse(result.expiresAt ?? '');
+      const idle = Date.parse(result.idleExpiresAt ?? '');
+      if (!Number.isFinite(absolute) || !Number.isFinite(idle)) return;
+      confirmedDeadline = Math.min(absolute, idle);
+      deadlineRoute = idle < absolute ? '/session/idle' : '/session/expired';
+      if (deadlineTimer) clearTimeout(deadlineTimer);
+      if (confirmedDeadline <= Date.now()) { leave(deadlineRoute); return; }
+      deadlineTimer = setTimeout(() => leave(deadlineRoute), confirmedDeadline - Date.now());
     };
     const check = async () => {
-      if (!active || running || signingOut.current) return; running = true;
+      if (!active || running || signingOut.current) return;
+      if (confirmedDeadline && Date.now() >= confirmedDeadline) { leave(deadlineRoute); return; }
+      running = true;
       try {
         const state = await auth.session();
         if (!active || signingOut.current) return;
-        if (state.kind !== 'preview-complete') { setConfirmed(false); expired(state.kind); }
-        else setConfirmed(true);
+        if (state.kind !== 'preview-complete') expired(state.kind);
+        else { rememberDeadline(state); if (active) setConfirmed(true); }
       } catch { if (active) { setConfirmed(false); expired('unavailable'); } }
       finally { running = false; }
     };
@@ -31,7 +53,9 @@ export function PasswordPreview() {
       const now = Date.now(); if (now - lastActivityReport.current < 60000) return;
       lastActivityReport.current = now;
       void auth.activity?.().then(result => {
-        if (result.kind !== 'preview-complete' && result.kind !== 'conflict') expired(result.kind);
+        if (!active) return;
+        if (result.kind === 'preview-complete') rememberDeadline(result);
+        else expired(result.kind);
       }).catch(() => expired('unavailable'));
     };
     void check();
@@ -41,7 +65,8 @@ export function PasswordPreview() {
     document.addEventListener('pointerdown', activity);
     document.addEventListener('keydown', activity);
     return () => {
-      active = false; clearInterval(timer); window.removeEventListener('focus', check);
+      active = false; clearInterval(timer); if (deadlineTimer) clearTimeout(deadlineTimer);
+      window.removeEventListener('focus', check);
       document.removeEventListener('pointerdown', activity); document.removeEventListener('keydown', activity);
     };
   }, [auth, navigate]);

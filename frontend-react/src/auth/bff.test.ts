@@ -36,8 +36,8 @@ describe('BFF transport boundary', () => {
     vi.stubGlobal('fetch', previewFetch);
     const preview = new BffAuthAdapter('preview');
     expect(await preview.login('fixture@example.test', 'public-fixture')).toEqual({ kind: 'preview-complete' });
-    expect(await preview.session()).toEqual({ kind: 'preview-complete' });
-    expect(await preview.activity()).toEqual({ kind: 'preview-complete' });
+    expect(await preview.session()).toEqual({ kind: 'preview-complete', expiresAt: payload.expiresAt, idleExpiresAt: payload.idleExpiresAt });
+    expect(await preview.activity()).toEqual({ kind: 'preview-complete', expiresAt: payload.expiresAt, idleExpiresAt: payload.idleExpiresAt });
     expect(await preview.enroll()).toEqual({ kind: 'unavailable' });
     expect(await preview.verify('123456')).toEqual({ kind: 'unavailable' });
     await preview.logout();
@@ -45,6 +45,13 @@ describe('BFF transport boundary', () => {
       '/bff/csrf','/bff/preview/login','/bff/preview/session','/bff/csrf','/bff/preview/activity',
       '/bff/csrf','/bff/preview/logout'
     ]);
+  });
+  it('distinguishes a confirmed expired preview from a provider outage', async () => {
+    const preview = new BffAuthAdapter('preview');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json({ code: 'AUTH_FAILURE' }, 401))
+      .mockResolvedValueOnce(json({ code: 'AUTH_UNAVAILABLE' }, 503)));
+    expect(await preview.session()).toEqual({ kind: 'expired' });
+    expect(await preview.session()).toEqual({ kind: 'unavailable' });
   });
   it('blocks duplicate transport while a request is pending', async () => {
     let release!: (r: Response) => void; const f = vi.fn().mockReturnValue(new Promise<Response>(resolve => { release = resolve; })); vi.stubGlobal('fetch', f);
