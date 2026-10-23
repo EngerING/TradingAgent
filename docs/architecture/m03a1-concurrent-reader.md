@@ -64,11 +64,14 @@ cada tick, el journal conserva el original y permite replay explícito; este API
 es de última observación, no una cola con garantía de entrega por tick.
 
 Los temporales hacen la lectura no disponible. Solo un nuevo escritor, después
-de adquirir exclusión y verificar los journals, descarta staging conocido,
+de verificar identidad y adquirir exclusión, descarta staging conocido,
 regular, sin links y de hasta 131072 bytes. No borra journals ni documentos del
 usuario. Un temporal sobredimensionado o una ruta desconocida bloquea la apertura.
 El prefijo se conserva fuera del directorio si se necesita detectar restauración
 de una copia anterior; sin esa ancla externa no se promete detectar rollback íntegro.
+La época anterior se invalida antes de la verificación prolongada de journals:
+un nuevo proceso que mantiene el lock no acredita la vigencia del proceso anterior.
+Una regresión pausa exactamente esa apertura antes de escanear SQLite.
 
 La publicación no aumenta cuotas de CollectorConfig/CapturePolicy. Comparte el
 presupuesto del archivo: cada documento <=131072 bytes, <=16 segmentos, <=512
@@ -139,7 +142,7 @@ ni una calificación de producción. Los valores exactos están en la evidencia.
 
 Las 47 pruebas M03-A originales son exigidas por sus IDs extraídos del commit
 auditado; se conservan los 394 casos Core y38 Analyst bajo sus wrappers intactos.
-Se añaden14 pruebas unitarias y3 escenarios con procesos reales en Windows:
+Se añaden15 pruebas unitarias y3 escenarios con procesos reales en Windows:
 dos lectores, exclusión de segundo escritor, commit pausado, rotación pausada,
 terminación forzada con transacción pendiente, reinicio y cierre de handles.
 El reader worker deniega apertura para escritura y toda conexión SQLite.

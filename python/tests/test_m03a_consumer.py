@@ -262,6 +262,21 @@ class ConsumerTests(unittest.TestCase):
             PERFORMANCE.update(segments=3,new_quote_folded_rows=1,new_quote_rehashed_bytes=size,
                                new_quote_append_and_poll_ms=elapsed*1000)
 
+    def test_writer_restart_invalidates_epoch_before_long_journal_verification(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with self.writer(directory) as writer:
+                archive_fixtures.ArchiveTests().capture(writer)
+                reader = self.reader(writer)
+                self.assertIsNotNone(reader.poll(AT).observation.quote)
+                cfg = writer.config
+            scan = Archive._scan
+            def paused_scan(reopened):
+                result = reader.poll(AT)
+                self.assertTrue(result.observation is None or result.observation.quote is None)
+                return scan(reopened)
+            with patch.object(Archive,'_scan',paused_scan):
+                with Archive(Path(directory),cfg,'session-1',Origin.FIXTURE,SessionKind.PAPER): pass
+
 
 
 

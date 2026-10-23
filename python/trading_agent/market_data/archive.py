@@ -49,6 +49,8 @@ class Archive:
             else:
                 import fcntl
                 fcntl.flock(self._lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            # Invalidate the previous process epoch before potentially slow verification.
+            self._publisher = Publisher(self)
             self._scan()
             rows = self.history()
             self._projection = Projection(config,origin,environment,self.metadata)
@@ -64,7 +66,6 @@ class Archive:
                         digest = rows[checkpoint.sequence-1].sha256 if checkpoint.sequence else journal.metadata
                 else: require(checkpoint.sequence == 0, 'M03_CHECKPOINT')
                 require(digest == checkpoint.sha256, 'M03_CHECKPOINT')
-            self._publisher = Publisher(self)
             self._publisher.publish(self._projection.available)
         except BaseException as exc:
             self.close()
