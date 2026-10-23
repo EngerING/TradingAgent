@@ -5,6 +5,18 @@ import subprocess
 
 BASE = '363e40985fbd3533992c70dfbe2aa05f6774ba9f'
 MAIN = 'f67fa92086d10b9562df214f4e869344bf0753d8'
+CORRECTION_BASE = '524c23f6629f46750a52c4b6da31c78252ffe5be'
+CORRECTION_ADDITIONS = {
+    'python/trading_agent/market_data/consumer.py','python/trading_agent/market_data/projection.py',
+    'python/trading_agent/market_data/publication.py','python/tests/test_m03a_consumer.py',
+    'python/tests/m03a_concurrency_worker.py','build/market-data/concurrency-check.py',
+    'docs/architecture/m03a1-concurrent-reader.md','docs/architecture/m03a1-evidence.json',
+}
+CORRECTION_EDITS = {
+    'python/trading_agent/market_data/archive.py','python/trading_agent/market_data/supervisor.py',
+    'python/tests/m03a_offline_check.py','build/market-data/preservation.py',
+    'build/market-data/verify-results.py','.github/workflows/m03a-market-data-ci.yml',
+}
 ALLOWED = {
     '.github/workflows/m03a-market-data-ci.yml',
     'build/market-data/preservation.py', 'build/market-data/verify-results.py',
@@ -17,12 +29,17 @@ ALLOWED = {
         'calendar','wire','reader','archive','supervisor')),
 }
 DISPATCHER = 'build/react-bff/preservation.mjs'
+ALLOWED |= CORRECTION_ADDITIONS
 
 
 def git(*args): return subprocess.check_output(['git',*args],text=True).strip()
 
 
 subprocess.run(['git','merge-base','--is-ancestor',BASE,'HEAD'],check=True)
+subprocess.run(['git','merge-base','--is-ancestor',CORRECTION_BASE,'HEAD'],check=True)
+correction = [row.split('\t') for row in git('diff','--name-status',CORRECTION_BASE,'HEAD').splitlines()]
+assert all((s == 'A' and p in CORRECTION_ADDITIONS) or (s == 'M' and p in CORRECTION_EDITS)
+           for s,p in correction), 'M03A1_EXACT_CORRECTION_ALLOWLIST'
 changes = [row.split('\t') for row in git('diff','--name-status',BASE,'HEAD').splitlines()]
 assert all((status == 'A' and name in ALLOWED) or (status == 'M' and name == DISPATCHER)
            for status,name in changes), 'M03_EXACT_ALLOWLIST'
@@ -31,13 +48,14 @@ assert git('rev-parse','origin/main') == MAIN, 'M03_MAIN_PRESERVED'
 protected = {}
 for path in ('python/trading_agent/core_v3','python/trading_agent/market_analyst','frontend',
              'src/TradingAgent.Infrastructure','src/TradingAgent.Core','src/TradingAgent.Api',
-             'Directory.Build.props','TradingAgent.sln'):
+             'Directory.Build.props','TradingAgent.sln','frontend-react','src/TradingAgent.Web'):
     old,current = git('rev-parse',BASE+':'+path),git('rev-parse','HEAD:'+path)
     assert old == current, 'M03_PROTECTED_OBJECT'
     protected[path] = current
 report = {'baseline':BASE,'head':git('rev-parse','HEAD'),'tree':git('rev-parse','HEAD^{tree}'),
           'main':MAIN,'protected_git_objects':protected,'additions':sum(s=='A' for s,p in changes),
           'modifications':sum(s=='M' for s,p in changes),'deletions':0,
+          'correction_baseline':CORRECTION_BASE,'correction_diff':correction,
           'approved_infrastructure_edit':DISPATCHER}
 root = Path('tmp/m03a')
 root.mkdir(parents=True,exist_ok=True)

@@ -37,6 +37,8 @@ jobs:
             python -B "python/tests/$suite.py" 2>&1 | Tee-Object "tmp/m03a/$suite.log"
             if ($LASTEXITCODE) { exit $LASTEXITCODE }
           }
+          python -B build/market-data/concurrency-check.py 2>&1 | Tee-Object tmp/m03a/concurrency.log
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python -B build/market-data/verify-results.py
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -49,5 +51,6 @@ jobs:
             tmp/m03a/git-identity.txt
             tmp/m03a/preservation.json
             tmp/m03a/results.json
+            tmp/m03a/concurrency.json
           retention-days: 14
           if-no-files-found: warn
