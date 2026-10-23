@@ -11,8 +11,8 @@
   "draft_required": true,
   "baseline_commit": "524c23f6629f46750a52c4b6da31c78252ffe5be",
   "baseline_tree": "3b2e32de6bb95bdeb2c9f9bd4dc328a31e44e091",
-  "verified_code_commit": "69bfcbdb161118335169a1d6cf6c4e848969c05a",
-  "verified_code_tree": "01065da960c99cc02e7285334585a882f8b770fd",
+  "verified_code_commit": "e3f4400c237739fe687aa828319f95e2ace0b6f3",
+  "verified_code_tree": "d9d617d389f08f4eaad96e7b40e76ba790345bd1",
   "final_documentation_commit_self_reference_omitted": true,
   "cause": "Archive constructor always acquires exclusive writer.lock; observe previously replayed every segment per quote.",
   "architecture": "Post-COMMIT bounded latest-state publication; incremental Projection; Consumer rb-only with prefix cursor and no SQLite connection.",
@@ -30,10 +30,10 @@
       "seconds": 1.288
     },
     "m03a_offline_check": {
-      "passed": 61,
+      "passed": 62,
       "failed": 0,
       "skipped": 0,
-      "seconds": 52.687
+      "seconds": 52.309
     },
     "windows_processes": {
       "schema": "trading.m03a1.windows_process_tests",
@@ -51,24 +51,24 @@
       "barrier_violations": 0,
       "worker_sha256": "1c07f9e4b7dbd69712061ae03a8c5404351a25761918477ebf34258aca93b98c",
       "poll_samples": 35,
-      "poll_ms_max": 40.7250999705866,
-      "poll_ms_mean": 22.473974283119396
+      "poll_ms_max": 40.39440001361072,
+      "poll_ms_mean": 24.154754275722162
     },
     "consumer_performance": {
       "warm_polls": 25,
-      "warm_poll_ms_mean": 14.936883999034762,
+      "warm_poll_ms_mean": 14.832460000179708,
       "warm_rehashed_bytes": 0,
       "segments": 3,
       "new_quote_folded_rows": 1,
       "new_quote_rehashed_bytes": 36864,
-      "new_quote_append_and_poll_ms": 151.67849999852479
+      "new_quote_append_and_poll_ms": 152.44620002340525
     },
-    "distinct_total": 496
+    "distinct_total": 497
   },
   "original_m03a_test_ids_required": 47,
   "original_core_tests": 394,
   "original_market_analyst_tests": 38,
-  "new_unit_tests": 14,
+  "new_unit_tests": 15,
   "new_process_scenarios": 3,
   "process_evidence": {
     "platform": "win32",
@@ -139,7 +139,8 @@
     "type": "Internal single-agent five-axis review; independent audit pending",
     "secret_patterns_and_path_review": "PASS; no universal secret-detection guarantee",
     "new_dependencies": 0,
-    "source_compile": "compile() in memory, no pycache"
+    "source_compile": "compile() in memory, no pycache",
+    "startup_regression": "Reproduced old quote becoming current during new writer _scan; moved epoch invalidation before long journal verification. Added pause-before-_scan regression; no Journal modification."
   },
   "diff_against_audited_baseline": {
     "added_files": 8,
@@ -166,6 +167,10 @@
       [
         "A",
         "docs/architecture/m03a1-concurrent-reader.md"
+      ],
+      [
+        "A",
+        "docs/architecture/m03a1-evidence.json"
       ],
       [
         "A",
@@ -198,10 +203,6 @@
       [
         "M",
         "python/trading_agent/market_data/supervisor.py"
-      ],
-      [
-        "A",
-        "docs/architecture/m03a1-evidence.json"
       ]
     ]
   },
@@ -232,14 +233,14 @@
       "path": "build/market-data/verify-results.py",
       "bytes": 2657,
       "lines": 39,
-      "sha256": "f6890fd55a4c0dab59fbf9a771f8930c2cef10554100f960792842b748991741"
+      "sha256": "58520df1e1227cab976c1725cc0ad16ae48a2340fd0d6fd2537d34d3eb712af2"
     },
     {
       "status": "A",
       "path": "docs/architecture/m03a1-concurrent-reader.md",
-      "bytes": 11593,
-      "lines": 189,
-      "sha256": "9c42ce66d7b72222d580bacf34e8cd334653f14c467a537ca70a476f1805649a"
+      "bytes": 11827,
+      "lines": 192,
+      "sha256": "e0cbd1a89382ca67af4a519bad8c1b2ea89ba738a250e7721d9b262343ad6907"
     },
     {
       "status": "A",
@@ -253,21 +254,21 @@
       "path": "python/tests/m03a_offline_check.py",
       "bytes": 1758,
       "lines": 39,
-      "sha256": "94de849be98322b008ccb62c693eee42f34f449918ba552c4efae816f722d9d8"
+      "sha256": "68556fc92160389417a9e568485081d376154b85f06c1d853c59a8913dc77cc1"
     },
     {
       "status": "A",
       "path": "python/tests/test_m03a_consumer.py",
-      "bytes": 16193,
-      "lines": 268,
-      "sha256": "c6e7a21ea5f9c633930a269f5692a3aeb28c775e25d1a2c378b11ed9bf6e634a"
+      "bytes": 17028,
+      "lines": 283,
+      "sha256": "58b4147a75d3811852faa61360e7b223e9ac37b0df386009079ec717245414c0"
     },
     {
       "status": "M",
       "path": "python/trading_agent/market_data/archive.py",
-      "bytes": 10602,
-      "lines": 208,
-      "sha256": "78dc81e45f9a6ef7513aff24a1bb0a9b6c3583ca27808541dd97075e9ac3437f"
+      "bytes": 10693,
+      "lines": 209,
+      "sha256": "b30692aaa083d56f21fe0e7358ea21cdb51998a607de956f394e6b2cac578b7e"
     },
     {
       "status": "A",
@@ -316,5 +317,6 @@
     "Active journal verification and hashing remain bounded linear work; no HFT claim.",
     "Staging and four views consume existing archive quota; exhaustion stops capture.",
     "Power-loss durability of filesystem replace is platform-dependent; restart verifies journals and starts inactive."
-  ]
+  ],
+  "local_validation_scope": "Core394 and Analyst38 preserved sources rerun locally; M03A62 and process3 rerun after startup-epoch correction. CI repeats all suites on final HEAD."
 }
