@@ -94,10 +94,10 @@ hasta validar TWS auténtico, el perfil 157, permisos y su calendario.
 
 ## Pruebas y preservación
 
-Once pruebas deterministas offline nuevas cubren delimitación causal del
+Doce pruebas deterministas offline nuevas cubren delimitación causal del
 intervalo, firma temporal desde el perfil, Paper y Live segregados,
 revocación, prohibición de historia sin `MARKET_CLOSED`, marcador diario,
-interrupción, salida sin cuenta ni precio, liberación del writer antes del
+interrupción y callback invocable, salida sin cuenta ni precio, liberación del writer antes del
 histórico y bloqueo ante rechazo de identidad. Se preservan las veinte pruebas
 M03-A.3 y suites anteriores de M03-A.2, Core y frontend mediante CI separadas.
 El guard `build/m03a4-host/preservation.py` compara los objetos Git contra

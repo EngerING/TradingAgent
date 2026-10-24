@@ -32,7 +32,7 @@ jobs:
             Tee-Object tmp/m03a4/unit-tests.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $log = Get-Content tmp/m03a4/unit-tests.log -Raw
-          if ($log -notmatch 'Ran 11 tests in' -or $log -notmatch '(?m)^OK\s*$') {
+          if ($log -notmatch 'Ran 12 tests in' -or $log -notmatch '(?m)^OK\s*$') {
             throw 'M034_TEST_COVERAGE_OR_SKIP'
           }
       - name: Recheck M03-A.3 encrypted account and Windows DPAPI baseline

@@ -112,6 +112,34 @@ class HistoryTests(unittest.TestCase):
             self.assertEqual('HISTORICAL_ALREADY_ATTEMPTED_TODAY',again['code'])
             self.assertEqual(['20261024'],[p.name for p in root.iterdir()])
 
+    def test_historical_stop_callback_is_callable_and_tracks_cancellation(self):
+        class Store:
+            def __enter__(self): return self
+            def __exit__(self, *exc): pass
+
+        class Reader:
+            def __init__(self, spec, approval, storage, *, stop, wait):
+                self.stop, self.wait = stop, wait
+
+        cancellation = Event()
+        def exercise_reader(reader, storage):
+            # Reproduce HistoricalReader.events(): it invokes self.stop().
+            self.assertFalse(reader.stop())
+            self.assertFalse(reader.wait(0))
+            cancellation.set()
+            self.assertTrue(reader.stop())
+            return SimpleNamespace(status='HISTORICAL_PARTIAL', pages=(),
+                                   market_state='MARKET_CLOSED', quality=())
+
+        with tempfile.TemporaryDirectory() as tmp, \
+             patch('trading_agent.market_data.host_history.HistoricalStore', return_value=Store()), \
+             patch('trading_agent.market_data.host_history.HistoricalReader', Reader), \
+             patch('trading_agent.market_data.host_history.collect', side_effect=exercise_reader), \
+             patch('socket.socket', side_effect=AssertionError('NO_NETWORK')):
+            result = run_offhours_history(paper(), Vault(paper()), cancellation, now=AT,
+                root=Path(tmp)/'history', market_closed_confirmed=True)
+        self.assertEqual('HISTORICAL_PARTIAL', result['code'])
+
     def test_health_status_redacts_identity_and_price(self):
         health=SimpleNamespace(code='MARKET_CLOSED',committed=23,segments=3)
         observed=SimpleNamespace(quote=None,quality=('QUOTE_UNAVAILABLE',),as_of=AT)
