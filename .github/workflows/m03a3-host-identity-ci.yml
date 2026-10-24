@@ -40,7 +40,7 @@ jobs:
             Tee-Object tmp/m03a3/unit-tests.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $log = Get-Content tmp/m03a3/unit-tests.log -Raw
-          if ($log -notmatch 'Ran 15 tests in' -or $log -notmatch '(?m)^OK\s*$') {
+          if ($log -notmatch 'Ran 20 tests in' -or $log -notmatch '(?m)^OK\s*$') {
             throw 'M033_TEST_COVERAGE_OR_SKIP'
           }
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
