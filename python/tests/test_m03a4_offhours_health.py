@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 from trading_agent.core_v3.contracts import ContractError
 from trading_agent.market_data.host_identity import fingerprint
+from trading_agent.market_data.host_calendar import CalendarProbe
 from trading_agent.market_data.host_history import (
     offhours_window, paper_history_approval, run_offhours_history,
 )
@@ -118,14 +119,17 @@ class HistoryTests(unittest.TestCase):
             def __exit__(self, *exc): pass
 
         class Reader:
-            def __init__(self, spec, approval, storage, *, stop, wait):
+            def __init__(self, spec, approval, storage, *, stop, wait,
+                         require_market_closed=False):
                 self.stop, self.wait = stop, wait
+                self.assert_closed = require_market_closed
 
         cancellation = Event()
         def exercise_reader(reader, storage):
             # Reproduce HistoricalReader.events(): it invokes self.stop().
             self.assertFalse(reader.stop())
             self.assertFalse(reader.wait(0))
+            self.assertTrue(reader.assert_closed)
             cancellation.set()
             self.assertTrue(reader.stop())
             return SimpleNamespace(status='HISTORICAL_PARTIAL', pages=(),
@@ -185,6 +189,8 @@ class HistoryTests(unittest.TestCase):
             grants=SimpleNamespace(capture=SimpleNamespace(grant=SimpleNamespace(session_id='test')))
             with patch('trading_agent.market_data.host_service.issue_data_lease',return_value=(object(),grants)), \
                  patch('trading_agent.market_data.host_service._listener_reachable',return_value=True), \
+                 patch('trading_agent.market_data.host_service.probe_broker_calendar',
+                       return_value=CalendarProbe('OPEN','IBKR_SOCKET_OBSERVED')), \
                  patch('trading_agent.market_data.host_service.Archive',Archive), \
                  patch('trading_agent.market_data.host_service.Supervisor',Supervisor), \
                  patch('trading_agent.market_data.host_service.run_offhours_history',side_effect=fake_history), \
@@ -210,6 +216,8 @@ class HistoryTests(unittest.TestCase):
             grants=SimpleNamespace(capture=SimpleNamespace(grant=SimpleNamespace(session_id='test')))
             with patch('trading_agent.market_data.host_service.issue_data_lease',return_value=(object(),grants)), \
                  patch('trading_agent.market_data.host_service._listener_reachable',return_value=True), \
+                 patch('trading_agent.market_data.host_service.probe_broker_calendar',
+                       return_value=CalendarProbe('OPEN','IBKR_SOCKET_OBSERVED')), \
                  patch('trading_agent.market_data.host_service.Archive',Archive), \
                  patch('trading_agent.market_data.host_service.Supervisor',Supervisor), \
                  patch('trading_agent.market_data.host_service.run_offhours_history') as history, \

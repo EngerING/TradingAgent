@@ -16,6 +16,7 @@ from .archive import Archive
 from .host_approval import issue_data_lease
 from .host_identity import HostVault, fingerprint, KINDS, default_path
 from .host_history import run_offhours_history
+from .host_calendar import probe_broker_calendar
 from .reader import MarketReader
 from .supervisor import Supervisor
 
@@ -69,7 +70,7 @@ def _read_masked_account(prompt, *, get_key=None, emit=None, interactive=None):
 
 def output(status, **values):
     active_scope = ('CAPTURE_RUNNING','CAPTURE_STOPPED','CAPTURE_HEALTH',
-                    'CAPTURE_CYCLE','HISTORICAL_STATUS')
+                    'CAPTURE_CYCLE','HISTORICAL_STATUS','CALENDAR_STATUS')
     print(json.dumps({'status':status, 'mode':'IBKR_DATA_ONLY' if status in active_scope else 'OFFLINE',
                       'decision':'NO_TRADE','executionAuthorized':False, **values}, sort_keys=True), flush=True)
 
@@ -151,6 +152,25 @@ def _profile_loop(vault, kind, archive_root, stop, result):
                 stop.wait(15)
                 continue
             waiting = False
+            if kind == 'PAPER':
+                # Independent read-only handshake. Feed outages and supervisor
+                # retry exhaustion must not suppress off-hours historical work.
+                probe = probe_broker_calendar(cfg,approval,stop)
+                output('CALENDAR_STATUS',environment=kind,calendarState=probe.state,
+                       evidenceOrigin=probe.origin,brokerClosed=probe.broker_closed)
+                if probe.state != 'OPEN' or probe.origin != Origin.SOCKET.value:
+                    if probe.broker_closed and not stop.is_set():
+                        try:
+                            history = run_offhours_history(profile,vault,stop,
+                                             market_closed_confirmed=True)
+                            output('HISTORICAL_STATUS',environment=kind,**history)
+                        except (OSError,ContractError,ValueError):
+                            output('HISTORICAL_STATUS',environment=kind,
+                                   code='HISTORICAL_UNAVAILABLE',quality=['HISTORY_HOST_REJECTED'])
+                    # Broker calendar UNKNOWN is not evidence that Forex is closed.
+                    # Recheck even after feed failure; never burn the daily marker.
+                    stop.wait(300 if probe.broker_closed else 60)
+                    continue
             require(sum(1 for item in base.iterdir() if item.is_dir()) <
                     MAX_ARCHIVES_PER_PROFILE, 'M033_ARCHIVE_RETENTION_REQUIRED')
             directory = base / (datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')

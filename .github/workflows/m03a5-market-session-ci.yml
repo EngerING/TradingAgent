@@ -1,0 +1,61 @@
+name: M03-A.5 Paper market-session scheduler and historical fallback
+on:
+  push:
+    branches: [feature/m03a5-market-session-scheduler]
+  pull_request:
+    branches: [develop]
+permissions:
+  contents: read
+jobs:
+  windows-offline:
+    name: Windows M03-A.5 calendar and no-trade boundaries
+    runs-on: windows-2025
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with: {persist-credentials: false, fetch-depth: 0}
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with: {python-version: '3.13.5'}
+      - name: Install pinned IANA time zones for Windows fixture calendars
+        run: |
+          python -m pip install --only-binary=:all: --require-hashes -r build/market-data/requirements-ci.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify exact changes against develop
+        run: |
+          New-Item -ItemType Directory -Force tmp/m03a5 | Out-Null
+          python -B build/m03a5-host/preservation.py 2>&1 | Tee-Object tmp/m03a5/preservation.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Test schedule, isolated broker calendar, and historical mode
+        env:
+          PYTHONPATH: ${{ github.workspace }}/python
+        run: |
+          python -B -m unittest discover -s python/tests -p 'test_m03a5_*.py' -v 2>&1 |
+            Tee-Object tmp/m03a5/unit-tests.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $log = Get-Content tmp/m03a5/unit-tests.log -Raw
+          if ($log -notmatch 'Ran 12 tests in' -or $log -notmatch '(?m)^OK\s*$') {
+            throw 'M035_TEST_COVERAGE_OR_SKIP'
+          }
+      - name: Check historical reader remains order-free
+        run: |
+          $paths = @('python/trading_agent/market_data/host_calendar.py',
+                     'python/trading_agent/market_data/host_history.py',
+                     'python/trading_agent/market_data/research_seed.py',
+                     'python/trading_agent/market_data/backfill/reader.py')
+          foreach ($path in $paths) {
+            if ((Get-Content $path -Raw) -match 'placeOrder|cancelOrder|reqGlobalCancel|reqPositions') {
+              throw "M035_ORDER_PATH_FORBIDDEN $path"
+            }
+          }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: m03a5-windows-offline-evidence
+          path: |
+            tmp/m03a5/*.json
+            tmp/m03a5/*.log
+          retention-days: 14
+          if-no-files-found: warn
