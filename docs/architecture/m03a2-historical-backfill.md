@@ -228,3 +228,33 @@ La especificación admite una fecha de inicio a medianoche UTC y un final explí
 La cobertura diaria del último día UTC se limita al corte explícito y a las velas efectivamente terminadas según las sesiones declaradas por `contractDetails.tradingHours`; no se inventan calendarios. Si el corte cae dentro de una barra superior aún abierta, el dataset permanece `HISTORICAL_PARTIAL` con `HISTORY_TRAILING_INCOMPLETE_BAR` y `HISTORY_GAP`. Si el corte coincide con el cierre de sesión y todas las barras requeridas están presentes, el dataset puede estar `HISTORICAL_COMPLETE` **solo para el intervalo solicitado**: esto no representa certificación de acceso TWS real ni autorización operativa. El horario del domingo se interpreta por calendario explícito y timezone IANA, incluidos cambios DST.
 
 Pruebas nuevas sintéticas y deterministas comprueban cierre del viernes antes de medianoche UTC, ausencia de lectura cuando la hora final está en el futuro, descarte de solapamientos válidos, rechazo lógico de cortes con velas abiertas, reanudación del domingo y cambio DST de Nueva York. Continúa `OFFLINE / NO_TRADE`; TWS auténtico requiere validación supervisada posterior.
+
+## M03-A.2 Paper con TWS que admite órdenes (permiso histórico restringido)
+
+La configuración global de TWS puede mantener desactivado Read-Only API porque un
+motor independiente realizará operaciones en el futuro. M03-A.2 nunca declara
+`tws_read_only_confirmed=true` cuando la casilla está desactivada.
+
+La excepción existe **solo** para un `Grant.tws_read_only_confirmed=false`
+firmado y una sesión `PAPER`. Requiere además un `HistoricalPermit`
+independiente, también firmado por el host confiable, con scope fijo
+`EURUSD_MIDPOINT_HISTORICAL_BACKFILL_ONLY`, asociado por hashes al grant,
+configuración e intervalo. La firma del permiso histórico es indispensable:
+una autorización genérica de captura no basta. Se conserva el schema/contrato
+v1 de `HistoricalPermit` sin agregar campos ni permitir permisos antiguos
+ampliados por accidente. En `LIVE`, incluso con una firma histórica válida,
+se sigue exigiendo Read-Only API y no se admite la excepción.
+
+La ruta especial vuelve a verificar firma HMAC del grant, revocación, scope
+`DATA_CAPTURE_ONLY`, hash de política, autorización de datos y plazos. No
+modifica el método general `Approval.verify` de Core V3.9 ni M03-A. No
+existen opcodes de órdenes o cancelaciones financieras ni consultas de cotización
+en M03-A.2. Los tests cubren firma histórica ausente, LIVE, firma de captura
+alterada, revocación, scope/permiso, vencimiento, cambio de spec, cuentas y
+comandos prohibidos. Todavía se debe provisionar una clave y los permisos por
+el host confiable: esta entrega no conecta TWS ni activa ninguna captura.
+
+**Riesgo residual:** sin Read-Only global, TWS no garantiza solo lectura por
+cliente. El host y otros clientes API autorizados conservan sus capacidades.
+Esta excepción es una barrera a nivel de aplicación para validar Paper, no
+aislamiento del sistema operativo, permiso de órdenes ni autorización Live.

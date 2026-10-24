@@ -88,12 +88,30 @@ class HistoricalApproval:
     def verify(self, spec, now):
         require(type(spec) is BackfillSpec,'M032_SPEC')
         g,p=self.capture.grant,self.permit
-        self.capture.verify(Scope.CAPTURE,spec.collector.capture,g.session_id,g.session_kind,now)
+        now=utc(now)
+        # Core V3.9 Approval.verify stays unchanged: other consumers still require
+        # broker-wide Read-Only API. Only the separately signed HistoricalPermit
+        # may authorize an order-capable TWS for historical DATA_ONLY on Paper.
+        if g.tws_read_only_confirmed:
+            self.capture.verify(Scope.CAPTURE,spec.collector.capture,g.session_id,g.session_kind,now)
+        else:
+            require(g.session_kind is SessionKind.PAPER,'M032_PAPER_RW_NOT_AUTHORIZED')
+            # Exact capture-grant signature, revocation, scope, policy and expiry
+            # checks duplicated here solely for the Paper/history exception.
+            # The ordinary Core/M03-A verification path is never relaxed.
+            cap=self.capture
+            expected=hmac.new(cap._key,canonical_bytes(g.to_dict()),hashlib.sha256).hexdigest()
+            require(cap.enabled and not cap._revoked and
+                    hmac.compare_digest(expected,cap.signature),'M032_PAPER_CAPTURE_DISABLED')
+            require(g.scope is Scope.CAPTURE and
+                    g.policy_sha256==content_hash(spec.collector.capture.to_dict()) and
+                    g.issued_at<=now<g.expires_at and g.market_permission_confirmed,
+                    'M032_PAPER_CAPTURE_UNVERIFIED')
         signature=hmac.new(self._key,canonical_bytes(p.to_dict()),hashlib.sha256).hexdigest()
         require(spec.enabled and spec.collector.enabled and hmac.compare_digest(signature,self.signature) and
                 p.spec_sha256==content_hash(spec.to_dict()) and
                 p.capture_grant_sha256==content_hash(g.to_dict()) and
-                g.issued_at<=p.issued_at<=utc(now)<p.expires_at<=g.expires_at,'M032_PERMISSION')
+                g.issued_at<=p.issued_at<=now<p.expires_at<=g.expires_at,'M032_PERMISSION')
 
 
 @dataclass(frozen=True, slots=True)
