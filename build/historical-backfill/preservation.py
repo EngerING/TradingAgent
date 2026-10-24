@@ -7,10 +7,11 @@ BASE='b7129313f216b24184c54f519fbc761c151bc101'
 MAIN='f67fa92086d10b9562df214f4e869344bf0753d8'
 DISPATCH='build/market-data/preservation.py'
 ADDITIONS={
-    *('python/trading_agent/market_data/backfill/'+p+'.py' for p in ('__init__','__main__','contracts','wire','store','reader')),
+    *('python/trading_agent/market_data/backfill/'+p+'.py' for p in ('__init__','__main__','contracts','wire','store','reader','host_provisioner')),
     *('python/tests/test_m03a2_'+p+'.py' for p in ('backfill','protocol','recovery','review')),
+    'python/tests/test_m03a2_host_provisioner.py',
     'python/tests/m03a2_offline_check.py','python/tests/m03a2_concurrency_worker.py',
-    *('build/historical-backfill/'+p for p in ('preservation.py','verify-results.py','run-approved.ps1','concurrency-check.py')),
+    *('build/historical-backfill/'+p for p in ('preservation.py','verify-results.py','run-approved.ps1','prepare-paper-history.ps1','concurrency-check.py')),
     '.github/workflows/m03a2-historical-backfill-ci.yml',
     'docs/architecture/m03a2-historical-backfill.md','docs/architecture/m03a2-evidence.json',
 }
