@@ -79,14 +79,19 @@ class HistoricalPermit(Record):
 
 
 class HistoricalApproval:
-    def __init__(self, capture, permit, signature, verification_key):
+    def __init__(self, capture, permit, signature, verification_key, *, host_revocation_check=None):
         require(type(capture) is Approval and type(permit) is HistoricalPermit and
                 type(verification_key) is bytes and len(verification_key)>=32,'M032_APPROVAL')
+        require(host_revocation_check is None or callable(host_revocation_check),
+                'M034_REVOCATION_CALLBACK')
         _hash(signature)
         self.capture,self.permit,self.signature,self._key=capture,permit,signature,verification_key
+        self._host_revocation_check=host_revocation_check
 
     def verify(self, spec, now):
         require(type(spec) is BackfillSpec,'M032_SPEC')
+        if self._host_revocation_check is not None:
+            require(self._host_revocation_check() is True,'M034_HISTORY_REVOKED')
         g,p=self.capture.grant,self.permit
         now=utc(now)
         # Core V3.9 Approval.verify stays unchanged: other consumers still require
