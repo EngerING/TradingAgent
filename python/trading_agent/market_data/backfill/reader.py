@@ -10,6 +10,7 @@ from trading_agent.core_v3.market_observation.contracts import Kind, Origin
 from trading_agent.core_v3.market_observation.ibkr_adapter import IBKRReader, _Epoch
 from trading_agent.core_v3.market_observation.ibkr_protocol import Command, handshake, fields
 from ..reader import MarketReader, _TranscriptSocket
+from ..calendar import TradingCalendar
 from .contracts import BackfillSpec, HistoricalApproval
 from .store import HistoricalStore, cutoff_has_incomplete_bar
 from .wire import request, cancel, history_fields
@@ -21,11 +22,14 @@ class HistoricalReader(IBKRReader):
     _receive=MarketReader._receive
 
     def __init__(self, spec, approval, store, *, now=lambda:datetime.now(timezone.utc),
-                 mono=time.monotonic_ns, wait=lambda seconds:time.sleep(seconds), stop=lambda:False):
+                 mono=time.monotonic_ns, wait=lambda seconds:time.sleep(seconds), stop=lambda:False,
+                 require_market_closed=False):
         require(type(spec) is BackfillSpec and type(approval) is HistoricalApproval and
                 type(store) is HistoricalStore,'M032_READER_TYPE')
+        require(type(require_market_closed) is bool,'M035_HISTORY_MODE')
         super().__init__(spec.collector.capture,approval.capture,now=now,mono=mono)
         self.spec,self.history_approval,self.store=spec,approval,store
+        self.require_market_closed=require_market_closed
         self.wait,self.stop=wait,stop
         self._connection_grant=content_hash(approval.capture.grant.to_dict())
         self._pending=None;self._buffer=bytearray();self._needed=4;self._rejected=b''
@@ -61,6 +65,7 @@ class HistoricalReader(IBKRReader):
                      self.now,self.mono,self.approval)
         deadline=self.mono()+self.policy.max_duration_seconds*10**9
         ready=False;tasks=None;next_utc=self.now();next_mono=self.mono();count=0
+        broker_calendar=None
         try:
             self._open();self._verify();self._socket.sendall(handshake())
             server=None
@@ -75,6 +80,11 @@ class HistoricalReader(IBKRReader):
                 self._send(cmd,**args)
             while not self.stop() and self.mono()<deadline and count<self.policy.max_events-3:
                 self._verify()
+                if ready and self.require_market_closed and (broker_calendar is None or
+                        broker_calendar.state(self.now()) != 'CLOSED'):
+                    self.reason='BACKFILL_BROKER_CLOSED_REQUIRED'
+                    yield epoch.raw(Kind.GAP,diagnostic=self.reason);count+=1
+                    break
                 if ready and self._pending is None:
                     if tasks is None: tasks=list(self.store.pending())
                     if not tasks:
@@ -105,6 +115,9 @@ class HistoricalReader(IBKRReader):
                 else:
                     raw=epoch.message(payload,self.policy,self.approval)
                     require(raw.kind not in (Kind.BID,Kind.ASK,Kind.DATA_TYPE),'M032_UNSOLICITED_QUOTE')
+                    if self.require_market_closed and raw.kind is Kind.CONTRACT:
+                        f=fields(payload)
+                        broker_calendar=TradingCalendar(f[27],f[28],raw.received_at)
                 if raw.diagnostic.startswith('IBKR_ERROR_'): self.reason='BACKFILL_PROVIDER_UNAVAILABLE'
                 yield raw;count+=1
                 if raw.diagnostic.startswith('IBKR_ERROR_'):

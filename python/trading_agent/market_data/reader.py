@@ -22,10 +22,12 @@ class MarketReader(IBKRReader):
     origin = Origin.SOCKET
 
     def __init__(self, config, approval, *, now=lambda:datetime.now(timezone.utc), mono=time.monotonic_ns,
-                 history_not_before=None, stop=lambda:False):
+                 history_not_before=None, stop=lambda:False, calendar_only=False):
         require(type(config) is CollectorConfig and type(approval) is DataApproval, 'M03_READER_TYPE')
+        require(type(calendar_only) is bool, 'M035_CALENDAR_MODE')
         super().__init__(config.capture, approval.capture, now=now, mono=mono)
         self.config, self.data_approval, self.stop = config, approval, stop
+        self.calendar_only = calendar_only
         self._connection_grant = content_hash(approval.capture.grant.to_dict())
         self.calendar, self.reason, self.next_open = None, 'NOT_STARTED', None
         self.history_not_before = history_not_before
@@ -152,6 +154,15 @@ class MarketReader(IBKRReader):
                 if epoch.accounts and epoch.ended and not ready:
                     require(self.calendar is not None, 'M03_CALENDAR_MISSING')
                     ready = True
+                    if self.calendar_only:
+                        # Broker-validated identity and finite contract calendar only.
+                        # This path never subscribes or requests even one history bar.
+                        state = self.calendar.state(self.now())
+                        self.reason = 'MARKET_'+state
+                        self.next_open = self.calendar.next_open(self.now())
+                        yield epoch.raw(Kind.GAP, diagnostic=self.reason)
+                        count += 1
+                        break
                     if self.calendar.state(self.now()) == 'OPEN':
                         self._send(Command.DATA_TYPE)
                         self._send(Command.SUBSCRIBE, con_id=epoch.contract.con_id)
