@@ -258,3 +258,73 @@ el host confiable: esta entrega no conecta TWS ni activa ninguna captura.
 cliente. El host y otros clientes API autorizados conservan sus capacidades.
 Esta excepción es una barrera a nivel de aplicación para validar Paper, no
 aislamiento del sistema operativo, permiso de órdenes ni autorización Live.
+
+
+## M03-A.2 — Provision local de permiso Paper para historicos
+
+Nueva herramienta de preparacion **apagada por defecto**, solo Windows:
+
+```powershell
+.\build\historical-backfill\prepare-paper-history.ps1 `
+  -StartUtc '2026-10-18T00:00:00Z' `
+  -EndUtc '2026-10-23T21:00:00Z'
+```
+
+**El comando no se ha ejecutado contra TWS ni prepara permiso en GitHub.**
+Solicita confirmacion humana de Paper, datos autorizados y Read-Only API
+desmarcado, ademas del identificador completo de la cuenta Paper en un prompt
+local sin eco. Para esta fase personal, el identificador debe comenzar en
+`DU` y terminar en `3784`; su valor completo jamas se transmite al
+repositorio, CI, documentacion ni salida JSON. Estas comprobaciones son
+declaraciones del operador, no una identidad atestada por el broker: al iniciar
+el lector debe comparar contra el resultado autentico de managedAccounts.
+
+La herramienta crea un directorio nuevo privado en LOCALAPPDATA con ACL
+no heredadas de propietario/SYSTEM/Administradores **antes de escribir**.
+Emite cinco archivos versionados existentes y dos firmas HMAC-SHA256 ligadas
+al hash del spec, cuenta opaca, entorno Paper, scope de captura, permiso
+historico y ventana solicitada. El secreto aleatorio se guarda solo en
+`verification.key` dentro del directorio protegido, nunca en GitHub.
+Los archivos son de creacion exclusiva; no se sobreescriben permisos previos.
+
+La autorizacion dura **30 minutos** desde la preparacion y permite una
+captura historica supervisada; no se autorrenueva ni concede ordenes, no
+activa el lector por si sola y no modifica la configuracion general de TWS.
+Si vence o falla cualquier comprobacion, preparar un **nuevo** directorio
+bajo supervisión. El lector existente se ejecuta por separado con
+`run-approved.ps1 -ApprovedHistoryOnly`, despues de comprobar cuenta,
+conexion, permisos y capacidad real de TWS. Los datasets no deben
+guardarse en el repositorio. No afirmar pruebas con proveedor hasta
+comprobar respuestas genuinas y limites/pacing. Ninguna prueba CI usa
+cuenta o clave real.
+
+**Riesgo residual:** con Read-Only API desmarcado, TWS sigue siendo
+capaz de aceptar ordenes de *otros clientes*. Ni el HMAC local ni la
+etiqueta PAPER reducen las capacidades del broker; solo restringen el
+codigo del lector propio. El host debe aislar el futuro motor de ejecucion
+mediante permisos, procesos y clientes distintos.
+
+## Fase posterior — M03-A lectura continua sin caducidad manual
+
+La autorizacion puntual anterior no se reutiliza para la captura continua.
+Antes de conectar M03-A a TWS bajo Read-Only API desmarcado se necesita
+un servicio de host persistente separado que gestione:
+
+1. Consentimiento de lectura definido por el propietario, revocable,
+   vinculado a cuenta, entorno, instrumento y version de politica.
+2. Arrendamientos cortos firmados de lectura y renovacion anticipada
+   automatica bajo ese consentimiento, nunca autorizaciones de trading.
+3. Comprobacion estricta de cuenta/sesion en cada reconexion; al cambiar
+   Paper por Live, congelar captura y exigir la politica/permiso propios.
+4. Reconexion limitada, frescura de eventos, marcador de huecos y
+   backfill con permisos independientes; si expira un arrendamiento y la
+   renovacion falla, detener nuevas solicitudes y declarar STALE.
+5. Servicio residente independiente de la sesion web/dashboard y del
+   cierre por inactividad de 30 minutos; parada/revocacion inmediata.
+6. Tests Windows de vencimiento, reanudacion, cuenta equivocada, cambios
+   de entorno, falta de mercado, revocacion y ausencia de opcodes de orden.
+
+**Este servicio continuo todavia NO esta implementado ni autorizado para
+funcionar con TWS genuino**. Se desarrollara/auditara en otro PR despues
+de verificar la preparacion historica. Los controles Live y de ejecucion
+permanecen bloqueados.
