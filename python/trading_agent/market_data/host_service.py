@@ -16,6 +16,7 @@ from trading_agent.core_v3.market_observation.contracts import Origin, SessionKi
 from .archive import Archive
 from .host_approval import issue_data_lease
 from .host_identity import HostVault, fingerprint, KINDS, default_path
+from .reader import MarketReader
 from .supervisor import Supervisor
 
 STOP = threading.Event()
@@ -34,6 +35,15 @@ def _listener_reachable(profile):
             return True
     except OSError:
         return False
+
+
+def _interruptible_reader(host_stop):
+    """Forward the process shutdown signal into the active 120-second socket reader."""
+    def create(config, approval, **kwargs):
+        supervisor_stop = kwargs.pop('stop')
+        return MarketReader(config, approval, **kwargs,
+                            stop=lambda:host_stop.is_set() or supervisor_stop())
+    return create
 
 
 def _profile_loop(vault, kind, archive_root, stop, result):
@@ -71,7 +81,9 @@ def _profile_loop(vault, kind, archive_root, stop, result):
             try:
                 with Archive(directory,cfg,approval.capture.grant.session_id,
                              Origin.SOCKET,SessionKind(kind),create=True) as archive:
-                    supervisor = Supervisor(archive, approval, wait=stop.wait)
+                    supervisor = Supervisor(archive, approval,
+                                            reader_factory=_interruptible_reader(stop),
+                                            wait=stop.wait)
                     health = supervisor.run()
             except (OSError,ContractError):
                 result[kind] = 'LOCAL_STORAGE_OR_PERMISSION_FAILURE'

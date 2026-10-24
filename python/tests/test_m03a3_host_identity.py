@@ -115,6 +115,14 @@ class DataLeaseTests(unittest.TestCase):
         self.assertLessEqual((approval.permit.expires_at-AT).total_seconds(),1800)
         self.assertEqual(900,cfg.max_run_seconds)
         self.assertEqual(16,cfg.capture.max_requests)
+        from threading import Event
+        from trading_agent.market_data.host_service import _interruptible_reader
+        shutdown=Event()
+        reader=_interruptible_reader(shutdown)(cfg,approval,stop=lambda:False)
+        self.assertFalse(reader.stop())
+        shutdown.set()
+        self.assertTrue(reader.stop())
+        reader.close()
 
     def test_live_data_only_lease_with_exact_account_binding(self):
         cfg,approval=issue_data_lease(live(),now=AT)
