@@ -95,7 +95,7 @@ def run_offhours_history(profile, vault, stop, *, now=None, root=None,
     destination.mkdir(mode=0o700)  # exclusive daily marker; concurrent attempts fail closed
     with HistoricalStore(destination, spec, approval.capture.grant.session_id,
                          Origin.SOCKET, SessionKind.PAPER, create=True) as storage:
-        reader = HistoricalReader(spec, approval, storage, stop=stop.is_set(), wait=stop.wait)
+        reader = HistoricalReader(spec, approval, storage, stop=stop.is_set, wait=stop.wait)
         result = collect(reader, storage)
     return {'code':result.status, 'bars':sum(page.count for page in result.pages),
             'market':result.market_state, 'quality':list(result.quality)}
