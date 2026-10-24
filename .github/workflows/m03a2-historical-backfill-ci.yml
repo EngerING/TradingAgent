@@ -1,0 +1,61 @@
+name: M03-A.2 historical backfill offline verification
+on:
+  push:
+    branches: [feature/m03a2-historical-backfill, develop]
+  pull_request:
+    branches: [develop]
+permissions:
+  contents: read
+jobs:
+  historical:
+    name: M03-A.2 Windows historical data-only and 507 preserved cases
+    runs-on: windows-2025
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with: { persist-credentials: false, fetch-depth: 0 }
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with: { python-version: '3.13.5' }
+      - name: Prepare pinned offline oracle and timezone data
+        run: |
+          python -m pip install --only-binary=:all: --require-hashes -r build/market-data/requirements-ci.txt
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python -B build/market-data/sdk-oracle.py
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Preserve integrated sources and run every required case
+        env:
+          PYTHONPATH: ${{ github.workspace }}/tmp/m03a-ci
+        run: |
+          New-Item -ItemType Directory -Force tmp/m03a,tmp/m03a2 | Out-Null
+          git rev-parse HEAD 'HEAD^{tree}' | Set-Content tmp/m03a2/git-identity.txt
+          python -B build/historical-backfill/preservation.py
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          foreach ($suite in @('core_v39_offline_check','market_analyst_offline_check','m03a_offline_check')) {
+            python -B "python/tests/$suite.py" 2>&1 | Tee-Object "tmp/m03a/$suite.log"
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          }
+          python -B build/market-data/concurrency-check.py 2>&1 | Tee-Object tmp/m03a/concurrency.log
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python -B python/tests/m03a2_offline_check.py 2>&1 | Tee-Object tmp/m03a2/units.log
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python -B build/historical-backfill/concurrency-check.py 2>&1 | Tee-Object tmp/m03a2/concurrency.log
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python -B build/historical-backfill/verify-results.py
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: m03a2-historical-offline-evidence
+          path: |
+            tmp/m03a2/*.json
+            tmp/m03a2/*.log
+            tmp/m03a2/git-identity.txt
+            tmp/m03a/*.log
+            tmp/m03a/results.json
+            tmp/m03a/tests.json
+            tmp/m03a/concurrency.json
+          retention-days: 14
+          if-no-files-found: warn
