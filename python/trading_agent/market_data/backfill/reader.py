@@ -11,7 +11,7 @@ from trading_agent.core_v3.market_observation.ibkr_adapter import IBKRReader, _E
 from trading_agent.core_v3.market_observation.ibkr_protocol import Command, handshake, fields
 from ..reader import MarketReader, _TranscriptSocket
 from .contracts import BackfillSpec, HistoricalApproval
-from .store import HistoricalStore
+from .store import HistoricalStore, cutoff_has_incomplete_bar
 from .wire import request, cancel, history_fields
 
 
@@ -78,8 +78,10 @@ class HistoricalReader(IBKRReader):
                 if ready and self._pending is None:
                     if tasks is None: tasks=list(self.store.pending())
                     if not tasks:
+                        days=(self.spec.end.date()-self.spec.start.date()).days
+                        if self.spec.end.time()!=datetime.min.time(): days+=1
                         complete=all((m,self.spec.start+timedelta(days=i)) in self.store.covered
-                            for m in self.spec.timeframes for i in range((self.spec.end-self.spec.start).days))
+                            for m in self.spec.timeframes for i in range(days)) and not cutoff_has_incomplete_bar(self.store.calendar,self.spec)
                         self.reason='HISTORICAL_COMPLETE' if complete else 'HISTORICAL_PARTIAL'
                         break
                     if self.now()<next_utc or self.mono()<next_mono:

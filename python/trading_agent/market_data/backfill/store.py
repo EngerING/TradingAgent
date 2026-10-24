@@ -27,7 +27,10 @@ def _window(payload, con_id):
         minutes={'15 mins':15,'1 hour':60,'4 hours':240}[f[16]]
         end=datetime.strptime(f[15],'%Y%m%d-%H:%M:%S').replace(tzinfo=timezone.utc)
         days=int(f[17].removesuffix(' D'))
-        w=Window(int(f[1]),minutes,end-timedelta(days=days),end)
+        earliest=end-timedelta(days=days)
+        start=earliest.replace(hour=0,minute=0,second=0,microsecond=0)
+        if start<earliest: start+=timedelta(days=1)
+        w=Window(int(f[1]),minutes,start,end)
         require(request(w,con_id)[4:]==payload,'M032_PLAN_BYTES')
         return w
     except (ValueError,IndexError,KeyError): raise ContractError('M032_PLAN_BYTES') from None
@@ -44,9 +47,19 @@ def expected(calendar, window):
     for a,b in calendar.sessions:
         at=a
         while at<b:
-            if window.start<=at<window.end: slots.add(at)
+            if window.start<=at<window.end and min(at+timedelta(minutes=window.minutes),b)<=window.end:
+                slots.add(at)
             at+=timedelta(minutes=window.minutes)
     return slots
+
+
+def cutoff_has_incomplete_bar(calendar, spec):
+    """An intraday cutoff cannot certify a still-open higher-timeframe bar."""
+    if calendar is None: return False
+    session=calendar.interval(spec.end-timedelta(microseconds=1))
+    if session is None or session[1]<=spec.end: return False
+    elapsed=(spec.end-session[0]).total_seconds()
+    return any(elapsed%(minutes*60)!=0 for minutes in spec.timeframes)
 
 
 class HistoricalStore:
@@ -161,7 +174,7 @@ class HistoricalStore:
             if not cal: continue
             day=w.start
             while day<w.end:
-                daily=Window(w.request_id,w.minutes,day,day+timedelta(days=1))
+                daily=Window(w.request_id,w.minutes,day,min(day+timedelta(days=1),w.end))
                 slots=expected(cal,daily)
                 if slots is not None and all((w.minutes,t) in self.samples for t in slots): self.covered.add((w.minutes,day))
                 day+=timedelta(days=1)
@@ -174,7 +187,7 @@ class HistoricalStore:
                 if (minutes,day) in self.covered: day+=timedelta(days=1);continue
                 start=day;day+=timedelta(days=1)
                 while day<self.spec.end and (minutes,day) not in self.covered and (day-start).days<{15:1,60:4,240:7}[minutes]: day+=timedelta(days=1)
-                w=Window(3000+len(windows),minutes,start,day)
+                w=Window(3000+len(windows),minutes,start,min(day,self.spec.end))
                 if self.attempts.get((minutes,start,day),0)<self.spec.max_attempts: windows.append(w)
         return tuple(windows)
 
@@ -206,8 +219,12 @@ class HistoricalStore:
                 p=Page(self.identity,minutes,tuple(values[i:i+64]));digest=self._immutable('pages',p.to_json().encode())
                 pages.append(PageRef(digest,minutes,len(p.bars)))
         quality=set(self.quality)
-        required={(m,self.spec.start+timedelta(days=i)) for m in self.spec.timeframes for i in range((self.spec.end-self.spec.start).days)}
-        complete=required<=self.covered
+        required={(m,day) for m in self.spec.timeframes
+                  for day in (self.spec.start+timedelta(days=i) for i in range((self.spec.end.date()-self.spec.start.date()).days+
+                     (1 if self.spec.end.time()!=datetime.min.time() else 0)))}
+        trailing=cutoff_has_incomplete_bar(self.calendar,self.spec)
+        complete=required<=self.covered and not trailing
+        if trailing: quality.add('HISTORY_TRAILING_INCOMPLETE_BAR')
         if not complete: quality.add('HISTORY_GAP')
         if not complete and (not self.calendar or any(expected(self.calendar,w) is None for w in plan(self.spec))):
             quality.add('CALENDAR_UNKNOWN')

@@ -30,11 +30,13 @@ class BackfillSpec(Record):
         self.check_types()
         for n in ('start','end'): object.__setattr__(self,n,utc(getattr(self,n)))
         require(timedelta(days=1) <= self.end-self.start <= timedelta(days=7) and
-                all((t.hour,t.minute,t.second,t.microsecond)==(0,0,0,0) for t in (self.start,self.end)),
+                (self.start.hour,self.start.minute,self.start.second,self.start.microsecond)==(0,0,0,0) and
+                self.end.minute%15==0 and self.end.second==0 and self.end.microsecond==0,
                 'M032_DAY_RANGE')
         require(self.timeframes and tuple(sorted(set(self.timeframes)))==self.timeframes and
                 all(m in (15,60,240) for m in self.timeframes),'M032_TIMEFRAMES')
-        days=(self.end-self.start).days
+        days=(self.end.date()-self.start.date()).days
+        if self.end.time() != datetime.min.time(): days+=1
         requests=sum((days+{15:1,60:4,240:7}[m]-1)//{15:1,60:4,240:7}[m] for m in self.timeframes)
         require(self.collector.capture.max_duration_seconds>=20*(requests-1)+10,'M032_PACING_DURATION')
         require(1 <= self.max_attempts <= 3 and 1048576 <= self.max_bytes <= 16777216 and
@@ -53,8 +55,10 @@ class Window(Record):
         self.check_types()
         for n in ('start','end'): object.__setattr__(self,n,utc(getattr(self,n)))
         require(3000 <= self.request_id < 3032 and self.minutes in (15,60,240),'M032_REQUEST')
-        days = (self.end-self.start).total_seconds()/86400
-        require(days.is_integer() and 1 <= days <= {15:1,60:4,240:7}[self.minutes], 'M032_STEP_SIZE')
+        require((self.start.hour,self.start.minute,self.start.second,self.start.microsecond)==(0,0,0,0) and
+                self.end.minute%15==0 and self.end.second==0 and self.end.microsecond==0 and
+                timedelta(minutes=15) <= self.end-self.start <=
+                timedelta(days={15:1,60:4,240:7}[self.minutes]), 'M032_STEP_SIZE')
 
 
 @dataclass(frozen=True, slots=True)

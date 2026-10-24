@@ -219,3 +219,12 @@ elección del usuario no se prepara paquete de revisión externa ni se envía c�
 Para iniciar M03-B se requiere auditoría independiente de este PR, aprobación propia
 y contratos de investigación causal que consuman estados/procedencia/suficiencia. Esta
 entrega no inicia M03-B ni conecta datos reales a motores sintéticos o financieros.
+
+
+## M03-A.2.1 — Corte UTC parcial y recuperación tras el cierre
+
+La especificación admite una fecha de inicio a medianoche UTC y un final explícito a un cuarto de hora UTC, dentro de un intervalo de uno a siete días. El final nunca puede superar la hora actual al iniciar la captura. Una solicitud de IBKR continúa expresando su duración en días enteros: se redondea hacia arriba y se descartan solamente las barras anteriores al inicio autorizado de la ventana, sin publicarlas ni imputar datos. Las barras fuera de ese solapamiento permitido siguen rechazándose.
+
+La cobertura diaria del último día UTC se limita al corte explícito y a las velas efectivamente terminadas según las sesiones declaradas por `contractDetails.tradingHours`; no se inventan calendarios. Si el corte cae dentro de una barra superior aún abierta, el dataset permanece `HISTORICAL_PARTIAL` con `HISTORY_TRAILING_INCOMPLETE_BAR` y `HISTORY_GAP`. Si el corte coincide con el cierre de sesión y todas las barras requeridas están presentes, el dataset puede estar `HISTORICAL_COMPLETE` **solo para el intervalo solicitado**: esto no representa certificación de acceso TWS real ni autorización operativa. El horario del domingo se interpreta por calendario explícito y timezone IANA, incluidos cambios DST.
+
+Pruebas nuevas sintéticas y deterministas comprueban cierre del viernes antes de medianoche UTC, ausencia de lectura cuando la hora final está en el futuro, descarte de solapamientos válidos, rechazo lógico de cortes con velas abiertas, reanudación del domingo y cambio DST de Nueva York. Continúa `OFFLINE / NO_TRADE`; TWS auténtico requiere validación supervisada posterior.

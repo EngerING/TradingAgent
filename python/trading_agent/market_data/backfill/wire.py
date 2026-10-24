@@ -21,7 +21,8 @@ def plan(spec):
 
 def request(window, con_id):
     require(type(window) is Window and type(con_id) is int and 0<con_id<2**31,'M032_COMMAND')
-    days=(window.end-window.start).days
+    duration=window.end-window.start
+    days=(duration.days + (1 if duration.seconds or duration.microseconds else 0))
     return _frame([20,window.request_id,con_id,'EUR','CASH','','0.0','','','IDEALPRO','',
         'USD','','',0,window.end.strftime('%Y%m%d-%H:%M:%S'),
         {15:'15 mins',60:'1 hour',240:'4 hours'}[window.minutes],str(days)+' D',0,'MIDPOINT',2,0,''])
@@ -46,14 +47,20 @@ def bars(payload, window, received_at, available_at, calendar, contract):
     f=history_fields(payload)
     require(int(f[1])==window.request_id,'M032_REQUEST_BINDING')
     result=[]; previous=None
+    duration=window.end-window.start
+    days=duration.days+(1 if duration.seconds or duration.microseconds else 0)
+    provider_start=window.end-timedelta(days=days)
     for i in range(int(f[4])):
         p=f[5+8*i:13+8*i]
         require(p[0].isascii() and p[0].isdigit() and len(p[0])<=11,'M032_TIMESTAMP')
         try: opened=datetime.fromtimestamp(int(p[0]),timezone.utc)
         except (ValueError,OverflowError,OSError): raise ContractError('M032_TIMESTAMP') from None
-        require(window.start<=opened<window.end,'M032_BAR_RANGE')
+        require(provider_start<=opened<window.end,'M032_BAR_RANGE')
         require(previous is None or opened>=previous,'M032_BAR_ORDER')
         previous=opened
+        # A rounded-up IBKR duration can return earlier, overlapping bars.
+        # Ignore only that bounded lead-in; never publish it for this window.
+        if opened<window.start: continue
         nominal=opened+timedelta(minutes=window.minutes)
         session=calendar.interval(opened) if calendar else None
         if session:
