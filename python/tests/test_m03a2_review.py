@@ -194,5 +194,92 @@ class PartialTimeWindowTests(unittest.TestCase):
             self.assertEqual('OPEN',calendar.state(opening+timedelta(minutes=1)))
 
 
+class PaperOrderCapableTwsTests(unittest.TestCase):
+    """Strict signed DATA_ONLY Paper exception; no connection to a broker."""
+
+    @staticmethod
+    def context(kind=None, signed_history=True, **grant_changes):
+        from datetime import datetime
+        import hashlib
+        import hmac
+        from test_m03a2_backfill import Clock
+        from test_core_v39_protocol import approval, KEY
+        from trading_agent.core_v3.contracts import content_hash, canonical_bytes
+        from trading_agent.core_v3.market_observation.contracts import SessionKind
+        from trading_agent.market_data.backfill.contracts import HistoricalPermit, HistoricalApproval
+        s=replace(spec(),end=START+timedelta(days=1),timeframes=(15,))
+        clock=Clock()
+        cap=approval(enabled=True,session_kind=kind or SessionKind.PAPER,
+                     policy_sha256=content_hash(s.collector.capture.to_dict()),
+                     issued_at=clock.now()-timedelta(seconds=1),
+                     expires_at=clock.now()+timedelta(minutes=30),
+                     tws_read_only_confirmed=False,**grant_changes)
+        permit=HistoricalPermit(content_hash(cap.grant.to_dict()),content_hash(s.to_dict()),
+                                cap.grant.issued_at,cap.grant.expires_at)
+        sig=hmac.new(KEY,canonical_bytes(permit.to_dict()),hashlib.sha256).hexdigest() if signed_history else '0'*64
+        return s,clock,HistoricalApproval(cap,permit,sig,KEY)
+
+    def test_signed_paper_history_exception_keeps_core_readonly_gate(self):
+        from trading_agent.core_v3.market_observation.authorization import Scope
+        s,c,auth=self.context()
+        self.assertFalse(auth.capture.grant.tws_read_only_confirmed)
+        auth.verify(s,c.now())
+        with self.assertRaises(ContractError):
+            auth.capture.verify(Scope.CAPTURE,s.collector.capture,
+                                auth.capture.grant.session_id,auth.capture.grant.session_kind,c.now())
+
+    def test_paper_history_fixture_sends_no_order_or_quote_opcode(self):
+        from test_m03a2_backfill import stream
+        from trading_agent.market_data.backfill.store import HistoricalStore
+        from trading_agent.market_data.backfill.reader import FixtureHistoricalReader, collect
+        from trading_agent.core_v3.market_observation.contracts import Origin, SessionKind
+        s,c,auth=self.context()
+        with tempfile.TemporaryDirectory() as directory, HistoricalStore(
+                Path(directory),s,'session-1',Origin.FIXTURE,SessionKind.PAPER,create=True) as store:
+            r=FixtureHistoricalReader(stream(s),s,auth,store,now=c.now,mono=c.mono,wait=c.wait)
+            for forbidden in ('placeOrder','cancelOrder','reqGlobalCancel'):
+                with self.assertRaises(ContractError): r._send(forbidden)
+            self.assertEqual('HISTORICAL_COMPLETE',collect(r,store).status)
+            self.assertTrue(set(r.sent_opcodes)<={71,17,49,9,20,25})
+            self.assertNotIn(1,r.sent_opcodes)
+            self.assertNotIn(59,r.sent_opcodes)
+
+    def test_missing_separately_signed_historical_permit_denies_before_socket(self):
+        from trading_agent.market_data.backfill.store import HistoricalStore
+        from trading_agent.market_data.backfill.reader import HistoricalReader, collect
+        from trading_agent.core_v3.market_observation.contracts import Origin, SessionKind
+        s,c,auth=self.context(signed_history=False)
+        with tempfile.TemporaryDirectory() as directory, HistoricalStore(
+                Path(directory),s,'session-1',Origin.SOCKET,SessionKind.PAPER,create=True) as store:
+            r=HistoricalReader(s,auth,store,now=c.now,mono=c.mono,wait=c.wait)
+            with patch('socket.socket',side_effect=AssertionError('SOCKET_MUST_NOT_OPEN')):
+                with self.assertRaises(ContractError): collect(r,store)
+
+    def test_live_order_capable_tws_never_receives_history_exception(self):
+        from trading_agent.core_v3.market_observation.contracts import SessionKind
+        s,c,auth=self.context(kind=SessionKind.LIVE)
+        with self.assertRaises(ContractError): auth.verify(s,c.now())
+
+    def test_bad_capture_signature_and_revocation_denied(self):
+        s,c,auth=self.context();auth.capture.signature='0'*64
+        with self.assertRaises(ContractError): auth.verify(s,c.now())
+        s,c,auth=self.context();auth.capture.revoke()
+        with self.assertRaises(ContractError): auth.verify(s,c.now())
+
+    def test_non_capture_scope_and_unverified_permission_denied(self):
+        from trading_agent.core_v3.market_observation.authorization import Scope
+        for changes in ({'scope':Scope.SHADOW},{'market_permission_confirmed':False}):
+            s,c,auth=self.context(**changes)
+            with self.assertRaises(ContractError): auth.verify(s,c.now())
+
+    def test_expiry_spec_signature_and_account_binding_remain_strict(self):
+        s,c,auth=self.context()
+        with self.assertRaises(ContractError): auth.verify(s,c.now()+timedelta(hours=1))
+        with self.assertRaises(ContractError): auth.verify(replace(s,max_attempts=2),c.now())
+        with self.assertRaises(ContractError): auth.capture.check_accounts('U999')
+        auth.permit=replace(auth.permit,spec_sha256='0'*64)
+        with self.assertRaises(ContractError): auth.verify(s,c.now())
+
+
 if __name__ == '__main__':
     unittest.main()
