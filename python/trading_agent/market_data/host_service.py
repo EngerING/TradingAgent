@@ -23,7 +23,7 @@ MAX_ARCHIVES_PER_PROFILE = 10000
 
 
 def output(status, **values):
-    print(json.dumps({'status':status, 'mode':'IBKR_DATA_ONLY' if status == 'CAPTURE_STOPPED' else 'OFFLINE',
+    print(json.dumps({'status':status, 'mode':'IBKR_DATA_ONLY' if status in ('CAPTURE_RUNNING','CAPTURE_STOPPED') else 'OFFLINE',
                       'decision':'NO_TRADE','executionAuthorized':False, **values}, sort_keys=True), flush=True)
 
 

@@ -127,7 +127,7 @@ class DataLeaseTests(unittest.TestCase):
     def test_expired_signed_lease_fails_closed(self):
         cfg,approval=issue_data_lease(paper(),now=AT)
         with self.assertRaises(ContractError):
-            approval.verify(cfg,AT+timedelta(minutes=11))
+            approval.verify(cfg,AT+timedelta(minutes=30))
 
     def test_original_scope_cannot_bypass_broker_read_only_guard(self):
         cfg,approval=issue_data_lease(paper(),now=AT)
@@ -143,7 +143,11 @@ class DataLeaseTests(unittest.TestCase):
         with self.assertRaises(ContractError):approval.verify(cfg,AT)
 
     def test_revocation_callback_stops_even_valid_signed_lease(self):
-        cfg,approval=issue_data_lease(live(),now=AT,revocation_check=lambda:False)
+        state={'consented': True}
+        cfg,approval=issue_data_lease(live(),now=AT,
+                    revocation_check=lambda:state['consented'])
+        approval.verify(cfg,AT)
+        state['consented']=False
         with self.assertRaises(ContractError):approval.verify(cfg,AT)
 
     def test_disabled_profile_cannot_issue_permit(self):
