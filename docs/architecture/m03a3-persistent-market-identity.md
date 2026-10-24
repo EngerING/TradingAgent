@@ -24,8 +24,11 @@ usuario de acceso IBKR, contraseña, OTP ni factor de recuperación.
 `HostVault` almacena perfiles de cuenta en
 `%LOCALAPPDATA%\TradingAgent\market-data-host\identities.dpapi`.
 El archivo completo se cifra usando DPAPI `CurrentUser`; una cuenta no aparece
-en JSON, logs, CI ni artefactos de GitHub. La identidad completa se solicita una
-sola vez mediante entrada oculta (no aparecen asteriscos; hay que teclear y Enter).
+en JSON, logs, CI ni artefactos de GitHub. La identidad completa se solicita una sola vez en una consola interactiva de
+Windows: aparece `*` por cada caracter, `Backspace` borra el ultimo asterisco y
+`Enter` confirma. El numero real no aparece en pantalla ni en los logs. Sin
+una consola interactiva el alta falla de forma cerrada, sin cambiar al modo
+de entrada invisible anterior.
 No se admite una cuenta Paper sin prefijo DU y sufijo 3784 en esta instalación
 particular. Live requiere alta independiente; no debe usarse la cuenta Paper.
 Reemplazar una cuenta exige el switch explícito `-Replace`. El estado público
@@ -120,7 +123,7 @@ no concede automáticamente privilegios al backfill anterior.
 
 ## Pruebas y limitaciones
 
-15 pruebas adversariales nuevas: vault cerrado/no existente, inscripción única,
+20 pruebas adversariales (15 originales y 5 de entrada enmascarada): vault cerrado/no existente, inscripción única,
 Paper/Live separados, cifrado local, revocación, sustitución, corrupción,
 DPAPI auténtico con cuenta sintética en Windows CI, firmas, expiración,
 identidad HMAC, scope antiguo bloqueado, manipulación y falta de consentimiento.

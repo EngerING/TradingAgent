@@ -163,4 +163,52 @@ class DataLeaseTests(unittest.TestCase):
             issue_data_lease(dict(live(),enabled=False),now=AT)
 
 
+
+class MaskedAccountInputTests(unittest.TestCase):
+    """Windows console keystrokes are synthetic; no TWS or real account access."""
+
+    def _read(self, keys, *, output_stream=None, interactive=True):
+        from trading_agent.market_data.host_service import _read_masked_account
+        stream = output_stream if output_stream is not None else io.StringIO()
+        sequence = iter(keys)
+        return (_read_masked_account('Cuenta: ', get_key=lambda: next(sequence),
+                                    emit=stream.write, interactive=interactive),
+                stream.getvalue())
+
+    def test_asterisks_echo_one_per_character_without_leaking_account(self):
+        value, rendered = self._read('du12343784\r')
+        self.assertEqual(ACCOUNT_PAPER, value)
+        self.assertEqual('Cuenta: ' + '*' * len(ACCOUNT_PAPER) + '\n', rendered)
+        self.assertNotIn(ACCOUNT_PAPER, rendered)
+        self.assertNotIn(ACCOUNT_PAPER.lower(), rendered)
+
+    def test_backspace_erases_mask_and_replaces_character(self):
+        value, rendered = self._read('DU12349\b3784\r')
+        self.assertEqual(ACCOUNT_PAPER, value)
+        self.assertEqual('Cuenta: *******\b \b****\n', rendered)
+
+    def test_escape_ctrl_and_invalid_character_fail_closed(self):
+        for keys in ('DU\x1b', 'DU\x03', 'DU-', 'DU\x04', 'DU\x1a'):
+            with self.subTest(keys=repr(keys)):
+                stream = io.StringIO()
+                with self.assertRaises(ContractError):
+                    self._read(keys, output_stream=stream)
+                self.assertNotIn('DU', stream.getvalue())
+
+    def test_noninteractive_and_invalid_length_are_rejected(self):
+        with self.assertRaises(ContractError):
+            self._read('DU12343784\r', interactive=False)
+        for keys in ('DU1\r', 'A' * 81):
+            with self.subTest(length=len(keys)):
+                stream = io.StringIO()
+                with self.assertRaises(ContractError):
+                    self._read(keys, output_stream=stream)
+                self.assertNotIn(keys, stream.getvalue())
+
+    def test_extended_key_is_discarded_and_live_account_can_be_enrolled(self):
+        value, rendered = self._read('u\x00H1234567\r')
+        self.assertEqual(ACCOUNT_LIVE, value)
+        self.assertEqual('Cuenta: ' + '*' * len(ACCOUNT_LIVE) + '\n', rendered)
+
+
 if __name__=='__main__':unittest.main()

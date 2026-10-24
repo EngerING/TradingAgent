@@ -1,7 +1,6 @@
 """M03-A.3 operator CLI and revocable background DATA_ONLY collector, not a trader."""
 import argparse
 from datetime import datetime, timezone
-import getpass
 import json
 import os
 from pathlib import Path
@@ -21,6 +20,50 @@ from .supervisor import Supervisor
 
 STOP = threading.Event()
 MAX_ARCHIVES_PER_PROFILE = 10000
+
+
+def _read_masked_account(prompt, *, get_key=None, emit=None, interactive=None):
+    """Read account identifier from a Windows console; echo only '*' and never the value."""
+    require(sys.platform == 'win32', 'M033_WINDOWS_REQUIRED')
+    # No stdin redirection or invisible getpass fallback. A real console is required.
+    if interactive is None:
+        interactive = sys.stdin.isatty() and sys.stdout.isatty()
+    require(interactive is True, 'M033_INTERACTIVE_CONSOLE_REQUIRED')
+    import msvcrt
+    take_key = get_key or msvcrt.getwch
+
+    def default_emit(value):
+        sys.stdout.write(value)
+        sys.stdout.flush()
+
+    write = emit or default_emit
+    chars = []
+    write(prompt)
+    while True:
+        key = take_key()
+        if key in ('\r', '\n'):
+            write('\n')
+            require(6 <= len(chars) <= 80, 'M033_ACCOUNT_INPUT_LENGTH')
+            return ''.join(chars).upper()
+        if key in ('\b', '\x7f'):
+            if chars:
+                chars.pop()
+                write('\b \b')
+            continue
+        if key in ('\x00', '\xe0'):
+            take_key()  # Discard the scan code for arrows/function keys.
+            continue
+        if key in ('\x03', '\x04', '\x1a', '\x1b'):
+            write('\n')
+            raise ContractError('M033_ACCOUNT_INPUT_CANCELLED')
+        if type(key) is not str or len(key) != 1 or not key.isascii() or not key.isalnum():
+            write('\n')
+            raise ContractError('M033_ACCOUNT_INPUT_INVALID')
+        if len(chars) >= 80:
+            write('\n')
+            raise ContractError('M033_ACCOUNT_INPUT_TOO_LONG')
+        chars.append(key)
+        write('*')
 
 
 def output(status, **values):
@@ -138,12 +181,12 @@ def main(argv=None):
         if args.command == 'enroll':
             require(args.confirm_market_data and args.confirm_session and
                     args.confirm_read_only_disabled, 'M033_OPERATOR_CONFIRMATIONS')
-            account = getpass.getpass('Identificador completo IBKR ' + args.kind +
-                                      ' (entrada oculta; no es contrasena): ')
-            vault.enroll(args.kind,account.strip().upper(),port=args.port,
+            account = _read_masked_account('Identificador IBKR ' + args.kind +
+                                           ' (* por caracter, Enter para confirmar): ')
+            vault.enroll(args.kind,account,port=args.port,
                          client_id=args.client_id,confirm=True,replace=args.replace)
             output('HOST_DATA_IDENTITY_SAVED', environment=args.kind,
-                   account_suffix=account.strip()[-4:], encrypted=True,
+                   account_suffix=account[-4:], encrypted=True,
                    socketConnected=False)
             return 0
         if args.command == 'revoke':
