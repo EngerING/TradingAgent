@@ -3,6 +3,13 @@ import json
 from pathlib import Path
 import subprocess
 
+# M03-A.4 has a new integrated develop baseline and an independent exact-diff
+# guard. Keep this dispatcher after merge so all earlier CI workflows still run.
+if Path('build/m03a4-host/preservation.py').is_file():
+    import runpy
+    runpy.run_path('build/m03a4-host/preservation.py',run_name='__main__')
+    raise SystemExit(0)
+
 BASE = '3230379de06107b3667eefc24081e9b8ab3ec401'
 MAIN = 'f67fa92086d10b9562df214f4e869344bf0753d8'
 ADDITIONS = {

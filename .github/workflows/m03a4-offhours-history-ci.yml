@@ -1,0 +1,90 @@
+name: M03-A.4 off-hours Paper history and capture health
+on:
+  push:
+    branches: [feature/m03a4-offhours-history-health]
+  pull_request:
+    branches: [develop]
+permissions:
+  contents: read
+jobs:
+  windows-offline:
+    name: Windows M03-A.4 synthetic boundaries
+    runs-on: windows-2025
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with: {persist-credentials: false, fetch-depth: 0}
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with: {python-version: '3.13.5'}
+      - name: Verify exact diff and preservation
+        run: |
+          New-Item -ItemType Directory -Force tmp/m03a4 | Out-Null
+          python -B build/m03a4-host/preservation.py | Tee-Object tmp/m03a4/preservation.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Run offline historical and health regression
+        env:
+          PYTHONPATH: ${{ github.workspace }}/python
+        run: |
+          python -B -m unittest discover -s python/tests -p 'test_m03a4_*.py' -v 2>&1 |
+            Tee-Object tmp/m03a4/unit-tests.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $log = Get-Content tmp/m03a4/unit-tests.log -Raw
+          if ($log -notmatch 'Ran 11 tests in' -or $log -notmatch '(?m)^OK\s*$') {
+            throw 'M034_TEST_COVERAGE_OR_SKIP'
+          }
+      - name: Recheck M03-A.3 encrypted account and Windows DPAPI baseline
+        env:
+          PYTHONPATH: ${{ github.workspace }}/python
+        run: |
+          python -B -m unittest discover -s python/tests -p 'test_m03a3_*.py' -v 2>&1 |
+            Tee-Object tmp/m03a4/m03a3-regression.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $log = Get-Content tmp/m03a4/m03a3-regression.log -Raw
+          if ($log -notmatch 'Ran 20 tests in' -or $log -notmatch '(?m)^OK\s*$') {
+            throw 'M034_M033_REGRESSION_OR_SKIP'
+          }
+      - name: Prepare pinned legacy SDK oracle for full regression
+        run: |
+          python -m pip install --only-binary=:all: --require-hashes -r build/market-data/requirements-ci.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -B build/market-data/sdk-oracle.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Repeat Core, Analyst, M03-A and M03-A.2 historical suites
+        env:
+          PYTHONPATH: ${{ github.workspace }}/tmp/m03a-ci
+        run: |
+          New-Item -ItemType Directory -Force tmp/m03a,tmp/m03a2 | Out-Null
+          foreach ($suite in @('core_v39_offline_check','market_analyst_offline_check','m03a_offline_check')) {
+            python -B "python/tests/$suite.py" 2>&1 | Tee-Object "tmp/m03a/$suite.log"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+          python -B build/market-data/concurrency-check.py 2>&1 | Tee-Object tmp/m03a/concurrency.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -B python/tests/m03a2_offline_check.py 2>&1 | Tee-Object tmp/m03a2/units.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -B build/historical-backfill/concurrency-check.py 2>&1 | Tee-Object tmp/m03a2/concurrency.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -B build/historical-backfill/verify-results.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Confirm no order entrypoints in new scope
+        run: |
+          $source = Get-Content python/trading_agent/market_data/host_history.py -Raw
+          if ($source -match 'placeOrder|cancelOrder|reqGlobalCancel|reqPositions') {
+            throw 'M034_ORDER_OPCODE_FORBIDDEN'
+          }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: m03a4-windows-offline-evidence
+          path: |
+            tmp/m03a4/*.log
+            tmp/m03a4/*.json
+            tmp/m03a2/*.log
+            tmp/m03a2/*.json
+            tmp/m03a/*.log
+            tmp/m03a/*.json
+          retention-days: 14
+          if-no-files-found: warn

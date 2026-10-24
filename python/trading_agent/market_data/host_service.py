@@ -15,6 +15,7 @@ from trading_agent.core_v3.market_observation.contracts import Origin, SessionKi
 from .archive import Archive
 from .host_approval import issue_data_lease
 from .host_identity import HostVault, fingerprint, KINDS, default_path
+from .host_history import run_offhours_history
 from .reader import MarketReader
 from .supervisor import Supervisor
 
@@ -67,7 +68,9 @@ def _read_masked_account(prompt, *, get_key=None, emit=None, interactive=None):
 
 
 def output(status, **values):
-    print(json.dumps({'status':status, 'mode':'IBKR_DATA_ONLY' if status in ('CAPTURE_RUNNING','CAPTURE_STOPPED') else 'OFFLINE',
+    active_scope = ('CAPTURE_RUNNING','CAPTURE_STOPPED','CAPTURE_HEALTH',
+                    'CAPTURE_CYCLE','HISTORICAL_STATUS')
+    print(json.dumps({'status':status, 'mode':'IBKR_DATA_ONLY' if status in active_scope else 'OFFLINE',
                       'decision':'NO_TRADE','executionAuthorized':False, **values}, sort_keys=True), flush=True)
 
 
@@ -89,8 +92,34 @@ def _interruptible_reader(host_stop):
     return create
 
 
+def _health_snapshot(health, observation, kind):
+    """Redacted status only; neither account nor quotes/prices appear on stdout."""
+    return {'environment':kind, 'healthCode':health.code,
+            'committedEvents':health.committed, 'segments':health.segments,
+            'quoteAvailable':bool(observation is not None and observation.quote is not None),
+            'quality':list(observation.quality) if observation is not None else [],
+            'observationAt':observation.as_of.isoformat() if observation is not None else None}
+
+
+def _monitor_supervisor(supervisor, kind, done, market_closed):
+    previous, last_emit = None, 0.0
+    while not done.is_set():
+        health, observation = supervisor.health, supervisor.latest
+        if health.code == 'MARKET_CLOSED':
+            market_closed.set()
+        status = _health_snapshot(health, observation, kind)
+        category = (status['healthCode'], status['quoteAvailable'], tuple(status['quality']))
+        now = time.monotonic()
+        if category != previous or now - last_emit >= 60:
+            output('CAPTURE_HEALTH', **status)
+            previous, last_emit = category, now
+        if done.wait(10):
+            break
+
+
 def _profile_loop(vault, kind, archive_root, stop, result):
     count = 0
+    waiting = False
     try:
         base = archive_root / kind.lower()
         base.mkdir(parents=True, exist_ok=True)
@@ -114,30 +143,55 @@ def _profile_loop(vault, kind, archive_root, stop, result):
                 revocation_check=still_authorized)
             if not _listener_reachable(profile):
                 result[kind] = 'WAITING_FOR_TWS'
+                if not waiting:
+                    output('CAPTURE_HEALTH', environment=kind, healthCode='WAITING_FOR_TWS',
+                           committedEvents=0, segments=0, quoteAvailable=False,
+                           quality=['TWS_SOCKET_NOT_REACHABLE'], observationAt=None)
+                waiting = True
                 stop.wait(15)
                 continue
+            waiting = False
             require(sum(1 for item in base.iterdir() if item.is_dir()) <
                     MAX_ARCHIVES_PER_PROFILE, 'M033_ARCHIVE_RETENTION_REQUIRED')
             directory = base / (datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
                                 + '-' + uuid.uuid4().hex[:10])
             directory.mkdir(mode=0o700)
+            market_closed, monitor_done = threading.Event(), threading.Event()
             try:
                 with Archive(directory,cfg,approval.capture.grant.session_id,
                              Origin.SOCKET,SessionKind(kind),create=True) as archive:
                     supervisor = Supervisor(archive, approval,
                                             reader_factory=_interruptible_reader(stop),
                                             wait=stop.wait)
-                    health = supervisor.run()
+                    monitor = threading.Thread(target=_monitor_supervisor,
+                        args=(supervisor,kind,monitor_done,market_closed), daemon=True)
+                    monitor.start()
+                    try:
+                        health = supervisor.run()
+                    finally:
+                        monitor_done.set()
+                        monitor.join(timeout=2)
             except (OSError,ContractError):
                 result[kind] = 'LOCAL_STORAGE_OR_PERMISSION_FAILURE'
                 break
             count += 1
             result[kind] = health.code
+            output('CAPTURE_CYCLE', **_health_snapshot(health,supervisor.latest,kind))
             # Refuse to continue after account/profile mismatch or uncertain safety.
             if health.code in ('IDENTITY_OR_PERMISSION_REJECTED','PROFILE_REJECTED',
                                'SESSION_OR_FEED_INVALID','CONFIGURATION_OR_PERMISSION_REJECTED',
                                'STORAGE_FAILURE'):
                 break
+            # The continuous reader releases its TWS socket and writer before
+            # one history-only Paper request. Broker calendar evidence is required.
+            if kind == 'PAPER' and market_closed.is_set() and not stop.is_set():
+                try:
+                    history = run_offhours_history(profile,vault,stop,
+                                     market_closed_confirmed=True)
+                    output('HISTORICAL_STATUS',environment=kind,**history)
+                except (OSError,ContractError,ValueError):
+                    output('HISTORICAL_STATUS',environment=kind,
+                           code='HISTORICAL_UNAVAILABLE', quality=['HISTORY_HOST_REJECTED'])
             # A new 30-minute signed permit will be issued before the next cycle.
             # Each 15-minute bounded capture has a fresh journal epoch and declares gaps.
             stop.wait(2 if health.code in ('RUN_DEADLINE','CAPTURE_BOUNDARY','SEGMENT_BUDGET')
