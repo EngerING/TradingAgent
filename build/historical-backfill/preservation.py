@@ -3,6 +3,14 @@ import json
 from pathlib import Path
 import subprocess
 
+# New audited integration baseline: forward to a tighter exact-diff guard.
+if subprocess.run(['git','merge-base','--is-ancestor',
+        '3230379de06107b3667eefc24081e9b8ab3ec401','HEAD'],
+        stdout=subprocess.DEVNULL).returncode == 0:
+    import runpy
+    runpy.run_path('build/m03a3-host/preservation.py',run_name='__main__')
+    raise SystemExit(0)
+
 BASE='b7129313f216b24184c54f519fbc761c151bc101'
 MAIN='f67fa92086d10b9562df214f4e869344bf0753d8'
 DISPATCH='build/market-data/preservation.py'
