@@ -1,0 +1,52 @@
+name: M03-A.3 durable identity and data-only lease
+on:
+  push:
+    branches: [feature/m03a3-persistent-market-identity, develop]
+  pull_request:
+    branches: [develop]
+permissions:
+  contents: read
+jobs:
+  windows-offline:
+    name: Windows DPAPI and M03-A.3 offline boundary
+    runs-on: windows-2025
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with: { persist-credentials: false, fetch-depth: 0 }
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with: { python-version: '3.13.5' }
+      - name: Verify preserved baseline
+        run: |
+          New-Item -ItemType Directory -Force tmp/m03a3 | Out-Null
+          python -B build/m03a3-host/preservation.py | Tee-Object tmp/m03a3/preservation.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: PowerShell syntax (does not run TWS)
+        run: |
+          $tokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path build/m03a3-host/run-host.ps1).Path,
+            [ref]$tokens,[ref]$parseErrors) | Out-Null
+          if ($parseErrors -and $parseErrors.Count -gt 0) { $parseErrors; exit 1 }
+      - name: Real Windows DPAPI with synthetic fixture account and permit tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}/python
+        run: |
+          python -B -m unittest discover -s python/tests -p 'test_m03a3_*.py' -v 2>&1 |
+            Tee-Object tmp/m03a3/unit-tests.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $log = Get-Content tmp/m03a3/unit-tests.log -Raw
+          if ($log -notmatch 'Ran 15 tests in' -or $log -notmatch '(?m)^OK\s*$') {
+            throw 'M033_TEST_COVERAGE_OR_SKIP'
+          }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: m03a3-windows-offline-evidence
+          path: tmp/m03a3/*.log
+          retention-days: 14
+          if-no-files-found: warn
